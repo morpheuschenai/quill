@@ -402,8 +402,29 @@
   .tag.clip { background: rgba(217,119,6,0.12); color: var(--yellow); }
 
   .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; max-width: 720px; }
-  .faq-item h3 { font-size: 16.5px; font-weight: 600; margin-bottom: 7px; }
-  .faq-item p { font-size: 14.5px; color: var(--text-dim); }
+  .faq-item h3 {
+    font-size: 16.5px; font-weight: 600; margin-bottom: 0; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    user-select: none; -webkit-user-select: none;
+  }
+  .faq-item h3::after { content: '+'; font-size: 22px; font-weight: 300; color: var(--text-dim); margin-left: 16px; flex-shrink: 0; transition: transform 0.2s; }
+  .faq-item.open h3::after { content: '−'; }
+  .faq-item > p, .faq-item > table { font-size: 14.5px; color: var(--text-dim); display: none; margin-top: 0; }
+  .faq-item.open > p, .faq-item.open > table { display: block; margin-top: 10px; }
+
+  /* ---------- Step mini-mockups ---------- */
+  .step-mock { margin-top: 16px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
+  .sm-line { padding: 1px 0; color: var(--text); }
+  .sm-dim  { color: var(--text-dim); }
+  .sm-hl   { background: rgba(59,130,246,0.22); border-radius: 2px; padding: 0 3px; }
+  .sm-fixed{ background: rgba(16,185,129,0.22); border-radius: 2px; padding: 0 3px; color: var(--text); }
+  .sm-check{ margin-top: 6px; color: var(--green); font-size: 11px; font-weight: 600; }
+  .sm-select, .sm-result { background: var(--bg); border: 1px solid var(--border); }
+  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px; }
+  .sm-item  { padding: 5px 8px; border-radius: 6px; color: rgba(232,232,240,0.6); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .sm-item-hi { background: rgba(255,255,255,0.07); color: #e8e8f0; }
+  .sm-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sm-kbds  { display: flex; gap: 3px; margin-bottom: 6px; }
 
   .cta { text-align: center; }
   .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
@@ -471,6 +492,10 @@
       <div>
         <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">actoins</span>,<br><span class="typo">rigth</span> <span class="grad">where you need them.</span></h1>
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">Fix, translate, or summarize text in any app — with one hotkey.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Join the waitlist</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> GitHub</a>
+        </div>
         <div><button id="resetChip">↺ Reset the headline</button></div>
       </div>
 
@@ -492,9 +517,36 @@
     <div class="sec-label"><svg class="ic-svg"><use href="#i-keyboard"/></svg> How it works</div>
     <h2>Three steps. Zero context switching.</h2>
     <div class="steps">
-      <div class="step"><div class="num">1</div><h3>Select</h3><p>Highlight text in any app — editor, browser, PDF, chat. Or grab a screenshot of anything on screen.</p></div>
-      <div class="step"><div class="num">2</div><h3>Press the hotkey</h3><p>One keystroke pops the action menu next to your selection or captures a region of the screen — both fully configurable in Preferences.</p></div>
-      <div class="step"><div class="num">3</div><h3>Done</h3><p>Editable text is rewritten in place. Read-only content shows the result in a floating panel, copied to your clipboard.</p></div>
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Select text</h3>
+        <p>Highlight anything in any app — email, doc, PDF, browser, chat.</p>
+        <div class="step-mock sm-select">
+          <div class="sm-line">The quick <span class="sm-hl">brown fox jumps</span></div>
+          <div class="sm-line sm-dim">over the lazy dog.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Press the hotkey</h3>
+        <p>The Quill menu pops up right next to your selection. Pick an action or type a custom prompt.</p>
+        <div class="step-mock sm-menu">
+          <div class="sm-kbds"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
+          <div class="sm-item sm-item-hi"><span class="sm-dot" style="background:#34d399"></span>Fix the text</div>
+          <div class="sm-item"><span class="sm-dot" style="background:#a78bfa"></span>Translate</div>
+          <div class="sm-item"><span class="sm-dot" style="background:#60a5fa"></span>Summarize</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Result, in place</h3>
+        <p>Editable fields: AI rewrites the text where it is. Read-only: result appears in a panel, copied to clipboard.</p>
+        <div class="step-mock sm-result">
+          <div class="sm-line">The quick <span class="sm-fixed">brown fox jumps</span></div>
+          <div class="sm-line sm-dim">over the lazy dog.</div>
+          <div class="sm-check">✓ Rewritten in place</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1129,6 +1181,11 @@
   addEventListener('scroll', () => {
     if (!ticking) { requestAnimationFrame(parallax); ticking = true; }
   }, { passive: true });
+
+  // ---------- FAQ accordion ----------
+  document.querySelectorAll('.faq-item h3').forEach(h3 => {
+    h3.addEventListener('click', () => h3.closest('.faq-item').classList.toggle('open'));
+  });
 
   // ---------- Scroll reveal (staggered) ----------
   const revealEls = document.querySelectorAll('.sec-label, h2, .sec-sub, .step, .feat, .plan, .privacy-item, .faq-item, .cta .btns');

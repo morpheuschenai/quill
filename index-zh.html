@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quill — AI 即用，就在你需要的地方出現</title>
+<title>Quill — AI 動作，就在你需要的地方出現</title>
 <meta property="og:type"        content="website">
 <meta property="og:url"         content="https://quill.morpheuschen.com/index-zh.html">
-<meta property="og:title"       content="Quill — AI 即用，就在你需要的地方出現">
+<meta property="og:title"       content="Quill — AI 動作，就在你需要的地方出現">
 <meta property="og:description" content="在任何 Mac app 選取文字，按快捷鍵，直接修正、翻譯或摘要。開源 macOS app，無後端，資料不繞路。">
 <meta property="og:image"       content="https://quill.morpheuschen.com/og-image.png">
 <meta property="og:site_name"   content="Quill">
 <meta name="twitter:card"        content="summary_large_image">
-<meta name="twitter:title"       content="Quill — AI 即用，就在你需要的地方出現">
+<meta name="twitter:title"       content="Quill — AI 動作，就在你需要的地方出現">
 <meta name="twitter:description" content="在任何 Mac app 選取文字，按快捷鍵，直接修正、翻譯或摘要。開源 macOS app，無後端，資料不繞路。">
 <meta name="twitter:image"       content="https://quill.morpheuschen.com/og-image.png">
 <meta name="description" content="在任何 Mac App 選取文字，按一個快捷鍵，就能修正、翻譯或摘要。開放原始碼。">
@@ -175,8 +175,23 @@
   .tag.read { background: var(--blue-soft); color: var(--blue); }
   .tag.clip { background: rgba(217,119,6,0.12); color: var(--yellow); }
   .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; max-width: 720px; }
-  .faq-item h3 { font-size: 16.5px; font-weight: 600; margin-bottom: 7px; }
-  .faq-item p { font-size: 14.5px; color: var(--text-dim); }
+  .faq-item h3 { font-size: 16.5px; font-weight: 600; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; -webkit-user-select: none; }
+  .faq-item h3::after { content: '+'; font-size: 22px; font-weight: 300; color: var(--text-dim); margin-left: 16px; flex-shrink: 0; }
+  .faq-item.open h3::after { content: '−'; }
+  .faq-item > p, .faq-item > table { font-size: 14.5px; color: var(--text-dim); display: none; margin-top: 0; }
+  .faq-item.open > p, .faq-item.open > table { display: block; margin-top: 10px; }
+  .step-mock { margin-top: 16px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
+  .sm-line { padding: 1px 0; color: var(--text); }
+  .sm-dim  { color: var(--text-dim); }
+  .sm-hl   { background: rgba(59,130,246,0.22); border-radius: 2px; padding: 0 3px; }
+  .sm-fixed{ background: rgba(16,185,129,0.22); border-radius: 2px; padding: 0 3px; color: var(--text); }
+  .sm-check{ margin-top: 6px; color: var(--green); font-size: 11px; font-weight: 600; }
+  .sm-select, .sm-result { background: var(--bg); border: 1px solid var(--border); }
+  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px; }
+  .sm-item  { padding: 5px 8px; border-radius: 6px; color: rgba(232,232,240,0.6); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .sm-item-hi { background: rgba(255,255,255,0.07); color: #e8e8f0; }
+  .sm-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sm-kbds  { display: flex; gap: 3px; margin-bottom: 6px; }
   .cta { text-align: center; }
   .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
   footer { padding: 36px 0 48px; border-top: 1px solid rgba(20,20,40,0.06); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13.5px; color: var(--text-dim); position: relative; z-index: 1; }
@@ -229,8 +244,12 @@
   <header>
     <div class="hero-grid">
       <div>
-        <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">既用</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
-        <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">在任何 App 修正、翻譯或摘要文字——只要一個快捷鍵。</p>
+        <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
+        <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">在任何 App 修正、翻譯或摘要文字 — 只要一個快捷鍵。</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> GitHub</a>
+        </div>
         <div><button id="resetChip">↺ 重置標題</button></div>
       </div>
       <div class="demo-panel">
@@ -251,9 +270,36 @@
     <div class="sec-label"><svg class="ic-svg"><use href="#i-keyboard"/></svg> 如何運作</div>
     <h2>三個步驟。零切換。</h2>
     <div class="steps">
-      <div class="step"><div class="num">1</div><h3>選取</h3><p>在任何 App 中選取文字——編輯器、瀏覽器、PDF、聊天視窗皆可。或直接截取畫面上的任何內容。</p></div>
-      <div class="step"><div class="num">2</div><h3>按快捷鍵</h3><p>一個按鍵就能在選取文字旁彈出操作選單，或啟動截圖框選模式，兩者皆可在偏好設定自訂。</p></div>
-      <div class="step"><div class="num">3</div><h3>完成</h3><p>可編輯的文字直接在原位替換；唯讀內容則在浮動面板顯示結果，並自動複製到剪貼板。</p></div>
+      <div class="step">
+        <div class="num">1</div>
+        <h3>選取文字</h3>
+        <p>在任何 App 選取文字——Email、文件、PDF、瀏覽器、聊天視窗都行。</p>
+        <div class="step-mock sm-select">
+          <div class="sm-line">這份報告的<span class="sm-hl">重點摘要如下</span></div>
+          <div class="sm-line sm-dim">第一季營收成長...</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>按快捷鍵</h3>
+        <p>Quill 選單直接彈在選取文字旁。選一個動作，或輸入自訂指令。</p>
+        <div class="step-mock sm-menu">
+          <div class="sm-kbds"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
+          <div class="sm-item sm-item-hi"><span class="sm-dot" style="background:#34d399"></span>修正文字</div>
+          <div class="sm-item"><span class="sm-dot" style="background:#a78bfa"></span>翻譯</div>
+          <div class="sm-item"><span class="sm-dot" style="background:#60a5fa"></span>摘要</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>結果，就在原位</h3>
+        <p>可編輯欄位：AI 直接在原處改寫。唯讀內容：結果顯示在浮動面板，自動複製到剪貼板。</p>
+        <div class="step-mock sm-result">
+          <div class="sm-line">這份報告的<span class="sm-fixed">重點摘要如下</span></div>
+          <div class="sm-line sm-dim">第一季營收成長...</div>
+          <div class="sm-check">✓ 已在原位改寫</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -406,15 +452,15 @@
 (function () {
   const UNITS = {
     title: {
-      origHTML: 'AI <span class="typo">既用</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span>',
-      fixHTML:  'AI <span class="fixed">即用</span>，<br>就在你<span class="fixed">需要</span><span class="grad">的地方出現。</span>',
+      origHTML: 'AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span>',
+      fixHTML:  'AI <span class="fixed">動作</span>，<br>就在你<span class="fixed">需要</span><span class="grad">的地方出現。</span>',
       en:     'AI actions, right where you need them.',
       formal: '人工智慧功能，精準呈現於您所需之處。',
-      emoji:  '✨ AI 即用，📍 就在你需要的地方出現！🚀'
+      emoji:  '✨ AI 動作，📍 就在你需要的地方出現！🚀'
     },
     sub: {
-      origHTML: '在任何 App 修正、翻譯或摘要文字——只要一個快捷鍵。',
-      fixHTML:  '在任何 App 修正、翻譯或摘要文字——只要一個快捷鍵。',
+      origHTML: '在任何 App 修正、翻譯或摘要文字 — 只要一個快捷鍵。',
+      fixHTML:  '在任何 App 修正、翻譯或摘要文字 — 只要一個快捷鍵。',
       en:     'Fix, translate, or summarize text in any app — with one hotkey.',
       formal: '可在任何應用程式中，透過單一快捷鍵，對文字執行修正、翻譯或摘要操作。',
       emoji:  '🪄 修正、🌍 翻譯、📝 摘要文字——⚡ 一個快捷鍵搞定！'
@@ -658,8 +704,8 @@
   }
 
   const EN = {
-    'AI 既用，就在你需耍的地方出現。': '(原文故意留了兩個錯字 😉)\nAI actions, right where you need them.',
-    'AI 即用，就在你需要的地方出現。': 'AI actions, right where you need them.',
+    'AI 動坐，就在你需耍的地方出現。': '(原文故意留了兩個錯字 😉)\nAI actions, right where you need them.',
+    'AI 動作，就在你需要的地方出現。': 'AI actions, right where you need them.',
     '在任何 App 修正、翻譯或摘要文字——只要一個快捷鍵。': 'Fix, translate, or summarize text in any app — with one hotkey.',
     '三個步驟。零切換。': 'Three steps. Zero context switching.',
     '一個快捷鍵，所有 App。': 'One hotkey, every app.',
@@ -704,6 +750,10 @@
   let ticking = false;
   function parallax() { const y = scrollY; b1.style.transform = `translateY(${y * 0.18}px)`; b2.style.transform = `translateY(${y * -0.12}px)`; b3.style.transform = `translateY(${y * 0.08}px)`; ticking = false; }
   addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(parallax); ticking = true; } }, { passive: true });
+
+  document.querySelectorAll('.faq-item h3').forEach(h3 => {
+    h3.addEventListener('click', () => h3.closest('.faq-item').classList.toggle('open'));
+  });
 
   const revealEls = document.querySelectorAll('.sec-label, h2, .sec-sub, .step, .feat, .plan, .privacy-item, .faq-item, .cta .btns');
   if ('IntersectionObserver' in window) {
