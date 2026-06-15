@@ -1,0 +1,82 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="g1" cx="18%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="85%" cy="70%" r="45%">
+      <stop offset="0%" stop-color="#7c5cf0" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#7c5cf0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="grad-text" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#7c5cf0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0e0e12"/>
+
+  <!-- Ambient blobs -->
+  <circle cx="216" cy="220" r="360" fill="url(#g1)"/>
+  <circle cx="1020" cy="440" r="320" fill="url(#g2)"/>
+
+  <!-- Logo icon (scaled from 36→72px, positioned at 100,259) -->
+  <g transform="translate(100,259) scale(2)">
+    <path d="M4.32931 31.6789C5.09735 28.7446 6.10181 25.8671 8.40875 21.6093M8.40875 21.6093C12.9072 13.3066 18.7038 6.45709 29.6914 3.23457C30.1403 3.10293 30.5947 3.42625 30.6114 3.89368C31.0531 16.2473 19.8997 20.7027 8.40875 21.6093Z" stroke="white" stroke-width="2.24" stroke-linecap="round" fill="none"/>
+    <path d="M19.8012 12.4725C21.8632 12.271 24.5561 12.2735 27.6994 12.8208C27.2071 13.5287 26.6875 14.1648 26.3207 14.5691C24.6958 13.7559 22.1193 13.0023 19.8012 12.4725Z" fill="white" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M25.4521 9.00872C26.6109 8.86245 27.9481 8.78085 29.438 8.82057C29.2271 9.14879 29.0173 9.44196 28.8467 9.66334C27.9324 9.38611 26.7037 9.16846 25.4521 9.00872Z" fill="white" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M9.40395 31.4048C11.1783 29.0871 16.5919 33.35 16.4682 30.3639C16.3017 26.342 20.8653 33.818 22.4741 30.8636C23.517 28.9483 22.242 25.2604 24.1092 25.1831C25.9764 25.1057 27.9827 28.3893 28.1219 31.7502" stroke="white" stroke-width="2.24" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- "Quill" wordmark -->
+  <text x="188" y="308" font-family="-apple-system, SF Pro Display, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="96" font-weight="800" letter-spacing="-3" fill="white">Quill</text>
+
+  <!-- Tagline with gradient on last 4 words -->
+  <text x="100" y="382" font-family="-apple-system, SF Pro Text, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="36" font-weight="500" fill="#9ca3af">AI actions, right</text>
+  <text x="100" y="430" font-family="-apple-system, SF Pro Text, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="36" font-weight="500" fill="#9ca3af">where you need them.</text>
+
+  <!-- Mini action menu card (right side) -->
+  <rect x="720" y="160" width="360" height="310" rx="20" fill="#1b1b24" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+
+  <!-- Menu items -->
+  <!-- Fix the text -->
+  <rect x="737" y="178" width="326" height="44" rx="10" fill="rgba(52,211,153,0.08)"/>
+  <rect x="750" y="187" width="26" height="26" rx="7" fill="rgba(52,211,153,0.15)"/>
+  <circle cx="763" cy="200" r="6" fill="#34d399"/>
+  <text x="786" y="205" font-family="-apple-system, SF Pro Text, sans-serif" font-size="15" font-weight="500" fill="#e8e8f0">Fix the text</text>
+
+  <!-- Make it formal -->
+  <rect x="750" y="233" width="26" height="26" rx="7" fill="rgba(251,191,36,0.12)"/>
+  <circle cx="763" cy="246" r="6" fill="#fbbf24"/>
+  <text x="786" y="251" font-family="-apple-system, SF Pro Text, sans-serif" font-size="15" font-weight="500" fill="rgba(232,232,240,0.75)">Make it formal</text>
+
+  <!-- Translate -->
+  <rect x="750" y="269" width="26" height="26" rx="7" fill="rgba(167,139,250,0.15)"/>
+  <circle cx="763" cy="282" r="6" fill="#a78bfa"/>
+  <text x="786" y="287" font-family="-apple-system, SF Pro Text, sans-serif" font-size="15" font-weight="500" fill="rgba(232,232,240,0.75)">Translate</text>
+
+  <!-- Summarize -->
+  <rect x="750" y="305" width="26" height="26" rx="7" fill="rgba(96,165,250,0.15)"/>
+  <circle cx="763" cy="318" r="6" fill="#60a5fa"/>
+  <text x="786" y="323" font-family="-apple-system, SF Pro Text, sans-serif" font-size="15" font-weight="500" fill="rgba(232,232,240,0.75)">Summarize</text>
+
+  <!-- Divider -->
+  <line x1="750" y1="345" x2="1063" y2="345" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+
+  <!-- Custom prompt input -->
+  <rect x="750" y="356" width="312" height="36" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+  <text x="763" y="379" font-family="-apple-system, SF Pro Text, sans-serif" font-size="13" fill="rgba(255,255,255,0.28)">e.g. Shorten this</text>
+
+  <!-- Hotkey badge -->
+  <rect x="720" y="490" width="88" height="30" rx="8" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)" stroke-width="0.5"/>
+  <text x="739" y="510" font-family="SF Mono, ui-monospace, monospace" font-size="14" fill="#f0f0f6">⌃⌥A</text>
+
+  <!-- Open source badge -->
+  <rect x="100" y="490" width="138" height="30" rx="15" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.2)" stroke-width="1"/>
+  <text x="122" y="510" font-family="-apple-system, SF Pro Text, sans-serif" font-size="13" font-weight="600" fill="#10b981">Open source</text>
+
+  <!-- macOS badge -->
+  <rect x="250" y="490" width="82" height="30" rx="15" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <text x="267" y="510" font-family="-apple-system, SF Pro Text, sans-serif" font-size="13" font-weight="500" fill="rgba(255,255,255,0.5)">macOS</text>
+</svg>
