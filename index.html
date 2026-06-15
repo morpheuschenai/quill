@@ -554,7 +554,7 @@
         <div class="price">Free forever · MIT</div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>All features, no limits</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>Bring your own OpenAI key</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>Use any provider — OpenAI, Groq, OpenRouter, or Ollama</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Audit every line of code</li>
         </ul>
         <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> Build from source</a>
@@ -594,7 +594,7 @@
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> FAQ</div>
     <h2>Questions, answered.</h2>
-    <div class="faq-item"><h3>Do I need an OpenAI account?</h3><p>Today, yes — Quill uses your own API key. Quill Cloud (coming soon) will include credits, so you can download and start without any setup.</p></div>
+    <div class="faq-item"><h3>Do I need an OpenAI account?</h3><p>No — Quill works with any OpenAI-compatible provider. Pick from the built-in presets (OpenAI, Groq, OpenRouter) or run Ollama locally for a free offline option. Quill Cloud (coming soon) will include credits so you need no API key at all.</p></div>
     <div class="faq-item"><h3>Why does Quill need Accessibility permission?</h3><p>It's how Quill reads your selected text and replaces it in place. The permission is granted once in System Settings, and the code that uses it is open for inspection.</p></div>
     <div class="faq-item">
       <h3>Which apps does it work in?</h3>
@@ -606,7 +606,7 @@
         <tr><td>Chrome, Electron apps</td><td><span class="tag clip">Clipboard fallback</span></td><td><span class="tag read">Result panel</span></td></tr>
       </table>
     </div>
-    <div class="faq-item"><h3>Can I use other models?</h3><p>The text and vision models are configurable. Support for other providers and local models is on the roadmap.</p></div>
+    <div class="faq-item"><h3>Can I use other models?</h3><p>Yes — set your provider and model name in Preferences. Built-in presets cover OpenAI (<code>gpt-4o-mini</code>), Groq (<code>llama-3.3-70b-versatile</code>), OpenRouter (<code>openai/gpt-4o-mini</code>), and Ollama (<code>llama3.2</code>). Any OpenAI-compatible endpoint works.</p></div>
     <div class="faq-item"><h3>Was the headline demo calling an API?</h3><p>No — the demo on this page is scripted to show the interaction. The real app sends your selection to the model you configure.</p></div>
   </section>
 
@@ -1031,7 +1031,7 @@
     'Build it yourself': '自己編譯',
     'Free forever · MIT': '永久免費 · MIT',
     'All features, no limits': '完整功能,沒有限制',
-    'Bring your own OpenAI key': '使用自己的 OpenAI key',
+    'Use any provider — OpenAI, Groq, OpenRouter, or Ollama': '自備 API Key，支援多家供應商',
     'Audit every line of code': '每一行程式碼都可審閱',
     'Coming soon': '即將推出',
     'Quill Cloud': 'Quill Cloud',
@@ -1045,7 +1045,7 @@
     'FAQ': '常見問題',
     'Questions, answered.': '問題,都有答案。',
     'Do I need an OpenAI account?': '我需要 OpenAI 帳號嗎?',
-    'Today, yes — Quill uses your own API key. Quill Cloud (coming soon) will include credits, so you can download and start without any setup.': '目前需要——Quill 使用你自己的 API key。即將推出的 Quill Cloud 內含額度,下載即用,不需任何設定。',
+    'No — Quill works with any OpenAI-compatible provider. Pick from the built-in presets (OpenAI, Groq, OpenRouter) or run Ollama locally for a free offline option. Quill Cloud (coming soon) will include credits so you need no API key at all.': '不需要——Quill 支援任何 OpenAI 相容的服務商。可選 OpenAI、Groq、OpenRouter，或在本地跑 Ollama（完全免費）。Quill Cloud（即將推出）內含點數，下載即用。',
     'Why does Quill need Accessibility permission?': '為什麼 Quill 需要輔助使用權限?',
     "It's how Quill reads your selected text and replaces it in place. The permission is granted once in System Settings, and the code that uses it is open for inspection.": 'Quill 靠它讀取你選取的文字並就地取代。權限只需在系統設定授權一次,相關程式碼完全公開可查。',
     'Which apps does it work in?': '支援哪些 app?',
@@ -1060,7 +1060,7 @@
     'Chrome, Electron apps': 'Chrome、Electron app',
     'Clipboard fallback': '剪貼簿備援',
     'Can I use other models?': '可以用其他模型嗎?',
-    'The text and vision models are configurable. Support for other providers and local models is on the roadmap.': '文字與視覺模型都可以設定,其他供應商和本地模型的支援在規劃中。',
+    'Yes — set your provider and model name in Preferences. Built-in presets cover OpenAI (gpt-4o-mini), Groq (llama-3.3-70b-versatile), OpenRouter (openai/gpt-4o-mini), and Ollama (llama3.2). Any OpenAI-compatible endpoint works.': '可以——在偏好設定選擇供應商與模型名稱。內建預設涵蓋 OpenAI、Groq、OpenRouter 及 Ollama，任何 OpenAI 相容端點都支援。',
     'Was the headline demo calling an API?': '標題的 demo 有呼叫 API 嗎?',
     'No — the demo on this page is scripted to show the interaction. The real app sends your selection to the model you configure.': '沒有——頁面上的 demo 是預先寫好的腳本,用來展示互動。真正的 app 會把你的選取送到你設定的模型。',
     'Stop copy-pasting into chatbots.': '別再複製貼上到聊天機器人了。',

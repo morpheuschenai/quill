@@ -313,7 +313,7 @@
         <div class="price">永久免費 · MIT 授權</div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>全功能，無使用限制</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自備 OpenAI API Key</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自備 API Key，支援多家供應商</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>每行程式碼都可查核</li>
         </ul>
         <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> 從原始碼建立</a>
@@ -353,7 +353,7 @@
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> 常見問題</div>
     <h2>常見問題，一次說清。</h2>
-    <div class="faq-item"><h3>需要 OpenAI 帳號嗎？</h3><p>目前需要——Quill 使用你自己的 API Key。Quill Cloud（即將推出）內含點數，下載後無需任何設定即可使用。</p></div>
+    <div class="faq-item"><h3>需要 OpenAI 帳號嗎？</h3><p>不需要——Quill 支援任何 OpenAI 相容的服務商。可選 OpenAI、Groq、OpenRouter，或在本地跑 Ollama（完全免費）。Quill Cloud（即將推出）內含點數，下載即用，不需任何 API Key。</p></div>
     <div class="faq-item"><h3>為什麼 Quill 需要「輔助使用」權限？</h3><p>這是 Quill 讀取選取文字並在原位取代的必要權限。只需在「系統設定」授權一次，相關程式碼都開放在 GitHub 供查核。</p></div>
     <div class="faq-item">
       <h3>哪些 App 可以用？</h3>
@@ -365,7 +365,7 @@
         <tr><td>Chrome、Electron App</td><td><span class="tag clip">剪貼板備援</span></td><td><span class="tag read">結果面板</span></td></tr>
       </table>
     </div>
-    <div class="faq-item"><h3>可以用其他 AI 模型嗎？</h3><p>文字與視覺模型皆可自訂設定，支援其他 AI 供應商與本地模型的計畫已在路線圖中。</p></div>
+    <div class="faq-item"><h3>可以用其他 AI 模型嗎？</h3><p>可以——在偏好設定選擇供應商與模型名稱。內建預設涵蓋 OpenAI（gpt-4o-mini）、Groq（llama-3.3-70b-versatile）、OpenRouter（openai/gpt-4o-mini）及 Ollama（llama3.2），任何 OpenAI 相容端點都支援。</p></div>
     <div class="faq-item"><h3>標題的 demo 有真的呼叫 API 嗎？</h3><p>沒有——這個頁面的互動是腳本模擬，用來呈現真實的操作流程。真正的 App 會將你的選取內容送到你設定的模型。</p></div>
   </section>
 
