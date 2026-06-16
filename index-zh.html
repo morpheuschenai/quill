@@ -93,12 +93,13 @@
   .panel-body p { font-size: 14.5px; color: var(--text-dim); line-height: 1.6; min-height: 66px; }
   .hotkey-row { display: flex; align-items: center; gap: 9px; margin: 16px 0 18px; font-size: 12.5px; color: var(--text-dim); }
   .hotkey-row .kbds { display: flex; gap: 3px; }
-  #tryBtn { width: 100%; justify-content: center; }
+  #tryBtn { width: 100%; justify-content: center; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  #tryBtn:hover { border-color: rgba(20,20,40,0.2); }
   kbd { font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; background: #fff; border: 1px solid rgba(20,20,40,0.16); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; color: var(--text-dim); }
   #hintBubble kbd { background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border-color: rgba(255,255,255,0.14); color: #f0f0f6; }
   .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-  #resetChip { display: none; cursor: pointer; font-size: 13px; margin-top: 18px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; color: var(--text-dim); font-weight: 500; font-family: inherit; transition: border-color 0.2s, color 0.2s, box-shadow 0.2s; }
-  #resetChip:hover { border-color: rgba(20,20,40,0.2); color: var(--text); box-shadow: var(--shadow); }
+  #resetChip { display: none; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; margin-top: 18px; }
+  #resetChip:hover { color: var(--text); }
   #hintBubble { position: fixed; z-index: 80; display: none; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: #f0f0f6; box-shadow: 0 12px 32px rgba(20,20,40,0.35); cursor: pointer; user-select: none; -webkit-user-select: none; animation: pop 0.18s ease; }
   #hintBubble:hover { border-color: rgba(96,165,250,0.6); }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
@@ -196,7 +197,7 @@
   .sm-fixed{ background: rgba(16,185,129,0.22); border-radius: 2px; padding: 0 3px; color: var(--text); }
   .sm-check{ margin-top: 6px; color: var(--green); font-size: 11px; font-weight: 600; }
   .sm-select, .sm-result { background: var(--bg); border: 1px solid var(--border); }
-  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px; }
+  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px 5px 1px; }
   .sm-item  { padding: 5px 8px; border-radius: 6px; color: rgba(232,232,240,0.6); font-size: 12px; display: flex; align-items: center; gap: 6px; }
   .sm-item-hi { background: rgba(255,255,255,0.07); color: #e8e8f0; }
   .sm-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -259,7 +260,7 @@
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">在任何 App 修正、翻譯或摘要文字 — 只要一個快捷鍵。</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://tally.so/r/68VMRP">搶先體驗 Quill Cloud</a>
-          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> 免費試用</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> 免費下載試用</a>
         </div>
         <div><button id="resetChip">↺ 重置標題</button></div>
       </div>
@@ -284,7 +285,7 @@
       <div class="step">
         <div class="num">1</div>
         <div class="step-mock sm-select">
-          <div class="sm-line">「求知若飢，<span class="sm-hl">虛心若愚。」</span></div>
+          <div class="sm-line">「求知若<span class="typo">肌</span>，<span class="sm-hl">虛心若愚。」</span></div>
           <div class="sm-line sm-dim">— Steve Jobs，2005</div>
         </div>
         <div class="step-kbds"></div>
@@ -305,8 +306,8 @@
       <div class="step">
         <div class="num">3</div>
         <div class="step-mock sm-result">
-          <div class="sm-line">這份報告的<span class="sm-fixed">重點摘要如下</span></div>
-          <div class="sm-line sm-dim">第一季營收成長...</div>
+          <div class="sm-line">「求知若飢，虛心若<span class="sm-fixed">愚。」</span></div>
+          <div class="sm-line sm-dim">— Steve Jobs，2005</div>
           <div class="sm-check">✓ 已在原位改寫</div>
         </div>
         <div class="step-kbds"></div>
@@ -382,7 +383,7 @@
         <div class="price">永久免費 · <span class="mit-badge">MIT 授權 <span class="mit-q">?</span><span class="mit-tip">MIT License：可自由使用、修改與散布，包含商業用途，無任何附加條件。</span></span></div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>全功能，無使用限制</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自備 API Key，支援多家供應商</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自備 API Key，支援 OpenAI、Groq、OpenRouter 或 Ollama（本機）</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>每行程式碼都可查核</li>
         </ul>
         <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> 從原始碼建立</a>
@@ -396,7 +397,7 @@
           <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-phone"/></svg> iPhone</span>
           <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-android"/></svg> Android</span>
         </div>
-        <div class="price">下載，雙擊，完成</div>
+        <div class="price">下載，安裝，完成</div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>下載後雙擊即可安裝，不需任何技術設定</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>不需 API Key，內含點數</li>
@@ -442,8 +443,8 @@
     <h2>別再複製貼上進聊天機器人了。</h2>
     <p class="sec-sub" style="margin:0 auto">免費、開源，每行程式碼都可查。</p>
     <div class="btns">
-      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> 在 GitHub 上查看</a>
-      <a class="btn btn-ghost" href="https://tally.so/r/68VMRP">加入 Cloud 候補名單</a>
+      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">搶先體驗 Quill Cloud</a>
+      <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> 免費下載試用</a>
     </div>
   </section>
   </main>

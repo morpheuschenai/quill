@@ -181,7 +181,8 @@
     margin: 16px 0 18px; font-size: 12.5px; color: var(--text-dim);
   }
   .hotkey-row .kbds { display: flex; gap: 3px; }
-  #tryBtn { width: 100%; justify-content: center; }
+  #tryBtn { width: 100%; justify-content: center; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  #tryBtn:hover { border-color: rgba(20,20,40,0.2); }
   kbd {
     font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px;
     background: #fff; border: 1px solid rgba(20,20,40,0.16); border-bottom-width: 2px;
@@ -193,12 +194,10 @@
   }
   .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
   #resetChip {
-    display: none; cursor: pointer; font-size: 13px; margin-top: 18px;
-    background: #fff; border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 14px; color: var(--text-dim); font-weight: 500; font-family: inherit;
-    transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+    display: none; background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 13px; margin-top: 18px;
   }
-  #resetChip:hover { border-color: rgba(20,20,40,0.2); color: var(--text); box-shadow: var(--shadow); }
+  #resetChip:hover { color: var(--text); }
 
   /* ---------- Hint bubble (dark app UI on light page) ---------- */
   #hintBubble {
@@ -428,7 +427,7 @@
   .sm-fixed{ background: rgba(16,185,129,0.22); border-radius: 2px; padding: 0 3px; color: var(--text); }
   .sm-check{ margin-top: 6px; color: var(--green); font-size: 11px; font-weight: 600; }
   .sm-select, .sm-result { background: var(--bg); border: 1px solid var(--border); }
-  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px; }
+  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px 5px 1px; }
   .sm-item  { padding: 5px 8px; border-radius: 6px; color: rgba(232,232,240,0.6); font-size: 12px; display: flex; align-items: center; gap: 6px; }
   .sm-item-hi { background: rgba(255,255,255,0.07); color: #e8e8f0; }
   .sm-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -524,7 +523,7 @@
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">Fix, translate, or summarize text in any app — with one hotkey.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Get early access</a>
-          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> Try Quill</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> Try Quill for free</a>
         </div>
         <div><button id="resetChip">↺ Reset the headline</button></div>
       </div>
@@ -550,7 +549,7 @@
       <div class="step">
         <div class="num">1</div>
         <div class="step-mock sm-select">
-          <div class="sm-line">"Stay hungry, <span class="sm-hl">stay foolish."</span></div>
+          <div class="sm-line">"Stay hungry, <span class="sm-hl">stay <span class="typo">foolissh</span>."</span></div>
           <div class="sm-line sm-dim">— Steve Jobs, 2005</div>
         </div>
         <div class="step-kbds"></div>
@@ -571,8 +570,8 @@
       <div class="step">
         <div class="num">3</div>
         <div class="step-mock sm-result">
-          <div class="sm-line">The quick <span class="sm-fixed">brown fox jumps</span></div>
-          <div class="sm-line sm-dim">over the lazy dog.</div>
+          <div class="sm-line">"Stay hungry, stay <span class="sm-fixed">foolish."</span></div>
+          <div class="sm-line sm-dim">— Steve Jobs, 2005</div>
           <div class="sm-check">✓ Rewritten in place</div>
         </div>
         <div class="step-kbds"></div>
@@ -648,7 +647,7 @@
         <div class="price">Free forever · <span class="mit-badge">MIT <span class="mit-q">?</span><span class="mit-tip">MIT License — free to use, modify, and share, including commercially. No strings attached.</span></span></div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>All features, no limits</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>Use any provider — OpenAI, Groq, OpenRouter, or Ollama</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>Use any provider — OpenAI, Groq, OpenRouter, or Ollama (local)</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Audit every line of code</li>
         </ul>
         <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> Build from source</a>
@@ -662,7 +661,7 @@
           <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-phone"/></svg> iPhone</span>
           <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-android"/></svg> Android</span>
         </div>
-        <div class="price">Download, double-click, done</div>
+        <div class="price">Download, install, done</div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Download and double-click — no tech setup needed</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>No API key needed — credits included</li>
@@ -708,8 +707,8 @@
     <h2>Stop copy-pasting into chatbots.</h2>
     <p class="sec-sub" style="margin:0 auto">Free, open source, and yours to audit.</p>
     <div class="btns">
-      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> View on GitHub</a>
-      <a class="btn btn-ghost" href="https://tally.so/r/68VMRP">Join the Cloud waitlist</a>
+      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Get early access</a>
+      <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> Try Quill for free</a>
     </div>
   </section>
   </main>
@@ -1125,11 +1124,11 @@
     'Build it yourself': '自己編譯',
     'Free forever · MIT': '永久免費 · MIT',
     'All features, no limits': '完整功能,沒有限制',
-    'Use any provider — OpenAI, Groq, OpenRouter, or Ollama': '自備 API Key，支援多家供應商',
+    'Use any provider — OpenAI, Groq, OpenRouter, or Ollama (local)': '自備 API Key，支援 OpenAI、Groq、OpenRouter 或 Ollama（本機）',
     'Audit every line of code': '每一行程式碼都可審閱',
     'Coming soon': '即將推出',
     'Quill Cloud': 'Quill Cloud',
-    'Download, double-click, done': '下載、雙擊、完成',
+    'Download, install, done': '下載、安裝、完成',
     'Signed app — no Xcode, no setup': '已簽名的 app——不用 Xcode、不用設定',
     'No API key needed — credits included': '不需要 API key——內含額度',
     'Automatic updates': '自動更新',
