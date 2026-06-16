@@ -98,8 +98,11 @@
   .btn:hover { transform: translateY(-1px); }
   .btn-primary { background: var(--text); color: #fff; }
   .btn-primary:hover { background: #2e2e3c; color: #fff; box-shadow: 0 8px 24px rgba(20,20,40,0.22); }
+  a.btn-primary, a.btn-primary:visited { color: #fff; }
   .btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
   .btn-ghost:hover { border-color: rgba(20,20,40,0.2); }
+  .btn-cta { background: var(--blue); color: #fff; }
+  .btn-cta:hover { background: #2563eb; color: #fff; box-shadow: 0 8px 24px rgba(59,130,246,0.32); transform: translateY(-1px); }
 
   /* ---------- Hero (copy 左、demo 面板右) ---------- */
   header { padding: 84px 0 100px; }
@@ -185,7 +188,7 @@
     border: 0.5px solid rgba(255,255,255,0.14); border-bottom-width: 2px;
     border-radius: 6px; padding: 2px 7px; color: #f0f0f6;
   }
-  .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; }
+  .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
   #resetChip {
     display: none; background: none; border: none; color: var(--text-dim);
     cursor: pointer; font-size: 13px; margin-top: 18px;
@@ -401,7 +404,7 @@
   .tag.read { background: var(--blue-soft); color: var(--blue); }
   .tag.clip { background: rgba(217,119,6,0.12); color: var(--yellow); }
 
-  .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; max-width: 720px; }
+  .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; }
   .faq-item h3 {
     font-size: 16.5px; font-weight: 600; margin-bottom: 0; cursor: pointer;
     display: flex; justify-content: space-between; align-items: center;
@@ -413,7 +416,7 @@
   .faq-item.open > p, .faq-item.open > table { display: block; margin-top: 10px; }
 
   /* ---------- Step mini-mockups ---------- */
-  .step-mock { margin-top: 16px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
+  .step-mock { margin-bottom: 14px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; min-height: 110px; }
   .sm-line { padding: 1px 0; color: var(--text); }
   .sm-dim  { color: var(--text-dim); }
   .sm-hl   { background: rgba(59,130,246,0.22); border-radius: 2px; padding: 0 3px; }
@@ -425,6 +428,26 @@
   .sm-item-hi { background: rgba(255,255,255,0.07); color: #e8e8f0; }
   .sm-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .sm-kbds  { display: flex; gap: 3px; margin-bottom: 6px; }
+
+  /* ---------- MIT tooltip ---------- */
+  .mit-badge { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+  .mit-q {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: rgba(20,20,40,0.1); color: var(--text-dim);
+    font-size: 10px; font-weight: 700; cursor: help;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .mit-tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: #1c1c28; color: #e8e8f0; font-size: 12px; font-weight: 400;
+    padding: 7px 11px; border-radius: 8px; width: 230px; text-align: center; line-height: 1.5;
+    pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: normal; z-index: 20;
+  }
+  .mit-tip::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: #1c1c28;
+  }
+  .mit-badge:hover .mit-tip { opacity: 1; }
 
   .cta { text-align: center; }
   .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
@@ -493,8 +516,8 @@
         <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">actoins</span>,<br><span class="typo">rigth</span> <span class="grad">where you need them.</span></h1>
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">Fix, translate, or summarize text in any app — with one hotkey.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Join the waitlist</a>
-          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> GitHub</a>
+          <a class="btn btn-cta" href="https://tally.so/r/68VMRP">Get early access</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> Try Quill for free</a>
         </div>
         <div><button id="resetChip">↺ Reset the headline</button></div>
       </div>
@@ -519,33 +542,33 @@
     <div class="steps">
       <div class="step">
         <div class="num">1</div>
-        <h3>Select text</h3>
-        <p>Highlight anything in any app — email, doc, PDF, browser, chat.</p>
         <div class="step-mock sm-select">
           <div class="sm-line">The quick <span class="sm-hl">brown fox jumps</span></div>
           <div class="sm-line sm-dim">over the lazy dog.</div>
         </div>
+        <h3>Select text</h3>
+        <p>Highlight anything in any app — email, doc, PDF, browser, chat.</p>
       </div>
       <div class="step">
         <div class="num">2</div>
-        <h3>Press the hotkey</h3>
-        <p>The Quill menu pops up right next to your selection. Pick an action or type a custom prompt.</p>
         <div class="step-mock sm-menu">
           <div class="sm-kbds"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
           <div class="sm-item sm-item-hi"><span class="sm-dot" style="background:#34d399"></span>Fix the text</div>
           <div class="sm-item"><span class="sm-dot" style="background:#a78bfa"></span>Translate</div>
           <div class="sm-item"><span class="sm-dot" style="background:#60a5fa"></span>Summarize</div>
         </div>
+        <h3>Press the hotkey</h3>
+        <p>The Quill menu pops up right next to your selection. Pick an action or type a custom prompt.</p>
       </div>
       <div class="step">
         <div class="num">3</div>
-        <h3>Result, in place</h3>
-        <p>Editable fields: AI rewrites the text where it is. Read-only: result appears in a panel, copied to clipboard.</p>
         <div class="step-mock sm-result">
           <div class="sm-line">The quick <span class="sm-fixed">brown fox jumps</span></div>
           <div class="sm-line sm-dim">over the lazy dog.</div>
           <div class="sm-check">✓ Rewritten in place</div>
         </div>
+        <h3>Result, in place</h3>
+        <p>Editable fields: AI rewrites the text where it is. Read-only: result appears in a panel, copied to clipboard.</p>
       </div>
     </div>
   </section>
@@ -613,7 +636,7 @@
         <div class="plan-platforms">
           <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS</span>
         </div>
-        <div class="price">Free forever · MIT</div>
+        <div class="price">Free forever · <span class="mit-badge">MIT <span class="mit-q">?</span><span class="mit-tip">MIT License — free to use, modify, and share, including commercially. No strings attached.</span></span></div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>All features, no limits</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Use any provider — OpenAI, Groq, OpenRouter, or Ollama</li>
@@ -632,7 +655,7 @@
         </div>
         <div class="price">Download, double-click, done</div>
         <ul>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>Signed app — no Xcode, no setup</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>Download and double-click — no tech setup needed</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>No API key needed — credits included</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Automatic updates</li>
         </ul>
@@ -646,10 +669,10 @@
     <h2>Your data never takes a detour.</h2>
     <p class="sec-sub">Quill is a native menu-bar app with no backend of its own. Audit every line on GitHub.</p>
     <div class="privacy-list">
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>No middleman servers.</b> <span>Text goes directly from your Mac to the AI provider.</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Keychain storage.</b> <span>Your API key lives in the macOS Keychain, never in plain text.</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>No telemetry.</b> <span>Nothing is collected, tracked, or phoned home.</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Clipboard respected.</b> <span>The clipboard fallback backs up and restores your clipboard automatically.</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Your text goes directly to the AI.</b> <span>Quill has no servers of its own — nothing passes through us.</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>API key stored securely.</b> <span>Saved in macOS's built-in secure storage — never in a plain text file.</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Zero tracking.</b> <span>No usage data, no analytics, nothing phoned home — ever.</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Clipboard-safe.</b> <span>If Quill needs the clipboard to read your selection, it restores whatever was there before.</span></span></div>
     </div>
   </section>
 

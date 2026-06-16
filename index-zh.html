@@ -65,8 +65,11 @@
   .btn:hover { transform: translateY(-1px); }
   .btn-primary { background: var(--text); color: #fff; }
   .btn-primary:hover { background: #2e2e3c; color: #fff; box-shadow: 0 8px 24px rgba(20,20,40,0.22); }
+  a.btn-primary, a.btn-primary:visited { color: #fff; }
   .btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
   .btn-ghost:hover { border-color: rgba(20,20,40,0.2); }
+  .btn-cta { background: var(--blue); color: #fff; }
+  .btn-cta:hover { background: #2563eb; color: #fff; box-shadow: 0 8px 24px rgba(59,130,246,0.32); transform: translateY(-1px); }
   header { padding: 84px 0 100px; }
   .hero-grid { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 56px; align-items: center; }
   @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
@@ -92,7 +95,7 @@
   .hotkey-row .kbds { display: flex; gap: 3px; }
   #tryBtn { width: 100%; justify-content: center; }
   kbd { font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.14); border-bottom-width: 2px; border-radius: 6px; padding: 2px 7px; color: #f0f0f6; }
-  .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; }
+  .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
   #resetChip { display: none; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; margin-top: 18px; }
   #resetChip:hover { color: var(--text); }
   #hintBubble { position: fixed; z-index: 80; display: none; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: #f0f0f6; box-shadow: 0 12px 32px rgba(20,20,40,0.35); cursor: pointer; user-select: none; -webkit-user-select: none; animation: pop 0.18s ease; }
@@ -174,13 +177,18 @@
   .tag.full { background: rgba(16,185,129,0.12); color: var(--green); }
   .tag.read { background: var(--blue-soft); color: var(--blue); }
   .tag.clip { background: rgba(217,119,6,0.12); color: var(--yellow); }
-  .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; max-width: 720px; }
+  .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; }
   .faq-item h3 { font-size: 16.5px; font-weight: 600; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; -webkit-user-select: none; }
   .faq-item h3::after { content: '+'; font-size: 22px; font-weight: 300; color: var(--text-dim); margin-left: 16px; flex-shrink: 0; }
   .faq-item.open h3::after { content: '−'; }
   .faq-item > p, .faq-item > table { font-size: 14.5px; color: var(--text-dim); display: none; margin-top: 0; }
   .faq-item.open > p, .faq-item.open > table { display: block; margin-top: 10px; }
-  .step-mock { margin-top: 16px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
+  .step-mock { margin-bottom: 14px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; min-height: 110px; }
+  .mit-badge { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+  .mit-q { width: 15px; height: 15px; border-radius: 50%; background: rgba(20,20,40,0.1); color: var(--text-dim); font-size: 10px; font-weight: 700; cursor: help; display: inline-flex; align-items: center; justify-content: center; }
+  .mit-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1c1c28; color: #e8e8f0; font-size: 12px; font-weight: 400; padding: 7px 11px; border-radius: 8px; width: 230px; text-align: center; line-height: 1.5; pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: normal; z-index: 20; }
+  .mit-tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #1c1c28; }
+  .mit-badge:hover .mit-tip { opacity: 1; }
   .sm-line { padding: 1px 0; color: var(--text); }
   .sm-dim  { color: var(--text-dim); }
   .sm-hl   { background: rgba(59,130,246,0.22); border-radius: 2px; padding: 0 3px; }
@@ -247,8 +255,8 @@
         <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">在任何 App 修正、翻譯或摘要文字 — 只要一個快捷鍵。</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
-          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> GitHub</a>
+          <a class="btn btn-cta" href="https://tally.so/r/68VMRP">搶先體驗 Quill Cloud</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> 免費下載試用</a>
         </div>
         <div><button id="resetChip">↺ 重置標題</button></div>
       </div>
@@ -272,33 +280,33 @@
     <div class="steps">
       <div class="step">
         <div class="num">1</div>
-        <h3>選取文字</h3>
-        <p>在任何 App 選取文字——Email、文件、PDF、瀏覽器、聊天視窗都行。</p>
         <div class="step-mock sm-select">
           <div class="sm-line">這份報告的<span class="sm-hl">重點摘要如下</span></div>
           <div class="sm-line sm-dim">第一季營收成長...</div>
         </div>
+        <h3>選取文字</h3>
+        <p>在任何 App 選取文字——Email、文件、PDF、瀏覽器、聊天視窗都行。</p>
       </div>
       <div class="step">
         <div class="num">2</div>
-        <h3>按快捷鍵</h3>
-        <p>Quill 選單直接彈在選取文字旁。選一個動作，或輸入自訂指令。</p>
         <div class="step-mock sm-menu">
           <div class="sm-kbds"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
           <div class="sm-item sm-item-hi"><span class="sm-dot" style="background:#34d399"></span>修正文字</div>
           <div class="sm-item"><span class="sm-dot" style="background:#a78bfa"></span>翻譯</div>
           <div class="sm-item"><span class="sm-dot" style="background:#60a5fa"></span>摘要</div>
         </div>
+        <h3>按快捷鍵</h3>
+        <p>Quill 選單直接彈在選取文字旁。選一個動作，或輸入自訂指令。</p>
       </div>
       <div class="step">
         <div class="num">3</div>
-        <h3>結果，就在原位</h3>
-        <p>可編輯欄位：AI 直接在原處改寫。唯讀內容：結果顯示在浮動面板，自動複製到剪貼板。</p>
         <div class="step-mock sm-result">
           <div class="sm-line">這份報告的<span class="sm-fixed">重點摘要如下</span></div>
           <div class="sm-line sm-dim">第一季營收成長...</div>
           <div class="sm-check">✓ 已在原位改寫</div>
         </div>
+        <h3>結果，就在原位</h3>
+        <p>可編輯欄位：AI 直接在原處改寫。唯讀內容：結果顯示在浮動面板，自動複製到剪貼板。</p>
       </div>
     </div>
   </section>
@@ -366,7 +374,7 @@
         <div class="plan-platforms">
           <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS</span>
         </div>
-        <div class="price">永久免費 · MIT 授權</div>
+        <div class="price">永久免費 · <span class="mit-badge">MIT 授權 <span class="mit-q">?</span><span class="mit-tip">MIT License：可自由使用、修改與散布，包含商業用途，無任何附加條件。</span></span></div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>全功能，無使用限制</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>自備 API Key，支援多家供應商</li>
@@ -385,7 +393,7 @@
         </div>
         <div class="price">下載，雙擊，完成</div>
         <ul>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>簽名版 App，不需 Xcode</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>下載後雙擊即可安裝，不需任何技術設定</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>不需 API Key，內含點數</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>自動更新</li>
         </ul>
@@ -399,10 +407,10 @@
     <h2>你的資料不繞道。</h2>
     <p class="sec-sub">Quill 是沒有後端的原生選單列 App，所有程式碼都可在 GitHub 查核。</p>
     <div class="privacy-list">
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>無中介伺服器。</b> <span>文字直接從你的 Mac 傳送到 AI 服務商，不經過任何第三方。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Keychain 儲存。</b> <span>API Key 存放在 macOS Keychain，永遠不以明文形式儲存。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>無遙測。</b> <span>不收集、不追蹤、不回傳任何資料。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>剪貼板受保護。</b> <span>剪貼板備援方案會自動備份並還原你原本的剪貼板內容。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>文字直接送到 AI，不繞道。</b> <span>Quill 沒有自己的伺服器，你的文字不會經過我們。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>API Key 安全儲存。</b> <span>存放在 macOS 內建的安全儲存機制，不以明文記錄。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>完全不追蹤。</b> <span>沒有使用數據、沒有分析，什麼都不收集。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>剪貼板不會被佔用。</b> <span>若需要透過剪貼板讀取文字，Quill 會在完成後自動還原你原本的剪貼板內容。</span></span></div>
     </div>
   </section>
 
