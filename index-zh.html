@@ -205,6 +205,18 @@
   .step-kbds { display: flex; gap: 4px; align-items: center; margin: 10px 0 12px; min-height: 28px; }
   .step-kbds kbd { background: #fff; border: 1px solid rgba(20,20,40,0.15); border-bottom-width: 2px; border-radius: 5px; padding: 2px 6px; color: var(--text-dim); font-size: 12px; font-family: 'SF Mono', ui-monospace, monospace; }
   .sm-kbds  { display: flex; gap: 3px; margin-bottom: 6px; }
+  .step { position: relative; }
+  .mock-cur { position: absolute; pointer-events: none; z-index: 8; opacity: 0; transition: opacity 0.2s, top 0.4s cubic-bezier(.25,.8,.25,1), left 0.4s cubic-bezier(.25,.8,.25,1); }
+  .a-sel { border-radius: 2px; padding: 0 3px; background: transparent; transition: background 0.35s; }
+  .a-sel.on { background: rgba(59,130,246,0.22); }
+  .a-fix { border-radius: 2px; padding: 0 3px; background: transparent; color: var(--text); transition: background 0.35s; }
+  .a-fix.on { background: rgba(16,185,129,0.22); }
+  .a-chk { opacity: 0; margin-top: 6px; color: var(--green); font-size: 11px; font-weight: 600; transition: opacity 0.3s; }
+  .a-chk.on { opacity: 1; }
+  .step-kbds kbd { transition: background 0.15s, border-color 0.15s, color 0.15s; }
+  .step-kbds kbd.on { background: rgba(20,20,40,0.82) !important; border-color: rgba(20,20,40,0.4) !important; color: #fff !important; }
+  @keyframes s2click { 0%,100% { filter: brightness(1); } 45% { filter: brightness(1.9); } }
+  .sm-item.clicking { animation: s2click 0.2s ease; }
   .cta { text-align: center; }
   .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
   footer { padding: 36px 0 48px; border-top: 1px solid rgba(20,20,40,0.06); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13.5px; color: var(--text-dim); position: relative; z-index: 1; }
@@ -286,7 +298,7 @@
       <div class="step">
         <div class="num">1</div>
         <div class="step-mock sm-select">
-          <div class="sm-line">「求知若<span class="typo">肌</span>，<span class="sm-hl">虛心若愚。」</span></div>
+          <div class="sm-line">「求知若<span class="typo">肌</span>，<span id="s1hl" class="a-sel">虛心若愚。」</span></div>
           <div class="sm-line sm-dim">— Steve Jobs，2005</div>
         </div>
         <div class="step-kbds"></div>
@@ -296,20 +308,20 @@
       <div class="step">
         <div class="num">2</div>
         <div class="step-mock sm-menu">
-          <div class="sm-item sm-item-hi"><span class="sm-dot" style="background:#34d399"></span>修正文字</div>
+          <div class="sm-item" id="s2fix"><span class="sm-dot" style="background:#34d399"></span>修正文字</div>
           <div class="sm-item"><span class="sm-dot" style="background:#a78bfa"></span>翻譯</div>
           <div class="sm-item"><span class="sm-dot" style="background:#60a5fa"></span>摘要</div>
         </div>
-        <div class="step-kbds"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
+        <div class="step-kbds"><kbd id="sk1">⌃</kbd><kbd id="sk2">⌥</kbd><kbd id="sk3">A</kbd></div>
         <h3>按快捷鍵</h3>
         <p>Quill 選單直接彈在選取文字旁。選一個動作，或輸入自訂指令。</p>
       </div>
       <div class="step">
         <div class="num">3</div>
         <div class="step-mock sm-result">
-          <div class="sm-line">「求知若飢，虛心若<span class="sm-fixed">愚。」</span></div>
+          <div class="sm-line">「求知若飢，虛心若<span id="s3fix" class="a-fix">愚。」</span></div>
           <div class="sm-line sm-dim">— Steve Jobs，2005</div>
-          <div class="sm-check">✓ 已在原位改寫</div>
+          <div id="s3chk" class="a-chk">✓ 已在原位改寫</div>
         </div>
         <div class="step-kbds"></div>
         <h3>結果，就在原位</h3>
@@ -787,6 +799,68 @@
   document.querySelectorAll('.feat, .plan').forEach(card => {
     card.addEventListener('mousemove', e => { const b = card.getBoundingClientRect(); card.style.setProperty('--mx', (e.clientX - b.left) + 'px'); card.style.setProperty('--my', (e.clientY - b.top) + 'px'); });
   });
+
+  // ---------- Step thumbnail animations ----------
+  (function () {
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    const CURSOR = `<svg class="mock-cur" viewBox="0 0 12 18" width="11" height="16" xmlns="http://www.w3.org/2000/svg">` +
+      `<path d="M2 1L2 14L5 11.2L7 16.5L9.2 15.6L7.2 10.2L10.8 10.2Z" ` +
+      `fill="#1c1c2e" stroke="rgba(255,255,255,0.9)" stroke-width="0.8" stroke-linejoin="round" paint-order="stroke"/></svg>`;
+    const steps = document.querySelectorAll('.steps .step');
+    if (steps.length < 3) return;
+    steps[0].insertAdjacentHTML('beforeend', CURSOR.replace('class="mock-cur"', 'class="mock-cur" id="s1cur"'));
+    steps[1].insertAdjacentHTML('beforeend', CURSOR.replace('class="mock-cur"', 'class="mock-cur" id="s2cur"'));
+    async function animS1() {
+      const hl = document.getElementById('s1hl'), cur = document.getElementById('s1cur');
+      if (!hl || !cur) return;
+      cur.style.top = '80px'; cur.style.left = '85px';
+      while (true) {
+        hl.classList.remove('on'); cur.style.transition = 'opacity 0.2s'; cur.style.opacity = '0';
+        await sleep(900);
+        cur.style.opacity = '1'; await sleep(340);
+        hl.classList.add('on'); await sleep(270);
+        cur.style.opacity = '0'; await sleep(2000);
+        hl.classList.remove('on'); await sleep(500);
+      }
+    }
+    async function animS2() {
+      const k = [document.getElementById('sk1'), document.getElementById('sk2'), document.getElementById('sk3')];
+      const fix = document.getElementById('s2fix'), cur = document.getElementById('s2cur');
+      if (!fix || !cur || k.some(x => !x)) return;
+      cur.style.top = '58px'; cur.style.left = '78px';
+      while (true) {
+        k.forEach(x => x.classList.remove('on')); fix.classList.remove('sm-item-hi', 'clicking');
+        cur.style.transition = 'opacity 0.2s'; cur.style.opacity = '0';
+        await sleep(750);
+        k[0].classList.add('on'); await sleep(230);
+        k[1].classList.add('on'); await sleep(230);
+        k[2].classList.add('on'); await sleep(310);
+        k.forEach(x => x.classList.remove('on')); await sleep(180);
+        cur.style.opacity = '1'; await sleep(330);
+        cur.style.transition = 'opacity 0.2s, top 0.42s cubic-bezier(.25,.8,.25,1), left 0.42s cubic-bezier(.25,.8,.25,1)';
+        cur.style.top = '85px'; cur.style.left = '44px'; await sleep(440);
+        fix.classList.add('sm-item-hi'); await sleep(500);
+        fix.classList.add('clicking'); await sleep(210); fix.classList.remove('clicking');
+        await sleep(200); cur.style.opacity = '0'; await sleep(1500);
+        fix.classList.remove('sm-item-hi'); await sleep(420);
+      }
+    }
+    async function animS3() {
+      const fix = document.getElementById('s3fix'), chk = document.getElementById('s3chk');
+      if (!fix || !chk) return;
+      while (true) {
+        fix.classList.remove('on'); chk.classList.remove('on');
+        await sleep(950);
+        fix.classList.add('on'); await sleep(430);
+        chk.classList.add('on'); await sleep(2100);
+        chk.classList.remove('on'); await sleep(360);
+        fix.classList.remove('on'); await sleep(520);
+      }
+    }
+    animS1();
+    setTimeout(animS2, 1400);
+    setTimeout(animS3, 2200);
+  })();
 })();
 </script>
 </body>
