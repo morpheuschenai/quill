@@ -117,7 +117,7 @@
   #shotOverlay { position: fixed; inset: 0; z-index: 100; display: none; background: rgba(20,20,40,0.30); cursor: crosshair; }
   #shotOverlay .shot-tip { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.14); border-radius: 999px; padding: 7px 16px; font-size: 13px; color: #f0f0f6; pointer-events: none; }
   #marquee { position: fixed; border: 1.5px solid var(--blue); background: rgba(59,130,246,0.10); display: none; pointer-events: none; border-radius: 3px; z-index: 101; box-shadow: 0 0 0 9999px rgba(20,20,40,0.18); }
-  section { padding: 84px 0; border-top: 1px solid rgba(20,20,40,0.06); }
+  section { padding: 84px 0; }
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
   .reveal.visible { opacity: 1; transform: none; }
   .sec-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); margin-bottom: 10px; }
@@ -185,7 +185,7 @@
   .faq-item.open h3::after { content: '−'; }
   .faq-item > p, .faq-item > table { font-size: 14.5px; color: var(--text-dim); display: none; margin-top: 0; }
   .faq-item.open > p, .faq-item.open > table { display: block; margin-top: 10px; }
-  .step-mock { margin-bottom: 14px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; height: 96px; overflow: hidden; }
+  .step-mock { margin-bottom: 14px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; height: 132px; overflow: hidden; }
   .step-mock .typo { text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   .mit-badge { position: relative; display: inline-flex; align-items: center; gap: 4px; }
   .mit-q { width: 15px; height: 15px; border-radius: 50%; background: rgba(20,20,40,0.1); color: var(--text-dim); font-size: 10px; font-weight: 700; cursor: help; display: inline-flex; align-items: center; justify-content: center; }
@@ -207,8 +207,44 @@
   .step-kbds kbd { background: #fff; border: 1px solid rgba(20,20,40,0.15); border-bottom-width: 2px; border-radius: 5px; padding: 2px 6px; color: var(--text-dim); font-size: 12px; font-family: 'SF Mono', ui-monospace, monospace; }
   .sm-kbds  { display: flex; gap: 3px; margin-bottom: 6px; }
   .cta { text-align: center; }
+  .cta h2 { max-width: 560px; margin: 0 auto 14px; }
+  .cta .sec-sub { margin: 0 auto; }
   .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .cta-note { margin-top: 16px; font-size: 13px; color: var(--text-dim); }
   footer { padding: 36px 0 48px; border-top: 1px solid rgba(20,20,40,0.06); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13.5px; color: var(--text-dim); position: relative; z-index: 1; }
+  /* Hero title wrap + demo-hint tooltip */
+  .hero-title-wrap { display: block; position: relative; }
+  .demo-hint {
+    position: absolute; bottom: calc(100% + 8px); left: 0;
+    white-space: nowrap; z-index: 10;
+    font-size: 12px; font-weight: 500; color: #e8e8f0;
+    background: #252530; border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 999px; padding: 5px 12px;
+    box-shadow: 0 6px 18px rgba(20,20,40,0.28);
+    display: inline-flex; align-items: center; gap: 6px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .demo-hint::after { content: ''; position: absolute; top: 100%; left: 18px; border: 5px solid transparent; border-top-color: #252530; }
+  .demo-hint::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--red); opacity: 0.85; flex-shrink: 0; }
+  .hero-title-wrap:hover .demo-hint { opacity: 1; }
+  /* Dev link below demo panel */
+  .hero-dev-link { margin-top: 12px; font-size: 13px; color: var(--text-dim); animation: rise 0.7s 0.22s ease both; text-align: center; }
+  /* Pricing 2:1 layout */
+  .plans-b { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-top: 32px; align-items: stretch; }
+  @media (max-width: 680px) { .plans-b { grid-template-columns: 1fr; } }
+  .plan-mini { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0; transition: transform 0.25s ease; }
+  .plan-mini:hover { transform: translateY(-4px); }
+  .plan-mini h3 { font-size: 18px; margin-bottom: 6px; }
+  .plan-mini .mini-desc { font-size: 13.5px; color: var(--text-dim); margin-bottom: 6px; line-height: 1.6; }
+  .plan-mini .mini-note { font-size: 12px; color: var(--text-dim); opacity: 0.7; margin-bottom: 24px; }
+  .plan-mini .btn { margin-top: auto; justify-content: center; }
+  /* Plan note */
+  .plan-note { margin-bottom: 14px; font-size: 12px; color: var(--yellow); display: flex; align-items: center; gap: 6px; }
+  .plan-note .ic-svg { color: var(--yellow); flex-shrink: 0; }
+  /* Section padding gap */
+  #features { padding-bottom: 56px; }
+  #pricing  { padding-top: 56px; }
+  #how { border-top: none; }
   @media (max-width: 600px) { .nav-links a:not(.btn) { display: none; } header { padding: 60px 0 68px; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .reveal { opacity: 1; transform: none; } }
 </style>
@@ -233,6 +269,7 @@
   <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 8.5C10.9 8.5 10 9.4 10 10.5C10 11.6 10.9 12.5 12 12.5C13.1 12.5 14 11.6 14 10.5" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12.5V15.5" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5902 7.11957C20.5902 5.88957 19.6502 4.52957 18.5002 4.09957L13.5102 2.22957C12.6802 1.91957 11.3202 1.91957 10.4902 2.22957L5.50016 4.10957C4.35016 4.53957 3.41016 5.89957 3.41016 7.11957V14.5496C3.41016 15.7296 4.19016 17.2796 5.14016 17.9896L9.44016 21.1996C10.8502 22.2596 13.1702 22.2596 14.5802 21.1996L18.8802 17.9896C19.8302 17.2796 20.6102 15.7296 20.6102 14.5496V11.0296" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-keyboard" viewBox="0 0 24 24"><path d="M2 7.26001C2 3.70001 2.75 2.40003 5.52 2.09003C6.04 2.02003 6.61 2 7.27 2H16.74C17.39 2 17.97 2.02003 18.49 2.09003C21.26 2.40003 22.01 3.70001 22.01 7.26001V13.58C22.01 17.14 21.26 18.44 18.49 18.75C17.97 18.82 17.4 18.84 16.74 18.84H7.27C6.62 18.84 6.04 18.82 5.52 18.75C2.75 18.44 2 17.14 2 13.58V11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5781 8.32031H17.2581" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.73828 14.1104H6.75827H17.2683" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 22H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.19373 8.2998H7.20271" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.4945 8.2998H10.5035" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M20.0992 5.69035C21.6592 4.57035 22.4092 5.14035 21.7692 6.95035L17.7292 18.2604C17.5892 18.6604 17.1192 18.9904 16.6992 18.9904H7.29922C6.87922 18.9904 6.40922 18.6604 6.26922 18.2604L2.12922 6.67035C1.53922 5.01035 2.22922 4.50035 3.64922 5.52035L7.54922 8.31035C8.19922 8.76035 8.93922 8.53035 9.21922 7.80035L10.9792 3.11035C11.5392 1.61035 12.4692 1.61035 13.0292 3.11035L14.7892 7.80035C15.0692 8.53035 15.8092 8.76035 16.4492 8.31035L17.0792 7.86035" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 22H17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 14H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </defs></svg>
 
 <div class="blob b1"></div>
@@ -243,12 +280,12 @@
   <nav>
     <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill</div>
     <div class="nav-links">
+      <a href="#how">如何運作</a>
       <a href="#features">功能</a>
-      <a href="#pricing">定價</a>
       <a href="#faq">常見問題</a>
       <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
       <a href="index.html" title="English version" style="font-size:13px;opacity:0.6">EN</a>
-      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases">下載 Quill</a>
+      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
     </div>
   </nav>
 </div></div>
@@ -258,14 +295,17 @@
   <header>
     <div class="hero-grid">
       <div>
-        <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
-        <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">在任何 App 修正、翻譯或摘要文字 — 只要一個快捷鍵。</p>
+        <div class="hero-title-wrap">
+          <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
+          <p class="demo-hint">上方標題有兩個錯字 — 選取後按一個快捷鍵修正</p>
+        </div>
+        <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">在任何 App 修正、翻譯或摘要文字 —<br>只要一個快捷鍵。</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">搶先體驗 Quill Cloud</a>
-          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> 免費下載試用</a>
+          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
         </div>
         <div><button id="resetChip">↺ 重置標題</button></div>
       </div>
+      <div>
       <div class="demo-panel">
         <div class="tabs">
           <button class="tab t-text active" data-tab="text"><svg class="ic-svg"><use href="#i-fix"/></svg> 文字操作</button>
@@ -276,6 +316,8 @@
           <div class="hotkey-row"><span class="kbds" id="panelKeys"></span><span id="panelKeyNote"></span></div>
           <button class="btn btn-primary" id="tryBtn"></button>
         </div>
+      </div>
+      <p class="hero-dev-link">開發者？<a href="https://github.com/morpheuschenai/quill">從 GitHub 原始碼建立 →</a></p>
       </div>
     </div>
   </header>
@@ -300,8 +342,10 @@
           <div class="sm-item sm-item-hi"><span class="sm-ic" style="color:#34d399"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-fix"/></svg></span>修正文字</div>
           <div class="sm-item"><span class="sm-ic" style="color:#a78bfa"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-translate"/></svg></span>翻譯</div>
           <div class="sm-item"><span class="sm-ic" style="color:#60a5fa"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-summarize"/></svg></span>摘要</div>
+          <div style="height:1px;background:rgba(255,255,255,0.09);margin:3px 4px"></div>
+          <div class="sm-item"><span class="sm-ic" style="color:#c084fc"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-custom"/></svg></span>自訂指令...</div>
         </div>
-        <div class="step-kbds"><kbd id="sk1">⌃</kbd><kbd id="sk2">⌥</kbd><kbd id="sk3">A</kbd></div>
+        <div class="step-kbds"></div>
         <h3>按快捷鍵</h3>
         <p>Quill 選單直接彈在選取文字旁。選一個動作，或輸入自訂指令。</p>
       </div>
@@ -374,22 +418,10 @@
 
   <section id="pricing">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-tick"/></svg> 定價</div>
-    <h2>自己建？免費。不想搞？開箱即用。</h2>
-    <div class="plans">
-      <div class="plan">
-        <span class="badge oss">開放原始碼</span>
-        <h3>自己建</h3>
-        <div class="plan-platforms">
-          <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS</span>
-        </div>
-        <div class="price">永久免費 · <span class="mit-badge">MIT 授權 <span class="mit-q">?</span><span class="mit-tip">MIT License：可自由使用、修改與散布，包含商業用途，無任何附加條件。</span></span></div>
-        <ul>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>全功能，無使用限制</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自備 API Key，支援 OpenAI、Groq、OpenRouter 或 Ollama（本機）</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>每行程式碼都可查核</li>
-        </ul>
-        <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill"><svg class="ic-svg"><use href="#i-github"/></svg> 從原始碼建立</a>
-      </div>
+    <h2>下載。安裝。完成。</h2>
+    <p class="sec-sub">不需 API Key，不需技術設定。加入候補名單，搶先體驗 Quill Cloud。</p>
+    <div class="plans-b">
+      <!-- Cloud — 2/3 width, featured -->
       <div class="plan featured">
         <span class="badge soon">即將推出</span>
         <h3>Quill Cloud</h3>
@@ -399,13 +431,23 @@
           <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-phone"/></svg> iPhone</span>
           <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-android"/></svg> Android</span>
         </div>
-        <div class="price">下載，安裝，完成</div>
+        <div class="price">搶先體驗 — 加入候補名單</div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>下載後雙擊即可安裝，不需任何技術設定</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>不需 API Key，內含點數</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>不需 API Key，內含使用點數</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>自動更新</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>支援 Mail、備忘錄、Chrome、Slack 等所有 App</li>
         </ul>
+        <p class="plan-note"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>前 50 位會員獲贈一個月免費使用 — 無需信用卡</p>
         <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
+      </div>
+      <!-- OSS — 1/3 width, minimal -->
+      <div class="plan-mini">
+        <div class="sec-label" style="color:var(--green);margin-bottom:10px"><svg class="ic-svg"><use href="#i-tick"/></svg> MIT 授權</div>
+        <h3>開放原始碼</h3>
+        <p class="mini-desc">自備 API Key，完全掌控，無需訂閱。</p>
+        <p class="mini-note">需要 Xcode + Apple Developer 帳號</p>
+        <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill">在 GitHub 查看 →</a>
       </div>
     </div>
   </section>
@@ -413,47 +455,39 @@
   <section id="privacy">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-shield"/></svg> 隱私</div>
     <h2>你的資料不繞道。</h2>
-    <p class="sec-sub">Quill 是沒有後端的原生選單列 App，所有程式碼都可在 GitHub 查核。</p>
+    <p class="sec-sub">Quill 沒有自己的伺服器。你的文字送到 AI、取得結果，全程不經過我們。</p>
     <div class="privacy-list">
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>文字直接送到 AI，不繞道。</b> <span>Quill 沒有自己的伺服器，你的文字不會經過我們。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>API Key 安全儲存。</b> <span>存放在 macOS 內建的安全儲存機制，不以明文記錄。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>完全不追蹤。</b> <span>沒有使用數據、沒有分析，什麼都不收集。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>剪貼板不會被佔用。</b> <span>若需要透過剪貼板讀取文字，Quill 會在完成後自動還原你原本的剪貼板內容。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>我們從不看你的文字。</b> <span>Quill 沒有後端伺服器，你的選取內容直接送到 AI，不經任何中間站。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>不需要帳號。</b> <span>不需要註冊、沒有個人資料、我們這邊不儲存任何資料。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>零追蹤。</b> <span>沒有使用數據、沒有分析，什麼紀錄都不收集。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>剪貼板安全。</b> <span>若 Quill 需要透過剪貼板讀取文字，完成後會自動還原你原本的內容。</span></span></div>
     </div>
   </section>
 
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> 常見問題</div>
     <h2>常見問題，一次說清。</h2>
-    <div class="faq-item"><h3>需要 OpenAI 帳號嗎？</h3><p>不需要——Quill 支援任何 OpenAI 相容的服務商。可選 OpenAI、Groq、OpenRouter，或在本地跑 Ollama（完全免費）。Quill Cloud（即將推出）內含點數，下載即用，不需任何 API Key。</p></div>
-    <div class="faq-item"><h3>為什麼 Quill 需要「輔助使用」權限？</h3><p>這是 Quill 讀取選取文字並在原位取代的必要權限。只需在「系統設定」授權一次，相關程式碼都開放在 GitHub 供查核。</p></div>
-    <div class="faq-item">
-      <h3>哪些 App 可以用？</h3>
-      <p>幾乎所有 App 都支援——Quill 使用 macOS 輔助使用 API，並提供剪貼板備援方案：</p>
-      <table>
-        <tr><th>App 類型</th><th>讀取選取文字</th><th>原位改寫</th></tr>
-        <tr><td>TextEdit、備忘錄、原生 App</td><td><span class="tag full">完整</span></td><td><span class="tag full">支援</span></td></tr>
-        <tr><td>Safari、Preview（PDF）</td><td><span class="tag full">完整</span></td><td><span class="tag read">結果面板</span></td></tr>
-        <tr><td>Chrome、Electron App</td><td><span class="tag clip">剪貼板備援</span></td><td><span class="tag read">結果面板</span></td></tr>
-      </table>
-    </div>
-    <div class="faq-item"><h3>可以用其他 AI 模型嗎？</h3><p>可以——在偏好設定選擇供應商與模型名稱。內建預設涵蓋 OpenAI（gpt-4o-mini）、Groq（llama-3.3-70b-versatile）、OpenRouter（openai/gpt-4o-mini）及 Ollama（llama3.2），任何 OpenAI 相容端點都支援。</p></div>
-    <div class="faq-item"><h3>標題的 demo 有真的呼叫 API 嗎？</h3><p>沒有——這個頁面的互動是腳本模擬，用來呈現真實的操作流程。真正的 App 會將你的選取內容送到你設定的模型。</p></div>
+    <div class="faq-item"><h3>Quill Cloud 什麼時候上線？</h3><p>我們正在開發中。加入候補名單代表你排在 beta 測試的前列——正式公開前，我們會優先通知早期會員。</p></div>
+    <div class="faq-item"><h3>加入候補名單可以獲得什麼？</h3><p>公開前的 beta 搶先體驗，以及直接影響產品開發方向的機會。名額到了，我們會寄送邀請連結給你。</p></div>
+    <div class="faq-item"><h3>Quill 支援哪些 Mac App？</h3><p>幾乎所有 App 都支援——Mail、備忘錄、Pages、訊息、Slack、Safari、Chrome 等。Quill 讀取你選取的文字後直接在原位改寫，唯讀 App（如 PDF）則在浮動面板顯示結果。</p></div>
+    <div class="faq-item"><h3>為什麼 Quill 需要「輔助使用」權限？</h3><p>這是讀取選取文字並在原位取代的必要權限。只需在「系統設定」授權一次，約 10 秒完成，不會存取其他任何資料。</p></div>
+    <div class="faq-item"><h3>加入候補名單是免費的嗎？</h3><p>完全免費——不需信用卡，沒有任何承諾。我們會在 beta 開放前分享定價細節。</p></div>
+    <div class="faq-item"><h3>標題的 demo 有真的呼叫 API 嗎？</h3><p>沒有——這個頁面的互動是腳本模擬，用來呈現真實的操作流程。真正的 App 會將你的選取內容送到你設定的 AI 模型。</p></div>
   </section>
 
   <section class="cta">
     <h2>別再複製貼上進聊天機器人了。</h2>
-    <p class="sec-sub" style="margin:0 auto">免費、開源，每行程式碼都可查。</p>
+    <p class="sec-sub" style="margin:0 auto">選取文字。按快捷鍵。完成——不需要離開你正在用的 App。</p>
+    <p class="cta-note">前 50 位會員獲贈一個月免費使用 · 無需信用卡</p>
     <div class="btns">
-      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">搶先體驗 Quill Cloud</a>
-      <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases"><svg class="ic-svg"><use href="#i-github"/></svg> 免費下載試用</a>
+      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
     </div>
   </section>
   </main>
 
   <footer>
-    <div>Quill — MIT 授權 · 開放原始碼 · macOS · Windows 即將推出</div>
-    <div><a href="https://github.com/morpheuschenai/quill">GitHub</a> · <a href="https://github.com/morpheuschenai/quill/issues">問題回報</a></div>
+    <div>Quill — MIT 授權 · 開放原始碼 · <a href="https://github.com/morpheuschenai/quill">GitHub</a></div>
+    <div><a href="https://github.com/morpheuschenai/quill/issues">問題回報</a> · <a href="index.html">EN</a></div>
   </footer>
 </div>
 
