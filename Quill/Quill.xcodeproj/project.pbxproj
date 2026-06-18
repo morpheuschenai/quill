@@ -1,0 +1,534 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E30E031F2FC688990002B61B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E30E03182FC688990002B61B /* Info.plist */; };
+		E30E03202FC688990002B61B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E03162FC688990002B61B /* AppDelegate.swift */; };
+		E30E03212FC688990002B61B /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E031B2FC688990002B61B /* PromptListView.swift */; };
+		E30E03232FC688990002B61B /* ResultPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E031E2FC688990002B61B /* ResultPanel.swift */; };
+		E30E03252FC688990002B61B /* Prompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E031A2FC688990002B61B /* Prompt.swift */; };
+		E30E03262FC688990002B61B /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E03192FC688990002B61B /* OpenAIService.swift */; };
+		E30E03272FC688990002B61B /* QuillApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E031D2FC688990002B61B /* QuillApp.swift */; };
+		E30E03352FC6B400002B61B /* QuillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E03342FC6B400002B61B /* QuillTests.swift */; };
+		E30E03DD2FC6FF000002B61B /* ScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E03CC2FC6FF000002B61B /* ScreenshotCapture.swift */; };
+		E30E0EE12FC6FF000002B61B /* PromptStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE02FC6FF000002B61B /* PromptStore.swift */; };
+		E30E0EE32FC6FF000002B61B /* PreferencesPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */; };
+		E30E0EE52FC6FF000002B61B /* TextCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE42FC6FF000002B61B /* TextCapture.swift */; };
+		E30E0EE72FC6FF000002B61B /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE62FC6FF000002B61B /* KeychainStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E30E03382FC6B400002B61B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E30E02FF2FC6883C0002B61B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E30E03062FC6883C0002B61B;
+			remoteInfo = Quill;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		E30E03072FC6883C0002B61B /* Quill.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quill.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E30E03162FC688990002B61B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E30E03182FC688990002B61B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E30E03192FC688990002B61B /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		E30E031A2FC688990002B61B /* Prompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompt.swift; sourceTree = "<group>"; };
+		E30E031B2FC688990002B61B /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
+		E30E031C2FC688990002B61B /* Quill.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Quill.entitlements; sourceTree = "<group>"; };
+		E30E031D2FC688990002B61B /* QuillApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuillApp.swift; sourceTree = "<group>"; };
+		E30E031E2FC688990002B61B /* ResultPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultPanel.swift; sourceTree = "<group>"; };
+		E30E03CC2FC6FF000002B61B /* ScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCapture.swift; sourceTree = "<group>"; };
+		E30E0EE02FC6FF000002B61B /* PromptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptStore.swift; sourceTree = "<group>"; };
+		E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesPanel.swift; sourceTree = "<group>"; };
+		E30E0EE42FC6FF000002B61B /* TextCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCapture.swift; sourceTree = "<group>"; };
+		E30E0EE62FC6FF000002B61B /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		E30E03332FC6B400002B61B /* QuillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E30E03342FC6B400002B61B /* QuillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuillTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E30E03292FC68D540002B61B /* Exceptions for "Quill" folder in "Quill" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E30E03062FC6883C0002B61B /* Quill */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E30E03092FC6883C0002B61B /* Quill */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E30E03292FC68D540002B61B /* Exceptions for "Quill" folder in "Quill" target */,
+			);
+			path = Quill;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E30E03042FC6883C0002B61B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E30E03302FC6B400002B61B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E30E02FE2FC6883C0002B61B = {
+			isa = PBXGroup;
+			children = (
+				E30E03092FC6883C0002B61B /* Quill */,
+				E30E03362FC6B400002B61B /* QuillTests */,
+				E30E03082FC6883C0002B61B /* Products */,
+				E30E03162FC688990002B61B /* AppDelegate.swift */,
+				E30E03182FC688990002B61B /* Info.plist */,
+				E30E0EE62FC6FF000002B61B /* KeychainStore.swift */,
+				E30E03192FC688990002B61B /* OpenAIService.swift */,
+				E30E031A2FC688990002B61B /* Prompt.swift */,
+				E30E031B2FC688990002B61B /* PromptListView.swift */,
+				E30E031C2FC688990002B61B /* Quill.entitlements */,
+				E30E031D2FC688990002B61B /* QuillApp.swift */,
+				E30E031E2FC688990002B61B /* ResultPanel.swift */,
+				E30E03CC2FC6FF000002B61B /* ScreenshotCapture.swift */,
+				E30E0EE02FC6FF000002B61B /* PromptStore.swift */,
+				E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */,
+				E30E0EE42FC6FF000002B61B /* TextCapture.swift */,
+			);
+			sourceTree = "<group>";
+		};
+		E30E03082FC6883C0002B61B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E30E03072FC6883C0002B61B /* Quill.app */,
+				E30E03332FC6B400002B61B /* QuillTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E30E03362FC6B400002B61B /* QuillTests */ = {
+			isa = PBXGroup;
+			children = (
+				E30E03342FC6B400002B61B /* QuillTests.swift */,
+			);
+			path = ../QuillTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E30E03062FC6883C0002B61B /* Quill */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E30E03122FC6883E0002B61B /* Build configuration list for PBXNativeTarget "Quill" */;
+			buildPhases = (
+				E30E03032FC6883C0002B61B /* Sources */,
+				E30E03042FC6883C0002B61B /* Frameworks */,
+				E30E03052FC6883C0002B61B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E30E03092FC6883C0002B61B /* Quill */,
+			);
+			name = Quill;
+			packageProductDependencies = (
+			);
+			productName = Quill;
+			productReference = E30E03072FC6883C0002B61B /* Quill.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E30E032C2FC6B400002B61B /* QuillTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E30E03392FC6B400002B61B /* Build configuration list for PBXNativeTarget "QuillTests" */;
+			buildPhases = (
+				E30E032D2FC6B400002B61B /* Sources */,
+				E30E03302FC6B400002B61B /* Frameworks */,
+				E30E03312FC6B400002B61B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E30E03372FC6B400002B61B /* PBXTargetDependency */,
+			);
+			name = QuillTests;
+			packageProductDependencies = (
+			);
+			productName = QuillTests;
+			productReference = E30E03332FC6B400002B61B /* QuillTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E30E02FF2FC6883C0002B61B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
+				TargetAttributes = {
+					E30E03062FC6883C0002B61B = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					E30E032C2FC6B400002B61B = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = E30E03062FC6883C0002B61B;
+					};
+				};
+			};
+			buildConfigurationList = E30E03022FC6883C0002B61B /* Build configuration list for PBXProject "Quill" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E30E02FE2FC6883C0002B61B;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E30E03082FC6883C0002B61B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E30E03062FC6883C0002B61B /* Quill */,
+				E30E032C2FC6B400002B61B /* QuillTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E30E03052FC6883C0002B61B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E30E031F2FC688990002B61B /* Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E30E03312FC6B400002B61B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E30E03032FC6883C0002B61B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E30E03202FC688990002B61B /* AppDelegate.swift in Sources */,
+				E30E03212FC688990002B61B /* PromptListView.swift in Sources */,
+				E30E03232FC688990002B61B /* ResultPanel.swift in Sources */,
+				E30E03252FC688990002B61B /* Prompt.swift in Sources */,
+				E30E0EE72FC6FF000002B61B /* KeychainStore.swift in Sources */,
+				E30E03262FC688990002B61B /* OpenAIService.swift in Sources */,
+				E30E03272FC688990002B61B /* QuillApp.swift in Sources */,
+				E30E03DD2FC6FF000002B61B /* ScreenshotCapture.swift in Sources */,
+				E30E0EE12FC6FF000002B61B /* PromptStore.swift in Sources */,
+				E30E0EE32FC6FF000002B61B /* PreferencesPanel.swift in Sources */,
+				E30E0EE52FC6FF000002B61B /* TextCapture.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E30E032D2FC6B400002B61B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E30E03352FC6B400002B61B /* QuillTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E30E03372FC6B400002B61B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E30E03062FC6883C0002B61B /* Quill */;
+			targetProxy = E30E03382FC6B400002B61B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E30E03102FC6883E0002B61B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E30E03112FC6883E0002B61B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		E30E03132FC6883E0002B61B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3537343K55;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Quill/Info.plist;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.morpheus.quill;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E30E03142FC6883E0002B61B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3537343K55;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Quill/Info.plist;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.morpheus.quill;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E30E033A2FC6B400002B61B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3537343K55;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.morpheus.quillTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Quill";
+			};
+			name = Debug;
+		};
+		E30E033B2FC6B400002B61B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3537343K55;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.morpheus.quillTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Quill";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E30E03022FC6883C0002B61B /* Build configuration list for PBXProject "Quill" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E30E03102FC6883E0002B61B /* Debug */,
+				E30E03112FC6883E0002B61B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E30E03122FC6883E0002B61B /* Build configuration list for PBXNativeTarget "Quill" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E30E03132FC6883E0002B61B /* Debug */,
+				E30E03142FC6883E0002B61B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E30E03392FC6B400002B61B /* Build configuration list for PBXNativeTarget "QuillTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E30E033A2FC6B400002B61B /* Debug */,
+				E30E033B2FC6B400002B61B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E30E02FF2FC6883C0002B61B /* Project object */;
+}

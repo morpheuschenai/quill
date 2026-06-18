@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- App 不顯示在 Dock，只在 Menu bar -->
+  <key>LSUIElement</key>
+  <true/>
+
+  <!-- Accessibility 權限說明（必填，否則無法通過審核） -->
+  <key>NSAccessibilityUsageDescription</key>
+  <string>Quill needs Accessibility access to detect your text selection and provide instant AI actions. We only read the text you select — nothing else.</string>
+
+  <!-- App 基本資訊 -->
+  <key>CFBundleName</key>
+  <string>Quill</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.morpheus.quill</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleExecutable</key>
+  <string>Quill</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+</dict>
+</plist>

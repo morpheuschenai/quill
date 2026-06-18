@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          xcodebuild build-for-testing \
+            -project Quill/Quill.xcodeproj \
+            -scheme Quill \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Test
+        run: |
+          xcodebuild test-without-building \
+            -project Quill/Quill.xcodeproj \
+            -scheme Quill \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill — Bold Vivid</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'SF Pro Text', BlinkMacSystemFont, sans-serif;
+    background: #f8f7ff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    padding: 40px 24px;
+  }
+
+  .label-top {
+    color: rgba(80,60,140,0.35);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .direction-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.25);
+    color: #6d28d9;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+
+  .stage {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .component-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .component-label {
+    color: rgba(80,60,140,0.35);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── Floating Button ── */
+  .floating-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border: none;
+    box-shadow:
+      0 2px 8px rgba(124,58,237,0.45),
+      0 6px 20px rgba(124,58,237,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+  }
+
+  .floating-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+    pointer-events: none;
+  }
+
+  .floating-btn:hover {
+    box-shadow:
+      0 4px 16px rgba(124,58,237,0.55),
+      0 8px 28px rgba(124,58,237,0.3);
+    transform: scale(1.06) translateY(-0.5px);
+  }
+
+  .floating-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  /* ── Prompt Menu ── */
+  .prompt-menu {
+    width: 234px;
+    background: #ffffff;
+    border: 1px solid rgba(124,58,237,0.12);
+    border-radius: 16px;
+    box-shadow:
+      0 4px 16px rgba(80,60,140,0.1),
+      0 16px 40px rgba(80,60,140,0.12);
+    overflow: hidden;
+  }
+
+  .menu-header {
+    padding: 10px 14px 8px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.06), rgba(79,70,229,0.04));
+    border-bottom: 1px solid rgba(124,58,237,0.08);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .menu-header-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+  }
+
+  .menu-header-text {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6d28d9;
+    letter-spacing: 0.02em;
+  }
+
+  .menu-body {
+    padding: 6px;
+  }
+
+  .prompt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .prompt-row:hover {
+    background: rgba(124,58,237,0.06);
+  }
+
+  .prompt-row.active {
+    background: rgba(124,58,237,0.08);
+  }
+
+  .prompt-chip {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .chip-fix    { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
+  .chip-formal { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+  .chip-trans  { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #3730a3; }
+  .chip-sum    { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; }
+  .chip-explain{ background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #9d174d; }
+  .chip-action { background: linear-gradient(135deg, #ffedd5, #fed7aa); color: #9a3412; }
+  .chip-custom { background: rgba(124,58,237,0.06); color: rgba(109,40,217,0.4); }
+
+  .prompt-text {
+    font-size: 13px;
+    color: #1e1b4b;
+    letter-spacing: -0.01em;
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .prompt-arrow {
+    font-size: 11px;
+    color: rgba(124,58,237,0.3);
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+
+  .prompt-row:hover .prompt-arrow {
+    opacity: 1;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(124,58,237,0.07);
+    margin: 4px 8px;
+  }
+
+  .custom-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: rgba(124,58,237,0.04);
+    border: 1.5px solid rgba(124,58,237,0.12);
+    margin-top: 4px;
+  }
+
+  .custom-row input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 12px;
+    color: rgba(30,27,75,0.65);
+    font-family: inherit;
+  }
+
+  .custom-row input::placeholder {
+    color: rgba(109,40,217,0.3);
+  }
+
+  .send-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    color: white;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.12s;
+  }
+
+  /* ── Result Panel ── */
+  .result-panel {
+    width: 360px;
+    background: #ffffff;
+    border: 1px solid rgba(124,58,237,0.12);
+    border-radius: 16px;
+    box-shadow:
+      0 8px 24px rgba(80,60,140,0.1),
+      0 24px 56px rgba(80,60,140,0.1);
+    overflow: hidden;
+  }
+
+  .result-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 10px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(79,70,229,0.04));
+    border-bottom: 1px solid rgba(124,58,237,0.08);
+  }
+
+  .result-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6d28d9;
+    letter-spacing: 0.04em;
+  }
+
+  .traffic-lights {
+    display: flex;
+    gap: 6px;
+  }
+
+  .tl {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .tl-red    { background: #ff5f57; }
+  .tl-yellow { background: #ffbd2e; }
+  .tl-green  { background: #28c840; }
+
+  .result-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: rgba(124,58,237,0.1);
+    color: #6d28d9;
+    letter-spacing: 0.04em;
+  }
+
+  .result-body {
+    padding: 18px;
+    font-size: 13.5px;
+    line-height: 1.72;
+    color: #1e1b4b;
+    min-height: 100px;
+  }
+
+  .result-body em {
+    color: #6d28d9;
+    font-style: normal;
+    background: rgba(124,58,237,0.07);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .result-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 14px;
+    border-top: 1px solid rgba(124,58,237,0.08);
+    gap: 8px;
+  }
+
+  .btn-copy {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: -0.01em;
+    box-shadow: 0 2px 8px rgba(124,58,237,0.3);
+  }
+
+  .btn-copy:hover {
+    transform: translateY(-0.5px);
+    box-shadow: 0 4px 12px rgba(124,58,237,0.4);
+  }
+
+  .btn-dismiss {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(109,40,217,0.5);
+    border: 1px solid rgba(124,58,237,0.18);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-dismiss:hover {
+    background: rgba(124,58,237,0.05);
+  }
+
+  /* ── Info ── */
+  .info-card {
+    background: white;
+    border: 1px solid rgba(124,58,237,0.12);
+    border-radius: 12px;
+    padding: 20px 24px;
+    max-width: 640px;
+    width: 100%;
+    box-shadow: 0 2px 12px rgba(80,60,140,0.07);
+  }
+
+  .info-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-bottom: 10px;
+  }
+
+  .info-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .info-card li {
+    font-size: 12.5px;
+    color: rgba(30,27,75,0.5);
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .info-card li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: #7c3aed;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 12px;
+  }
+
+  .nav-links a {
+    font-size: 11.5px;
+    color: rgba(80,60,140,0.4);
+    text-decoration: none;
+    padding: 5px 10px;
+    border: 1px solid rgba(124,58,237,0.15);
+    border-radius: 6px;
+    transition: all 0.14s;
+  }
+
+  .nav-links a:hover {
+    color: #6d28d9;
+    border-color: rgba(124,58,237,0.35);
+  }
+
+  .nav-links a.current {
+    color: #6d28d9;
+    border-color: rgba(124,58,237,0.35);
+    background: rgba(124,58,237,0.06);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="label-top">Quill UI Prototype · Direction 3 of 3</div>
+
+<div class="direction-tag">
+  <span>⚡</span> Bold Vivid — Arc / Craft 風格
+</div>
+
+<div class="nav-links">
+  <a href="v1-dark-premium.html">01 Dark Premium</a>
+  <a href="v2-warm-minimal.html">02 Warm Minimal</a>
+  <a href="v3-bold-vivid.html" class="current">03 Bold Vivid</a>
+</div>
+
+<div class="stage">
+
+  <!-- Floating Button -->
+  <div class="component-wrap">
+    <div class="component-label">浮動按鈕</div>
+    <div class="floating-btn">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 1.5L14.5 3.5L5.5 12.5L1.5 14.5L3.5 10.5L12.5 1.5Z" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10.5 3.5L12.5 5.5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Prompt Menu -->
+  <div class="component-wrap">
+    <div class="component-label">Prompt 選單（可編輯文字）</div>
+    <div class="prompt-menu">
+      <div class="menu-header">
+        <div class="menu-header-icon">✦</div>
+        <span class="menu-header-text">Quill Actions</span>
+      </div>
+      <div class="menu-body">
+        <div class="prompt-row">
+          <div class="prompt-chip chip-fix">✓</div>
+          <span class="prompt-text">Fix the text</span>
+          <span class="prompt-arrow">→</span>
+        </div>
+        <div class="prompt-row active">
+          <div class="prompt-chip chip-formal">◈</div>
+          <span class="prompt-text">Make it formal</span>
+          <span class="prompt-arrow">→</span>
+        </div>
+        <div class="prompt-row">
+          <div class="prompt-chip chip-trans">⇄</div>
+          <span class="prompt-text">Translate</span>
+          <span class="prompt-arrow">→</span>
+        </div>
+        <div class="divider"></div>
+        <div class="custom-row">
+          <div class="prompt-chip chip-custom" style="width:26px;height:26px;border-radius:7px;font-size:11px;">↵</div>
+          <input type="text" placeholder="Custom instruction…">
+          <button class="send-btn">↑</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Panel -->
+  <div class="component-wrap">
+    <div class="component-label">Result 面板</div>
+    <div class="result-panel">
+      <div class="result-titlebar">
+        <div class="traffic-lights">
+          <div class="tl tl-red"></div>
+          <div class="tl tl-yellow"></div>
+          <div class="tl tl-green"></div>
+        </div>
+        <div class="result-title">Quill</div>
+        <div class="result-badge">AI Result</div>
+      </div>
+      <div class="result-body">
+        The report highlights <em>three core growth drivers</em> for Q3: improved onboarding conversion, reduced churn through better retention flows, and expanded enterprise tier adoption.
+      </div>
+      <div class="result-footer">
+        <button class="btn-dismiss">Dismiss</button>
+        <button class="btn-copy">Copy &amp; Close</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="info-card">
+  <h3>Direction 3 — Bold Vivid</h3>
+  <ul>
+    <li>彩色 gradient chip，每個 action 有自己的顏色語意（綠=修正、黃=風格、藍=翻譯）</li>
+    <li>參考：Arc Browser、Craft、Amie — 設計感強、有個性</li>
+    <li>Purple (#7c3aed) 作為品牌主色，gradient button 在任何背景都能被看見</li>
+    <li>選單加了 header bar，讓工具有「身份感」而不只是一個下拉選單</li>
+    <li>優點：視覺辨識度最高，截圖或 demo 時最吸睛，適合行銷素材</li>
+    <li>風險：過於搶眼，長時間懸浮在工作文件上可能造成干擾</li>
+  </ul>
+</div>
+
+</body>
+</html>

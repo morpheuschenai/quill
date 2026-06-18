@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill UI — 三種視覺方向</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'SF Pro Text', BlinkMacSystemFont, sans-serif;
+    background: #18181b;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    padding: 60px 24px;
+  }
+
+  .title-block {
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: -0.01em;
+  }
+
+  .cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 900px;
+    width: 100%;
+  }
+
+  .card {
+    flex: 1;
+    min-width: 240px;
+    max-width: 280px;
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+  }
+
+  .card-preview {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Dark Preview */
+  .preview-dark {
+    background: #0f0f12;
+  }
+
+  .mini-btn-dark {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #252530, #14141c);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 0 12px rgba(96,165,250,0.15), 0 4px 12px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: white;
+  }
+
+  .mini-menu-dark {
+    width: 160px;
+    background: rgba(20,20,26,0.95);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    padding: 5px;
+  }
+
+  .mini-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+
+  .mini-row.hi-dark { background: rgba(96,165,250,0.12); }
+  .mini-row.hi-warm { background: rgba(194,120,47,0.09); }
+  .mini-row.hi-vivid { background: rgba(124,58,237,0.08); }
+
+  .mini-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+
+  .mini-icon-d1 { background: rgba(52,211,153,0.2); color: #34d399; }
+  .mini-icon-d2 { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .mini-icon-d3 { background: rgba(167,139,250,0.15); color: #a78bfa; }
+
+  .mini-text-dark { font-size: 11px; color: rgba(255,255,255,0.8); }
+  .mini-text-dark-muted { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+  /* Warm Preview */
+  .preview-warm {
+    background: #f5f0e8;
+  }
+
+  .mini-btn-warm {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ede5d5;
+    border: 1px solid rgba(160,130,90,0.3);
+    box-shadow: 0 2px 8px rgba(100,70,30,0.15), inset 0 1px 0 rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #7a5c38;
+  }
+
+  .mini-menu-warm {
+    width: 160px;
+    background: #faf7f2;
+    border: 1px solid rgba(160,130,90,0.2);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(100,70,30,0.1);
+    padding: 5px;
+  }
+
+  .mini-icon-w1 { background: rgba(74,180,130,0.12); color: #3a9a72; }
+  .mini-icon-w2 { background: rgba(194,120,47,0.12); color: #b06818; }
+  .mini-icon-w3 { background: rgba(120,80,200,0.1);  color: #7850a0; }
+
+  .mini-text-warm { font-size: 11px; color: #3a2e22; }
+  .mini-text-warm-muted { font-size: 11px; color: rgba(60,45,25,0.45); }
+
+  /* Vivid Preview */
+  .preview-vivid {
+    background: #f8f7ff;
+  }
+
+  .mini-btn-vivid {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    box-shadow: 0 2px 10px rgba(124,58,237,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: white;
+  }
+
+  .mini-menu-vivid {
+    width: 160px;
+    background: white;
+    border: 1px solid rgba(124,58,237,0.12);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(80,60,140,0.12);
+    overflow: hidden;
+  }
+
+  .mini-menu-header {
+    padding: 6px 8px;
+    background: rgba(124,58,237,0.05);
+    border-bottom: 1px solid rgba(124,58,237,0.08);
+    font-size: 9px;
+    font-weight: 700;
+    color: #6d28d9;
+    letter-spacing: 0.04em;
+  }
+
+  .mini-menu-body { padding: 5px; }
+
+  .mini-chip {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+  }
+
+  .mini-chip-v1 { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
+  .mini-chip-v2 { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+  .mini-chip-v3 { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #3730a3; }
+
+  .mini-text-vivid { font-size: 11px; color: #1e1b4b; font-weight: 500; }
+  .mini-text-vivid-muted { font-size: 11px; color: rgba(30,27,75,0.4); }
+
+  /* Card Info */
+  .card-info {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .card-dark .card-info   { background: #1c1c20; }
+  .card-warm .card-info   { background: #f0ebe0; }
+  .card-vivid .card-info  { background: white; border: 1px solid rgba(124,58,237,0.1); border-top: none; }
+
+  .card-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .num-dark  { color: rgba(96,165,250,0.6); }
+  .num-warm  { color: rgba(194,120,47,0.6); }
+  .num-vivid { color: rgba(124,58,237,0.6); }
+
+  .card-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .name-dark  { color: white; }
+  .name-warm  { color: #2c2218; }
+  .name-vivid { color: #1e1b4b; }
+
+  .card-desc {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .desc-dark  { color: rgba(255,255,255,0.4); }
+  .desc-warm  { color: rgba(60,45,25,0.5); }
+  .desc-vivid { color: rgba(30,27,75,0.45); }
+
+  .card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-top: 4px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.14s;
+    align-self: flex-start;
+  }
+
+  .cta-dark  { background: rgba(96,165,250,0.12); color: #60a5fa; }
+  .cta-warm  { background: rgba(194,120,47,0.1); color: #b06818; }
+  .cta-vivid { background: rgba(124,58,237,0.08); color: #6d28d9; }
+
+  .card:hover .cta-dark  { background: rgba(96,165,250,0.2); }
+  .card:hover .cta-warm  { background: rgba(194,120,47,0.18); }
+  .card:hover .cta-vivid { background: rgba(124,58,237,0.14); }
+
+  .card-dark:hover  { box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(96,165,250,0.2); }
+  .card-warm:hover  { box-shadow: 0 20px 50px rgba(100,70,30,0.15); }
+  .card-vivid:hover { box-shadow: 0 20px 50px rgba(80,60,140,0.15), 0 0 0 1px rgba(124,58,237,0.15); }
+
+  .footer {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<div class="title-block">
+  <div class="eyebrow">Quill macOS App · UI Design Exploration</div>
+  <h1>三種視覺方向</h1>
+  <div class="subtitle">選一個點進去看完整 prototype</div>
+</div>
+
+<div class="cards">
+
+  <!-- Card 1: Dark Premium -->
+  <a href="v1-dark-premium.html" class="card card-dark">
+    <div class="card-preview preview-dark">
+      <div class="mini-btn-dark">✦</div>
+      <div class="mini-menu-dark">
+        <div class="mini-row">
+          <div class="mini-icon mini-icon-d1">✓</div>
+          <span class="mini-text-dark-muted">Fix the text</span>
+        </div>
+        <div class="mini-row hi-dark">
+          <div class="mini-icon mini-icon-d2">◈</div>
+          <span class="mini-text-dark">Make it formal</span>
+        </div>
+        <div class="mini-row">
+          <div class="mini-icon mini-icon-d3">⇄</div>
+          <span class="mini-text-dark-muted">Translate</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div class="card-num num-dark">01</div>
+      <div class="card-name name-dark">Dark Premium</div>
+      <div class="card-desc desc-dark">深色 glass morphism，Raycast / Linear 風格，power user 首選</div>
+      <div class="card-cta cta-dark">查看 Prototype →</div>
+    </div>
+  </a>
+
+  <!-- Card 2: Warm Minimal -->
+  <a href="v2-warm-minimal.html" class="card card-warm">
+    <div class="card-preview preview-warm">
+      <div class="mini-btn-warm">✦</div>
+      <div class="mini-menu-warm">
+        <div class="mini-row">
+          <div class="mini-icon mini-icon-w1">≡</div>
+          <span class="mini-text-warm-muted">Summarize</span>
+        </div>
+        <div class="mini-row hi-warm">
+          <div class="mini-icon mini-icon-w2">◎</div>
+          <span class="mini-text-warm">Explain this</span>
+        </div>
+        <div class="mini-row">
+          <div class="mini-icon mini-icon-w3">⇄</div>
+          <span class="mini-text-warm-muted">Translate</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div class="card-num num-warm">02</div>
+      <div class="card-name name-warm">Warm Minimal</div>
+      <div class="card-desc desc-warm">米色紙感，Notion / Bear 風格，寫作環境首選，低干擾</div>
+      <div class="card-cta cta-warm">查看 Prototype →</div>
+    </div>
+  </a>
+
+  <!-- Card 3: Bold Vivid -->
+  <a href="v3-bold-vivid.html" class="card card-vivid">
+    <div class="card-preview preview-vivid">
+      <div class="mini-btn-vivid">✦</div>
+      <div class="mini-menu-vivid">
+        <div class="mini-menu-header">✦ QUILL ACTIONS</div>
+        <div class="mini-menu-body">
+          <div class="mini-row">
+            <div class="mini-chip mini-chip-v1">✓</div>
+            <span class="mini-text-vivid-muted">Fix the text</span>
+          </div>
+          <div class="mini-row hi-vivid">
+            <div class="mini-chip mini-chip-v2">◈</div>
+            <span class="mini-text-vivid">Make it formal</span>
+          </div>
+          <div class="mini-row">
+            <div class="mini-chip mini-chip-v3">⇄</div>
+            <span class="mini-text-vivid-muted">Translate</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div class="card-num num-vivid">03</div>
+      <div class="card-name name-vivid">Bold Vivid</div>
+      <div class="card-desc desc-vivid">彩色 gradient chip，Arc / Craft 風格，視覺辨識度最高</div>
+      <div class="card-cta cta-vivid">查看 Prototype →</div>
+    </div>
+  </a>
+
+</div>
+
+<div class="footer">Generated by Claude · Quill UI Design Exploration · 2026-06-05</div>
+
+</body>
+</html>

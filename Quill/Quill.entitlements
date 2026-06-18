@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- 允許網路連線（OpenAI API 用） -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+
+  <!-- Phase 0：先不用 sandbox，方便測試 Accessibility -->
+  <key>com.apple.security.app-sandbox</key>
+  <false/>
+</dict>
+</plist>

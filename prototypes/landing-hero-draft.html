@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill Landing Hero Draft</title>
+<style>
+  :root {
+    --paper: #f4efe6;
+    --paper-deep: #ebe0d1;
+    --ink: #2f281f;
+    --muted: rgba(47, 40, 31, 0.62);
+    --hairline: rgba(111, 86, 54, 0.18);
+    --amber: #ad6b20;
+    --amber-soft: rgba(173, 107, 32, 0.12);
+    --blue: #2f7dd1;
+    --green: #2f9d73;
+    --violet: #7652bb;
+    --shadow: 0 24px 70px rgba(75, 49, 18, 0.18);
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.78), transparent 28%),
+      radial-gradient(circle at 88% 8%, rgba(198, 137, 69, 0.16), transparent 28%),
+      linear-gradient(135deg, #f7f1e7 0%, #efe3d3 54%, #f8f4ee 100%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.34;
+    background-image:
+      linear-gradient(rgba(70, 49, 24, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(70, 49, 24, 0.035) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom, black, transparent 84%);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .page {
+    width: min(1180px, calc(100% - 40px));
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .nav {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-size: 17px;
+  }
+
+  .mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: #fffaf2;
+    background: linear-gradient(145deg, #3b3024, #15120f);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 12px 26px rgba(55, 34, 12, 0.18);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: rgba(47, 40, 31, 0.58);
+    font-size: 13px;
+  }
+
+  .github-pill {
+    padding: 8px 12px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.34);
+    color: var(--ink);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+  }
+
+  .hero {
+    min-height: calc(100vh - 76px);
+    display: grid;
+    grid-template-columns: 0.86fr 1.14fr;
+    align-items: center;
+    gap: 48px;
+    padding: 34px 0 72px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    color: var(--amber);
+    background: rgba(255,255,255,0.44);
+    border: 1px solid rgba(173, 107, 32, 0.22);
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.58);
+  }
+
+  .eyebrow-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 4px rgba(47,157,115,0.12);
+  }
+
+  h1 {
+    margin: 22px 0 0;
+    max-width: 680px;
+    font-family: ui-serif, Georgia, "New York", serif;
+    font-size: clamp(54px, 7vw, 92px);
+    line-height: 0.9;
+    letter-spacing: -0.065em;
+    font-weight: 760;
+  }
+
+  .subtitle {
+    max-width: 540px;
+    margin: 24px 0 0;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1.62;
+    letter-spacing: -0.02em;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 17px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 680;
+    letter-spacing: -0.01em;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    color: #fffaf2;
+    background: #2c251d;
+    box-shadow: 0 14px 32px rgba(48, 34, 20, 0.22), inset 0 1px 0 rgba(255,255,255,0.13);
+  }
+
+  .btn-secondary {
+    color: var(--ink);
+    background: rgba(255,255,255,0.45);
+    border-color: var(--hairline);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.62);
+  }
+
+  .fine-print {
+    margin-top: 18px;
+    color: rgba(47, 40, 31, 0.46);
+    font-size: 12px;
+  }
+
+  .demo-shell {
+    position: relative;
+    min-height: 650px;
+  }
+
+  .demo-card {
+    position: relative;
+    width: 100%;
+    min-height: 640px;
+    border: 1px solid rgba(114, 88, 54, 0.2);
+    border-radius: 28px;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.48), rgba(255,255,255,0.18)),
+      rgba(245, 239, 230, 0.72);
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.62);
+    backdrop-filter: blur(18px);
+  }
+
+  .demo-topbar {
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    border-bottom: 1px solid rgba(114, 88, 54, 0.14);
+    background: rgba(255,255,255,0.28);
+  }
+
+  .traffic {
+    display: flex;
+    gap: 7px;
+  }
+
+  .traffic i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #d7cabb;
+  }
+
+  .traffic i:nth-child(1) { background: #e88070; }
+  .traffic i:nth-child(2) { background: #e8bc58; }
+  .traffic i:nth-child(3) { background: #74b86b; }
+
+  .mode-switch {
+    display: flex;
+    padding: 4px;
+    border: 1px solid rgba(114, 88, 54, 0.16);
+    border-radius: 999px;
+    background: rgba(240, 230, 216, 0.72);
+  }
+
+  .mode-btn {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(47, 40, 31, 0.5);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    cursor: pointer;
+  }
+
+  .mode-btn.active {
+    color: var(--ink);
+    background: #fffaf2;
+    box-shadow: 0 2px 10px rgba(80, 56, 27, 0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+
+  .topbar-note {
+    color: rgba(47, 40, 31, 0.42);
+    font-size: 12px;
+    font-weight: 640;
+  }
+
+  .workspace {
+    position: relative;
+    min-height: 586px;
+    padding: 26px;
+  }
+
+  .mode-panel {
+    display: none;
+    position: relative;
+    min-height: 532px;
+  }
+
+  .mode-panel.active {
+    display: block;
+  }
+
+  .document-window {
+    width: min(520px, 100%);
+    margin: 20px auto 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fffaf3;
+    border: 1px solid rgba(103, 78, 47, 0.16);
+    box-shadow: 0 18px 50px rgba(78, 51, 20, 0.14);
+  }
+
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 18px 13px;
+    border-bottom: 1px solid rgba(103, 78, 47, 0.12);
+    background: #f8f1e7;
+  }
+
+  .doc-title {
+    font-size: 13px;
+    font-weight: 720;
+    letter-spacing: -0.01em;
+  }
+
+  .doc-meta {
+    font-size: 11px;
+    color: rgba(47, 40, 31, 0.42);
+  }
+
+  .doc-body {
+    padding: 28px 30px 32px;
+    font-size: 18px;
+    line-height: 1.72;
+    letter-spacing: -0.025em;
+  }
+
+  .selectable-copy {
+    display: inline;
+    border-radius: 6px;
+    cursor: text;
+  }
+
+  .selected {
+    background: linear-gradient(180deg, rgba(74, 144, 226, 0.24), rgba(74, 144, 226, 0.34));
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+  }
+
+  .hint-card {
+    position: absolute;
+    left: 30px;
+    bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255,250,242,0.82);
+    border: 1px solid rgba(103, 78, 47, 0.15);
+    color: rgba(47, 40, 31, 0.56);
+    font-size: 12px;
+    box-shadow: 0 12px 28px rgba(80, 54, 22, 0.1);
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 7px;
+    background: #fffaf2;
+    border: 1px solid rgba(103, 78, 47, 0.18);
+    box-shadow: 0 2px 0 rgba(103, 78, 47, 0.13);
+    color: var(--ink);
+    font: 700 12px ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .quill-menu {
+    position: absolute;
+    right: 54px;
+    top: 168px;
+    width: 236px;
+    padding: 7px;
+    border-radius: 16px;
+    background: rgba(255, 250, 242, 0.94);
+    border: 1px solid rgba(103, 78, 47, 0.16);
+    box-shadow: 0 22px 54px rgba(63, 39, 10, 0.2), inset 0 1px 0 rgba(255,255,255,0.7);
+    transform-origin: 28px 18px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px) scale(0.96);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+  }
+
+  .quill-menu.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .menu-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 9px 7px;
+    color: rgba(47, 40, 31, 0.46);
+    font-size: 11px;
+    font-weight: 740;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .menu-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menu-row:hover,
+  .menu-row:focus-visible {
+    outline: 0;
+    background: rgba(173, 107, 32, 0.09);
+  }
+
+  .chip {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 780;
+  }
+
+  .chip.green { color: var(--green); background: rgba(47, 157, 115, 0.12); }
+  .chip.amber { color: var(--amber); background: rgba(173, 107, 32, 0.12); }
+  .chip.violet { color: var(--violet); background: rgba(118, 82, 187, 0.11); }
+  .chip.blue { color: var(--blue); background: rgba(47, 125, 209, 0.11); }
+
+  .result-bubble {
+    position: absolute;
+    left: 68px;
+    right: 68px;
+    bottom: 92px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: #2d271f;
+    color: rgba(255, 250, 242, 0.86);
+    font-size: 14px;
+    line-height: 1.55;
+    box-shadow: 0 20px 48px rgba(44, 37, 29, 0.26);
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    z-index: 4;
+  }
+
+  .result-bubble.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .screen-scene {
+    position: relative;
+    width: min(548px, 100%);
+    height: 392px;
+    margin: 36px auto 0;
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(103, 78, 47, 0.18);
+    background: #fffaf3;
+    box-shadow: 0 18px 50px rgba(78, 51, 20, 0.14);
+  }
+
+  .browser-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 15px;
+    border-bottom: 1px solid rgba(103, 78, 47, 0.12);
+    background: #f8f1e7;
+  }
+
+  .url {
+    flex: 1;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(103, 78, 47, 0.1);
+    color: rgba(47, 40, 31, 0.42);
+    font-size: 11px;
+  }
+
+  .mock-page {
+    display: grid;
+    grid-template-columns: 1fr 138px;
+    gap: 22px;
+    padding: 24px;
+  }
+
+  .mock-page h3 {
+    margin: 0 0 11px;
+    font-family: ui-serif, Georgia, "New York", serif;
+    font-size: 28px;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+
+  .mock-page p {
+    margin: 0 0 12px;
+    color: rgba(47, 40, 31, 0.62);
+    font-size: 13px;
+    line-height: 1.58;
+  }
+
+  .chart {
+    height: 164px;
+    align-self: start;
+    display: flex;
+    align-items: end;
+    gap: 8px;
+    padding: 18px 15px;
+    border-radius: 16px;
+    background: #efe2cf;
+    border: 1px solid rgba(103, 78, 47, 0.1);
+  }
+
+  .bar {
+    flex: 1;
+    border-radius: 999px 999px 5px 5px;
+    background: linear-gradient(180deg, #c88437, #8c531f);
+  }
+
+  .bar:nth-child(1) { height: 46%; opacity: 0.45; }
+  .bar:nth-child(2) { height: 62%; opacity: 0.62; }
+  .bar:nth-child(3) { height: 80%; opacity: 0.8; }
+  .bar:nth-child(4) { height: 55%; opacity: 0.55; }
+  .bar:nth-child(5) { height: 91%; }
+
+  .capture-region {
+    position: absolute;
+    left: 25px;
+    top: 70px;
+    width: 330px;
+    height: 205px;
+    border: 2px solid rgba(47, 125, 209, 0.86);
+    border-radius: 14px;
+    background: rgba(47, 125, 209, 0.08);
+    box-shadow: 0 0 0 999px rgba(42, 33, 24, 0.32);
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+
+  .capture-region.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fffaf2;
+    border: 2px solid var(--blue);
+  }
+
+  .handle:nth-child(1) { left: -6px; top: -6px; }
+  .handle:nth-child(2) { right: -6px; top: -6px; }
+  .handle:nth-child(3) { right: -6px; bottom: -6px; }
+  .handle:nth-child(4) { left: -6px; bottom: -6px; }
+
+  .screenshot-menu {
+    top: 178px;
+    right: 36px;
+  }
+
+  .status-strip {
+    position: absolute;
+    right: 30px;
+    bottom: 30px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .mini-step {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(47, 40, 31, 0.18);
+  }
+
+  .mini-step.active {
+    background: var(--amber);
+  }
+
+  .mobile-tap {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    border: 0;
+    color: var(--ink);
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(103, 78, 47, 0.16);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .orb {
+    position: absolute;
+    width: 88px;
+    height: 88px;
+    border-radius: 30px;
+    right: -28px;
+    top: 80px;
+    transform: rotate(12deg);
+    background: linear-gradient(145deg, rgba(173,107,32,0.18), rgba(255,255,255,0.32));
+    border: 1px solid rgba(173,107,32,0.16);
+    filter: blur(0.2px);
+  }
+
+  @media (max-width: 980px) {
+    .hero {
+      grid-template-columns: 1fr;
+      padding-top: 12px;
+    }
+
+    .copy {
+      text-align: center;
+    }
+
+    .eyebrow,
+    .actions {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .subtitle {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .demo-shell {
+      min-height: auto;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .page {
+      width: min(100% - 24px, 1180px);
+    }
+
+    .nav-links a:not(.github-pill) {
+      display: none;
+    }
+
+    h1 {
+      font-size: clamp(48px, 16vw, 68px);
+    }
+
+    .demo-card {
+      min-height: 600px;
+      border-radius: 22px;
+    }
+
+    .workspace {
+      padding: 18px;
+    }
+
+    .mode-panel {
+      min-height: 502px;
+    }
+
+    .topbar-note {
+      display: none;
+    }
+
+    .document-window {
+      margin-top: 18px;
+    }
+
+    .doc-body {
+      padding: 24px 22px 30px;
+      font-size: 16px;
+    }
+
+    .quill-menu {
+      left: 22px;
+      right: auto;
+      top: 262px;
+      width: calc(100% - 44px);
+    }
+
+    .screenshot-menu {
+      top: 300px;
+    }
+
+    .result-bubble {
+      left: 22px;
+      right: 22px;
+      bottom: 86px;
+    }
+
+    .hint-card {
+      left: 18px;
+      right: 18px;
+      bottom: 20px;
+    }
+
+    .screen-scene {
+      height: 330px;
+      margin-top: 22px;
+    }
+
+    .mock-page {
+      grid-template-columns: 1fr;
+      padding: 20px;
+    }
+
+    .chart {
+      display: none;
+    }
+
+    .capture-region {
+      left: 17px;
+      top: 66px;
+      width: calc(100% - 34px);
+      height: 190px;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#">
+        <span class="mark">Q</span>
+        <span>Quill</span>
+      </a>
+      <div class="nav-links">
+        <a href="#">How it works</a>
+        <a href="#">Roadmap</a>
+        <a class="github-pill" href="#">GitHub</a>
+      </div>
+    </nav>
+
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span>Open-source macOS AI layer</div>
+        <h1 id="hero-title">AI actions, right where you need them.</h1>
+        <p class="subtitle">
+          Select text or capture part of your screen. Quill appears in context so you can rewrite,
+          translate, summarize, explain, or extract what matters without opening another chat window.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#">Download for macOS</a>
+          <a class="btn btn-secondary" href="#">View on GitHub</a>
+        </div>
+        <p class="fine-print">Demo mode on this page uses scripted responses. No API key needed.</p>
+      </div>
+
+      <div class="demo-shell" aria-label="Interactive Quill demo">
+        <div class="orb" aria-hidden="true"></div>
+        <div class="demo-card">
+          <div class="demo-topbar">
+            <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="mode-switch" role="tablist" aria-label="Demo mode">
+              <button class="mode-btn active" type="button" data-mode="text" role="tab" aria-selected="true">Text</button>
+              <button class="mode-btn" type="button" data-mode="screenshot" role="tab" aria-selected="false">Screenshot</button>
+            </div>
+            <div class="topbar-note">Try the hero</div>
+          </div>
+
+          <div class="workspace">
+            <section class="mode-panel active" id="text-panel">
+              <div class="document-window">
+                <div class="doc-header">
+                  <span class="doc-title">Launch note draft</span>
+                  <span class="doc-meta">Notes</span>
+                </div>
+                <div class="doc-body">
+                  <span id="sample-text" class="selectable-copy">hey team i think we should maybe move the launch to next week because the onboarding still feels kind of confusing and people might not get the value fast enough.</span>
+                </div>
+              </div>
+
+              <div class="quill-menu" id="text-menu" aria-label="Quill text actions">
+                <div class="menu-label"><span>Quill actions</span><span>Text</span></div>
+                <button class="menu-row" type="button" data-text-action="fix"><span class="chip green">F</span><span>Fix the text</span></button>
+                <button class="menu-row" type="button" data-text-action="formal"><span class="chip amber">M</span><span>Make it formal</span></button>
+                <button class="menu-row" type="button" data-text-action="translate"><span class="chip violet">T</span><span>Translate</span></button>
+                <button class="menu-row" type="button" data-text-action="summarize"><span class="chip blue">S</span><span>Summarize</span></button>
+              </div>
+
+              <div class="result-bubble" id="text-result"></div>
+              <div class="hint-card">
+                <span>Click the text, then press</span>
+                <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Q</kbd>
+                <button class="mobile-tap" type="button" id="text-trigger">Run demo</button>
+              </div>
+            </section>
+
+            <section class="mode-panel" id="screenshot-panel">
+              <div class="screen-scene">
+                <div class="browser-bar">
+                  <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+                  <div class="url">quill.local/research-note</div>
+                </div>
+                <div class="mock-page">
+                  <article>
+                    <h3>Weekly growth review</h3>
+                    <p>Activation improved after the setup checklist shipped, but retention still drops sharply after day three.</p>
+                    <p>Next step: rewrite onboarding around the first successful AI action, then compare completion rate by cohort.</p>
+                  </article>
+                  <div class="chart" aria-hidden="true">
+                    <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                  </div>
+                </div>
+                <div class="capture-region" id="capture-region" aria-hidden="true">
+                  <span class="handle"></span><span class="handle"></span><span class="handle"></span><span class="handle"></span>
+                </div>
+              </div>
+
+              <div class="quill-menu screenshot-menu" id="screenshot-menu" aria-label="Quill screenshot actions">
+                <div class="menu-label"><span>Quill actions</span><span>Screenshot</span></div>
+                <button class="menu-row" type="button" data-shot-action="extract"><span class="chip green">E</span><span>Extract text</span></button>
+                <button class="menu-row" type="button" data-shot-action="describe"><span class="chip blue">D</span><span>Describe this</span></button>
+                <button class="menu-row" type="button" data-shot-action="summarize"><span class="chip amber">S</span><span>Summarize</span></button>
+                <button class="menu-row" type="button" data-shot-action="translate"><span class="chip violet">T</span><span>Translate</span></button>
+              </div>
+
+              <div class="result-bubble" id="screenshot-result"></div>
+              <div class="hint-card">
+                <span>Press</span>
+                <kbd>⌘</kbd><kbd>⇧</kbd><kbd>2</kbd>
+                <span>to capture a region</span>
+                <button class="mobile-tap" type="button" id="shot-trigger">Capture sample</button>
+              </div>
+            </section>
+
+            <div class="status-strip" aria-hidden="true">
+              <span class="mini-step active"></span>
+              <span class="mini-step"></span>
+              <span class="mini-step"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const textPanel = document.getElementById("text-panel");
+  const screenshotPanel = document.getElementById("screenshot-panel");
+  const sampleText = document.getElementById("sample-text");
+  const textMenu = document.getElementById("text-menu");
+  const screenshotMenu = document.getElementById("screenshot-menu");
+  const textResult = document.getElementById("text-result");
+  const screenshotResult = document.getElementById("screenshot-result");
+  const captureRegion = document.getElementById("capture-region");
+  const modeButtons = [...document.querySelectorAll(".mode-btn")];
+  const steps = [...document.querySelectorAll(".mini-step")];
+
+  let activeMode = "text";
+  let textSelected = false;
+  let shotCaptured = false;
+  let typingTimer;
+
+  const scriptedText = {
+    fix: "Hi team, I think we should move the launch to next week because onboarding still feels confusing and users may not understand the value quickly enough.",
+    formal: "Hi team, I recommend moving the launch to next week. The onboarding experience still feels unclear, and users may not understand the product value quickly enough.",
+    translate: "團隊好，我建議將發佈延到下週，因為目前 onboarding 仍然有些不清楚，使用者可能無法很快理解產品價值。",
+    summarize: "Launch should likely move to next week because onboarding clarity may affect how quickly users understand the product value."
+  };
+
+  const scriptedShot = {
+    extract: "Weekly growth review\nActivation improved after the setup checklist shipped.\nRetention still drops sharply after day three.\nNext step: rewrite onboarding around the first successful AI action.",
+    describe: "The captured area shows a weekly growth review with a short written analysis and a bar chart. The note highlights better activation, weaker day-three retention, and an onboarding experiment.",
+    summarize: "Activation is up after the checklist launch. Retention remains the main issue after day three. The proposed next step is to redesign onboarding around the first successful AI action.",
+    translate: "每週成長回顧：設定清單推出後，啟用率有所改善，但第三天後留存仍明顯下降。下一步是圍繞第一次成功的 AI 操作重寫 onboarding。"
+  };
+
+  function setStep(index) {
+    steps.forEach((step, i) => step.classList.toggle("active", i <= index));
+  }
+
+  function hideResults() {
+    textResult.classList.remove("visible");
+    screenshotResult.classList.remove("visible");
+  }
+
+  function setMode(mode) {
+    activeMode = mode;
+    modeButtons.forEach((button) => {
+      const selected = button.dataset.mode === mode;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+    });
+    textPanel.classList.toggle("active", mode === "text");
+    screenshotPanel.classList.toggle("active", mode === "screenshot");
+    textMenu.classList.remove("visible");
+    screenshotMenu.classList.remove("visible");
+    captureRegion.classList.remove("visible");
+    hideResults();
+    setStep(0);
+  }
+
+  function selectTextDemo() {
+    textSelected = true;
+    sampleText.classList.add("selected");
+    textMenu.classList.remove("visible");
+    hideResults();
+    setStep(1);
+  }
+
+  function showTextMenu() {
+    if (!textSelected) selectTextDemo();
+    textMenu.classList.add("visible");
+    setStep(2);
+  }
+
+  function typeInto(element, value) {
+    window.clearInterval(typingTimer);
+    element.textContent = "";
+    element.classList.add("visible");
+    let index = 0;
+    typingTimer = window.setInterval(() => {
+      element.textContent = value.slice(0, index);
+      index += 2;
+      if (index > value.length + 2) window.clearInterval(typingTimer);
+    }, 12);
+  }
+
+  function runTextAction(action) {
+    const result = scriptedText[action];
+    textMenu.classList.remove("visible");
+    if (action === "fix" || action === "formal" || action === "translate") {
+      sampleText.classList.remove("selected");
+      sampleText.textContent = result;
+      textSelected = false;
+      textResult.textContent = "The selected text was rewritten in place.";
+      textResult.classList.add("visible");
+    } else {
+      typeInto(textResult, result);
+    }
+  }
+
+  function captureScreenshotDemo() {
+    shotCaptured = true;
+    captureRegion.classList.add("visible");
+    screenshotMenu.classList.remove("visible");
+    hideResults();
+    setStep(1);
+    window.setTimeout(() => {
+      screenshotMenu.classList.add("visible");
+      setStep(2);
+    }, 260);
+  }
+
+  function runScreenshotAction(action) {
+    screenshotMenu.classList.remove("visible");
+    typeInto(screenshotResult, scriptedShot[action]);
+  }
+
+  modeButtons.forEach((button) => {
+    button.addEventListener("click", () => setMode(button.dataset.mode));
+  });
+
+  sampleText.addEventListener("click", selectTextDemo);
+  document.getElementById("text-trigger").addEventListener("click", showTextMenu);
+  document.getElementById("shot-trigger").addEventListener("click", captureScreenshotDemo);
+
+  document.querySelectorAll("[data-text-action]").forEach((button) => {
+    button.addEventListener("click", () => runTextAction(button.dataset.textAction));
+  });
+
+  document.querySelectorAll("[data-shot-action]").forEach((button) => {
+    button.addEventListener("click", () => runScreenshotAction(button.dataset.shotAction));
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const mod = event.metaKey || event.ctrlKey;
+    if (!mod || !event.shiftKey) return;
+
+    if (activeMode === "text" && event.key.toLowerCase() === "q") {
+      event.preventDefault();
+      showTextMenu();
+    }
+
+    if (activeMode === "screenshot" && event.key === "2") {
+      event.preventDefault();
+      captureScreenshotDemo();
+    }
+  });
+
+  window.setTimeout(selectTextDemo, 700);
+</script>
+</body>
+</html>

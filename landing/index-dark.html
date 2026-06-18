@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quill — AI actions, right where you need them</title>
+<meta name="description" content="Select text in any Mac app, press a hotkey, and fix, translate, or summarize it in place. Open source, bring your own key.">
+<style>
+  :root {
+    --bg: #0a0a14;
+    --bg-card: #0f0f12;
+    --panel-hi: #252530;
+    --panel-lo: #14141c;
+    --text: #e8e8f0;
+    --text-dim: #9a9aac;
+    --blue: #60a5fa;
+    --green: #34d399;
+    --purple: #a78bfa;
+    --yellow: #fbbf24;
+    --cyan: #22d3ee;
+    --orange: #fb923c;
+    --border: rgba(255,255,255,0.09);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, 'SF Pro Text', BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(96,165,250,0.4); }
+  a { color: var(--blue); text-decoration: none; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; position: relative; }
+
+  /* ---------- Ambient parallax blobs ---------- */
+  .blob {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+    filter: blur(90px); will-change: transform;
+  }
+  .b1 {
+    width: 560px; height: 560px; top: -160px; left: -140px;
+    background: radial-gradient(circle, rgba(96,165,250,0.20), transparent 65%);
+    animation: drift1 16s ease-in-out infinite alternate;
+  }
+  .b2 {
+    width: 480px; height: 480px; top: 220px; right: -180px;
+    background: radial-gradient(circle, rgba(167,139,250,0.16), transparent 65%);
+    animation: drift2 21s ease-in-out infinite alternate;
+  }
+  .b3 {
+    width: 380px; height: 380px; bottom: -120px; left: 30%;
+    background: radial-gradient(circle, rgba(52,211,153,0.10), transparent 65%);
+    animation: drift1 25s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes drift1 { to { transform: translate(60px, 40px) scale(1.08); } }
+  @keyframes drift2 { to { transform: translate(-50px, 60px) scale(0.94); } }
+  main, nav { position: relative; z-index: 1; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); }
+  .logo-mark {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo));
+    border: 0.5px solid rgba(255,255,255,0.12);
+    display: grid; place-items: center; font-size: 15px;
+    animation: sparkle 4s ease-in-out infinite;
+  }
+  @keyframes sparkle { 0%,100% { box-shadow: 0 0 0 rgba(96,165,250,0); } 50% { box-shadow: 0 0 18px rgba(96,165,250,0.35); } }
+  .nav-links { display: flex; gap: 22px; align-items: center; font-size: 14px; }
+  .nav-links a { color: var(--text-dim); transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+  .btn {
+    display: inline-block; padding: 9px 18px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer; border: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s, border-color 0.18s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--blue); color: #0a0a14; }
+  .btn-primary:hover { background: #7bbfff; color: #0a0a14; box-shadow: 0 6px 24px rgba(96,165,250,0.35); }
+  .btn-ghost { background: rgba(255,255,255,0.02); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.28); }
+
+  /* ---------- Hero ---------- */
+  header { padding: 88px 0 96px; text-align: center; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12.5px; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 14px; margin-bottom: 30px;
+    animation: rise 0.7s ease both;
+  }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2.4s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: 0.35; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(22px); } }
+
+  h1 {
+    font-size: clamp(36px, 6.4vw, 62px); font-weight: 800;
+    letter-spacing: -0.025em; line-height: 1.12;
+    cursor: text;
+    animation: rise 0.7s 0.08s ease both;
+    border-radius: 8px;
+    transition: opacity 0.25s;
+  }
+  h1 .grad {
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-sub {
+    margin: 22px auto 0; max-width: 580px;
+    font-size: 18px; color: var(--text-dim);
+    cursor: text; border-radius: 6px;
+    animation: rise 0.7s 0.16s ease both;
+    transition: opacity 0.25s;
+  }
+  .demo-unit.working { opacity: 0.3; animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.12; } }
+
+  .hero-hint {
+    margin-top: 34px;
+    display: inline-flex; align-items: center; gap: 9px;
+    font-size: 13.5px; color: var(--text-dim);
+    background: rgba(255,255,255,0.025);
+    border: 1px dashed rgba(255,255,255,0.16); border-radius: 999px;
+    padding: 8px 18px;
+    animation: rise 0.7s 0.24s ease both;
+  }
+  .hero-hint .pen { animation: wiggle 2.6s ease-in-out infinite; display: inline-block; }
+  @keyframes wiggle { 0%,100% { transform: rotate(0); } 12% { transform: rotate(-12deg); } 24% { transform: rotate(8deg); } 36% { transform: rotate(0); } }
+  kbd {
+    font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px;
+    background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo));
+    border: 0.5px solid rgba(255,255,255,0.14); border-bottom-width: 2px;
+    border-radius: 6px; padding: 2px 7px; color: var(--text);
+  }
+  .hero-actions {
+    margin-top: 22px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    animation: rise 0.7s 0.3s ease both;
+  }
+  #resetChip {
+    display: none; background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 13px; margin-top: 16px;
+  }
+  #resetChip:hover { color: var(--text); }
+
+  /* ---------- Hint bubble ---------- */
+  #hintBubble {
+    position: fixed; z-index: 80; display: none;
+    background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo));
+    border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px;
+    padding: 8px 16px; font-size: 13px; color: var(--text);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(96,165,250,0.12);
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+    animation: pop 0.18s ease;
+  }
+  #hintBubble:hover { border-color: rgba(96,165,250,0.5); }
+  @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
+
+  /* ---------- Quill menu ---------- */
+  #quillMenu {
+    position: fixed; z-index: 90; display: none; width: 238px;
+    background: linear-gradient(160deg, #1b1b24, #121218);
+    border: 0.5px solid var(--border); border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.65);
+    padding: 7px; animation: pop 0.15s ease;
+  }
+  .menu-row {
+    display: flex; align-items: center; gap: 11px;
+    padding: 8px 10px; border-radius: 9px; cursor: pointer;
+    font-size: 13.5px; font-weight: 500;
+    transition: background 0.12s;
+  }
+  .menu-row:hover { background: rgba(255,255,255,0.06); }
+  .menu-ic {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: grid; place-items: center; font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .menu-div { height: 1px; background: var(--border); margin: 6px 8px; }
+  .menu-note { font-size: 11px; color: var(--text-dim); padding: 4px 10px 6px; }
+
+  /* ---------- Result panel ---------- */
+  #resultPanel {
+    position: fixed; z-index: 95; display: none; width: min(380px, 88vw);
+    background: linear-gradient(160deg, #1b1b24, #121218);
+    border: 0.5px solid var(--border); border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.65);
+    padding: 16px 18px; animation: pop 0.15s ease;
+    text-align: left;
+  }
+  #resultPanel h4 {
+    font-size: 12px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 9px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #resultPanel h4 button { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; }
+  #resultBody { font-size: 14px; white-space: pre-wrap; line-height: 1.65; }
+
+  /* ---------- Screenshot mode ---------- */
+  #shotOverlay {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    background: rgba(5,5,12,0.45); cursor: crosshair;
+  }
+  #shotOverlay .shot-tip {
+    position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo));
+    border: 0.5px solid rgba(255,255,255,0.14); border-radius: 999px;
+    padding: 7px 16px; font-size: 13px; pointer-events: none;
+  }
+  #marquee {
+    position: fixed; border: 1.5px solid var(--blue);
+    background: rgba(96,165,250,0.12); display: none; pointer-events: none;
+    border-radius: 3px; z-index: 101;
+    box-shadow: 0 0 0 9999px rgba(5,5,12,0.3);
+  }
+
+  /* ---------- Sections + scroll reveal ---------- */
+  section { padding: 84px 0; border-top: 1px solid rgba(255,255,255,0.05); }
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  .sec-label {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--blue); margin-bottom: 10px;
+  }
+  h2 { font-size: clamp(26px, 4vw, 36px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .sec-sub { color: var(--text-dim); max-width: 620px; font-size: 16px; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 40px; }
+  .step {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 24px;
+    transition: transform 0.25s ease, border-color 0.25s;
+  }
+  .step:hover { transform: translateY(-4px); border-color: rgba(96,165,250,0.3); }
+  .step .num {
+    width: 30px; height: 30px; border-radius: 50%; font-size: 14px; font-weight: 700;
+    background: rgba(96,165,250,0.15); color: var(--blue);
+    display: grid; place-items: center; margin-bottom: 14px;
+  }
+  .step h3 { font-size: 16.5px; margin-bottom: 6px; }
+  .step p { font-size: 14px; color: var(--text-dim); }
+
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 40px; }
+  .feat {
+    position: relative; overflow: hidden;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 26px;
+    transition: transform 0.25s ease, border-color 0.25s;
+  }
+  .feat::before {
+    content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(96,165,250,0.09), transparent 55%);
+    pointer-events: none;
+  }
+  .feat:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.18); }
+  .feat:hover::before { opacity: 1; }
+  .feat .ic {
+    width: 38px; height: 38px; border-radius: 10px; font-size: 17px; font-weight: 700;
+    display: grid; place-items: center; margin-bottom: 16px;
+  }
+  .feat h3 { font-size: 17px; margin-bottom: 7px; }
+  .feat p { font-size: 14px; color: var(--text-dim); }
+
+  .privacy-list { margin-top: 28px; display: grid; gap: 14px; max-width: 640px; }
+  .privacy-item { display: flex; gap: 13px; align-items: flex-start; font-size: 15px; }
+  .privacy-item .check { color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .privacy-item span:last-child { color: var(--text-dim); }
+  .privacy-item b { color: var(--text); font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 32px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 13px; }
+  .tag { font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .tag.full { background: rgba(52,211,153,0.14); color: var(--green); }
+  .tag.read { background: rgba(96,165,250,0.14); color: var(--blue); }
+  .tag.clip { background: rgba(251,191,36,0.14); color: var(--yellow); }
+
+  .faq-item { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 20px 0; max-width: 720px; }
+  .faq-item h3 { font-size: 16.5px; font-weight: 600; margin-bottom: 7px; }
+  .faq-item p { font-size: 14.5px; color: var(--text-dim); }
+
+  .cta { text-align: center; }
+  .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  footer {
+    padding: 36px 0 48px; border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    font-size: 13.5px; color: var(--text-dim);
+    position: relative; z-index: 1;
+  }
+  @media (max-width: 600px) {
+    .nav-links a:not(.btn) { display: none; }
+    header { padding: 56px 0 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+
+<div class="wrap">
+  <nav>
+    <div class="logo"><span class="logo-mark">✦</span> Quill</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary" href="https://github.com/YOUR_USERNAME/quill">GitHub</a>
+    </div>
+  </nav>
+
+  <main>
+  <header>
+    <div class="hero-badge"><span class="dot"></span> Open source · macOS · Bring your own key</div>
+
+    <h1 id="heroTitle" class="demo-unit" data-unit="title">AI actions,<br><span class="grad">right where you need them.</span></h1>
+
+    <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">Select text in any app, press a hotkey, and fix, translate, or summarize it in place. No window switching. No copy-paste.</p>
+
+    <div class="hero-hint"><span class="pen">✏️</span> This headline <em>is</em> the demo — select it, then press <kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
+
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/YOUR_USERNAME/quill">Get Quill →</a>
+      <button class="btn btn-ghost" id="shotBtn">📸 Screenshot mode <kbd>⌃</kbd><kbd>⌥</kbd><kbd>I</kbd></button>
+    </div>
+    <div><button id="resetChip">↺ Reset the headline</button></div>
+  </header>
+
+  <section id="how">
+    <div class="sec-label">How it works</div>
+    <h2>Three steps. Zero context switching.</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><h3>Select</h3><p>Highlight text in any app — editor, browser, PDF, chat. Or grab a screenshot of anything on screen.</p></div>
+      <div class="step"><div class="num">2</div><h3>Press the hotkey</h3><p>⌃⌥A pops the action menu next to your selection. ⌃⌥I captures a region of the screen.</p></div>
+      <div class="step"><div class="num">3</div><h3>Done</h3><p>Editable text is rewritten in place. Read-only content shows the result in a floating panel, copied to your clipboard.</p></div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="sec-label">Features</div>
+    <h2>One hotkey, every app.</h2>
+    <div class="features">
+      <div class="feat"><div class="ic" style="background:rgba(52,211,153,0.15);color:var(--green)">✦</div><h3>Rewrite in place</h3><p>Fix grammar, change tone, translate — the selected text is replaced directly where it lives.</p></div>
+      <div class="feat"><div class="ic" style="background:rgba(96,165,250,0.15);color:var(--blue)">≡</div><h3>Analyze anything</h3><p>Summarize, explain, or extract action items from web pages, PDFs, and other read-only text.</p></div>
+      <div class="feat"><div class="ic" style="background:rgba(34,211,238,0.15);color:var(--cyan)">▣</div><h3>Screenshot AI</h3><p>Capture any region and extract its text, describe it, or translate it with vision models.</p></div>
+      <div class="feat"><div class="ic" style="background:rgba(167,139,250,0.15);color:var(--purple)">+</div><h3>Custom prompts</h3><p>Your workflows, your words. Add any action with a custom system prompt in Preferences.</p></div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="sec-label">Privacy</div>
+    <h2>Your key. Your data. No middleman.</h2>
+    <p class="sec-sub">Quill is a native menu-bar app with no backend. Audit every line on GitHub.</p>
+    <div class="privacy-list">
+      <div class="privacy-item"><span class="check">✓</span><span><b>No Quill servers.</b> <span>Text goes directly from your Mac to the OpenAI API with your own key.</span></span></div>
+      <div class="privacy-item"><span class="check">✓</span><span><b>Keychain storage.</b> <span>Your API key lives in the macOS Keychain, never in plain text.</span></span></div>
+      <div class="privacy-item"><span class="check">✓</span><span><b>No telemetry, no accounts.</b> <span>Nothing is collected. There is nothing to sign up for.</span></span></div>
+      <div class="privacy-item"><span class="check">✓</span><span><b>Clipboard respected.</b> <span>The clipboard fallback backs up and restores your clipboard automatically.</span></span></div>
+    </div>
+  </section>
+
+  <section id="compat">
+    <div class="sec-label">Compatibility</div>
+    <h2>Honest about where it works.</h2>
+    <p class="sec-sub">Quill uses the macOS Accessibility API with a clipboard fallback, so nearly every app with selectable text works.</p>
+    <table>
+      <tr><th>App</th><th>Read selection</th><th>Rewrite in place</th></tr>
+      <tr><td>TextEdit, Notes, native apps</td><td><span class="tag full">Full</span></td><td><span class="tag full">Yes</span></td></tr>
+      <tr><td>Safari, Preview (PDF)</td><td><span class="tag full">Full</span></td><td><span class="tag read">Result panel</span></td></tr>
+      <tr><td>Chrome, Electron apps</td><td><span class="tag clip">Clipboard fallback</span></td><td><span class="tag read">Result panel</span></td></tr>
+    </table>
+  </section>
+
+  <section id="faq">
+    <div class="sec-label">FAQ</div>
+    <h2>Questions, answered.</h2>
+    <div class="faq-item"><h3>Why does Quill need Accessibility permission?</h3><p>It's how Quill reads your selected text and replaces it in place. The permission is granted once in System Settings, and the code that uses it is open for inspection.</p></div>
+    <div class="faq-item"><h3>How much does it cost?</h3><p>Quill is free and open source. You pay only your own OpenAI API usage — typical text actions cost fractions of a cent with gpt-4o-mini.</p></div>
+    <div class="faq-item"><h3>Can I use other models?</h3><p>The text and vision models are configurable. Support for other providers and local models is on the roadmap.</p></div>
+    <div class="faq-item"><h3>Was the headline demo calling an API?</h3><p>No — the demo on this page is scripted to show the interaction. The real app sends your selection to the model you configure.</p></div>
+  </section>
+
+  <section class="cta">
+    <h2>Stop copy-pasting into chatbots.</h2>
+    <p class="sec-sub" style="margin:0 auto">Free, open source, and yours to audit.</p>
+    <div class="btns">
+      <a class="btn btn-primary" href="https://github.com/YOUR_USERNAME/quill">View on GitHub →</a>
+      <a class="btn btn-ghost" href="https://github.com/YOUR_USERNAME/quill#install">Install guide</a>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <div>✦ Quill — MIT License</div>
+    <div><a href="https://github.com/YOUR_USERNAME/quill">GitHub</a> · <a href="https://github.com/YOUR_USERNAME/quill/issues">Issues</a></div>
+  </footer>
+</div>
+
+<!-- Floating UI -->
+<div id="hintBubble">✨ Transform — or press <kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
+<div id="quillMenu"></div>
+<div id="resultPanel"><h4><span id="resultTitle">Result</span><button id="resultClose">✕</button></h4><div id="resultBody"></div></div>
+<div id="shotOverlay"><div class="shot-tip">Drag to capture a region — <b>Esc</b> to cancel</div></div>
+<div id="marquee"></div>
+
+<script>
+(function () {
+  // ---------- Scripted demo content ----------
+  const UNITS = {
+    title: {
+      origHTML: 'AI actions,<br><span class="grad">right where you need them.</span>',
+      zh:     'AI 動作,就在你需要的地方。',
+      formal: 'Artificial-intelligence capabilities, precisely where they are required.',
+      pirate: "Arr! AI actions, right where ye be needin' 'em, matey!"
+    },
+    sub: {
+      origHTML: 'Select text in any app, press a hotkey, and fix, translate, or summarize it in place. No window switching. No copy-paste.',
+      zh:     '在任何 app 選取文字、按下快捷鍵,就能原地修正、翻譯、摘要。不用切換視窗、不用複製貼上。',
+      formal: 'Select text within any application and press a designated hotkey to correct, translate, or summarize it in situ, without switching windows or copying and pasting.',
+      pirate: "Hoist yer text in any app, smash th' hotkey, an' watch it get fixed, translated, or summarized right on deck — no window-jumpin', no copy-pastin', arr!"
+    }
+  };
+  const SUMMARY = '• One hotkey works in every app\n• Text transforms in place\n• Open source — bring your own API key';
+
+  const units    = [...document.querySelectorAll('.demo-unit')];
+  const hint     = document.getElementById('hintBubble');
+  const menu     = document.getElementById('quillMenu');
+  const panel    = document.getElementById('resultPanel');
+  const resetChip = document.getElementById('resetChip');
+  let selectedKeys = [];
+  let anchor = { x: innerWidth / 2, y: 200 };
+
+  // ---------- Selection tracking ----------
+  function selectionInHero() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    const keys = units.filter(u => range.intersectsNode(u)).map(u => u.dataset.unit);
+    return keys.length ? { keys, rect: range.getBoundingClientRect() } : null;
+  }
+
+  function refreshHint() {
+    const found = selectionInHero();
+    if (found) {
+      selectedKeys = found.keys;
+      anchor = { x: found.rect.left + found.rect.width / 2, y: found.rect.bottom };
+      hint.style.display = 'block';
+      const w = hint.offsetWidth || 220;
+      hint.style.left = Math.min(Math.max(anchor.x - w / 2, 12), innerWidth - w - 12) + 'px';
+      hint.style.top  = (found.rect.bottom + 12) + 'px';
+    } else if (menu.style.display !== 'block') {
+      hint.style.display = 'none';
+    }
+  }
+  document.addEventListener('mouseup', e => {
+    if (hint.contains(e.target) || menu.contains(e.target)) return;
+    setTimeout(refreshHint, 10);
+  });
+  document.addEventListener('touchend', () => setTimeout(refreshHint, 150));
+
+  // ---------- Menu ----------
+  const ACTIONS = [
+    { key: 'fixdemo', label: 'Fix the text',    glyph: '✦',  color: 'var(--green)',  bg: 'rgba(52,211,153,0.15)' },
+    { key: 'formal',  label: 'Make it formal',  glyph: 'Aa', color: 'var(--yellow)', bg: 'rgba(251,191,36,0.12)' },
+    { key: 'zh',      label: 'Translate',       glyph: '文', color: 'var(--purple)', bg: 'rgba(167,139,250,0.15)' },
+    { key: 'sum',     label: 'Summarize',       glyph: '≡',  color: 'var(--blue)',   bg: 'rgba(96,165,250,0.15)' },
+    { key: 'pirate',  label: 'Pirate mode 🏴‍☠️', glyph: '☠',  color: 'var(--orange)', bg: 'rgba(251,146,60,0.12)' },
+  ];
+
+  function showMenu(x, y, actions, onPick, note) {
+    menu.innerHTML = '';
+    actions.forEach(a => {
+      const row = document.createElement('div');
+      row.className = 'menu-row';
+      const ic = document.createElement('span');
+      ic.className = 'menu-ic';
+      ic.style.color = a.color; ic.style.background = a.bg;
+      ic.textContent = a.glyph;
+      row.appendChild(ic);
+      row.appendChild(document.createTextNode(a.label));
+      row.addEventListener('pointerdown', e => e.preventDefault()); // keep selection alive
+      row.addEventListener('click', () => { hideMenu(); onPick(a.key); });
+      menu.appendChild(row);
+    });
+    if (note) {
+      const div = document.createElement('div'); div.className = 'menu-div'; menu.appendChild(div);
+      const n = document.createElement('div'); n.className = 'menu-note'; n.textContent = note; menu.appendChild(n);
+    }
+    menu.style.display = 'block';
+    const w = 238, h = menu.offsetHeight;
+    menu.style.left = Math.min(Math.max(x - w / 2, 12), innerWidth - w - 12) + 'px';
+    menu.style.top  = (y + h + 24 > innerHeight ? Math.max(y - h - 12, 12) : y + 12) + 'px';
+  }
+  function hideMenu() { menu.style.display = 'none'; }
+
+  function openTextMenu() {
+    if (!selectedKeys.length) {
+      // 沒有選取時,demo 整個標題,讓 hotkey 永遠有反應
+      selectedKeys = ['title'];
+      const r = document.getElementById('heroTitle').getBoundingClientRect();
+      anchor = { x: r.left + r.width / 2, y: r.bottom };
+    }
+    hint.style.display = 'none';
+    showMenu(anchor.x, anchor.y, ACTIONS, applyAction, 'Demo — scripted, no API call');
+  }
+
+  // pointerdown(非 click):搶在瀏覽器清掉選取之前開選單
+  hint.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    openTextMenu();
+  });
+
+  // ---------- Apply scripted transforms ----------
+  function typeInto(el, text) {
+    el.classList.remove('working');
+    el.textContent = '';
+    let i = 0;
+    (function tick() {
+      el.textContent = text.slice(0, ++i);
+      if (i < text.length) setTimeout(tick, 14);
+    })();
+  }
+
+  function applyAction(key) {
+    window.getSelection().removeAllRanges();
+    if (key === 'sum') { showPanel('Summarize', SUMMARY); return; }
+    if (key === 'fixdemo') {
+      // 標題沒有錯字 — 誠實地玩個梗
+      showPanel('Fix the text', 'Nothing to fix — this headline is already perfect. 😌\nIn the real app, typos and grammar get corrected in place.');
+      return;
+    }
+    const els = selectedKeys.map(k => document.querySelector(`.demo-unit[data-unit="${k}"]`));
+    els.forEach(el => el.classList.add('working'));
+    setTimeout(() => {
+      els.forEach((el, n) => setTimeout(() => typeInto(el, UNITS[el.dataset.unit][key]), n * 140));
+      resetChip.style.display = 'inline';
+    }, 600); // 模擬 API 延遲
+  }
+
+  resetChip.addEventListener('click', () => {
+    units.forEach(u => {
+      u.innerHTML = UNITS[u.dataset.unit].origHTML;
+      u.classList.remove('working');
+    });
+    resetChip.style.display = 'none';
+  });
+
+  // ---------- Result panel ----------
+  function showPanel(title, text) {
+    document.getElementById('resultTitle').textContent = title;
+    const body = document.getElementById('resultBody');
+    panel.style.display = 'block';
+    const w = Math.min(380, innerWidth * 0.88);
+    panel.style.left = Math.min(Math.max(anchor.x - w / 2, 12), innerWidth - w - 12) + 'px';
+    panel.style.top  = Math.min(anchor.y + 12, innerHeight - 240) + 'px';
+    body.textContent = '';
+    let i = 0;
+    (function tick() {
+      body.textContent = text.slice(0, i += 3);
+      if (i < text.length) setTimeout(tick, 12);
+    })();
+  }
+  document.getElementById('resultClose').addEventListener('click', () => panel.style.display = 'none');
+
+  // ---------- Screenshot mode ----------
+  const overlay = document.getElementById('shotOverlay');
+  const marquee = document.getElementById('marquee');
+  let drag = null;
+
+  function enterShot() { hideMenu(); panel.style.display = 'none'; hint.style.display = 'none'; overlay.style.display = 'block'; }
+  function exitShot()  { overlay.style.display = 'none'; marquee.style.display = 'none'; drag = null; }
+  document.getElementById('shotBtn').addEventListener('click', enterShot);
+
+  overlay.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY }; });
+  overlay.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const r = rectFrom(drag, e);
+    marquee.style.display = 'block';
+    Object.assign(marquee.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+  });
+  overlay.addEventListener('mouseup', e => {
+    if (!drag) return;
+    const r = rectFrom(drag, e);
+    drag = null;
+    if (r.w < 24 || r.h < 16) { exitShot(); return; }
+    overlay.style.display = 'none';
+    anchor = { x: r.x + r.w / 2, y: r.y + r.h };
+    showMenu(anchor.x, anchor.y, [
+      { key: 'extract',  label: 'Extract text',  glyph: '✦', color: 'var(--green)', bg: 'rgba(52,211,153,0.15)' },
+      { key: 'describe', label: 'Describe this', glyph: '◎', color: 'var(--cyan)',  bg: 'rgba(34,211,238,0.15)' },
+    ], key => {
+      marquee.style.display = 'none';
+      if (key === 'extract')  showPanel('Extracted text', extractText(r) || '(no text in this region)');
+      if (key === 'describe') showPanel('Description', describeRegion(r));
+    }, 'Demo — extraction runs locally in your browser');
+  });
+  function rectFrom(a, e) {
+    return { x: Math.min(a.x, e.clientX), y: Math.min(a.y, e.clientY),
+             w: Math.abs(a.x - e.clientX), h: Math.abs(a.y - e.clientY) };
+  }
+
+  // 真的從框選範圍抽出 DOM 文字(viewport 座標)
+  function extractText(r) {
+    const out = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => n.textContent.trim() && !['SCRIPT','STYLE'].includes(n.parentElement?.tagName)
+        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+    });
+    let node;
+    while ((node = walker.nextNode())) {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const cr of range.getClientRects()) {
+        const overlap = Math.max(0, Math.min(cr.right, r.x + r.w) - Math.max(cr.left, r.x)) *
+                        Math.max(0, Math.min(cr.bottom, r.y + r.h) - Math.max(cr.top, r.y));
+        if (overlap > cr.width * cr.height * 0.5) { out.push(node.textContent.trim()); break; }
+      }
+    }
+    return [...new Set(out)].join('\n');
+  }
+
+  function describeRegion(r) {
+    const hits = [];
+    document.querySelectorAll('h1, h2, h3, table, .feat, .step').forEach(el => {
+      const b = el.getBoundingClientRect();
+      if (b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y)
+        hits.push(el.tagName === 'TABLE' ? 'a compatibility table' :
+                  el.classList.contains('feat') ? 'a feature card' :
+                  el.classList.contains('step') ? 'a how-it-works step' :
+                  '"' + el.textContent.trim().replace(/\s+/g, ' ').slice(0, 60) + '"');
+    });
+    return hits.length
+      ? 'A region of the Quill landing page containing ' + [...new Set(hits)].slice(0, 4).join(', ') + '. Dark themed, with blue accent highlights.'
+      : 'A dark-themed region of the Quill landing page with no prominent content.';
+  }
+
+  // ---------- Hotkeys ----------
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Escape' || e.key === 'Escape') {
+      exitShot(); hideMenu(); panel.style.display = 'none';
+      return;
+    }
+    if (!(e.ctrlKey && e.altKey)) return;
+    // e.code 不受鍵盤排列/⌥ 組字影響;e.key 在 mac 上可能是 å/ˆ 等
+    if (e.code === 'KeyA') { e.preventDefault(); openTextMenu(); }
+    if (e.code === 'KeyI') { e.preventDefault(); enterShot(); }
+  });
+
+  // Dismiss on outside pointerdown
+  document.addEventListener('pointerdown', e => {
+    if (!menu.contains(e.target) && !hint.contains(e.target)) hideMenu();
+    if (!panel.contains(e.target)) panel.style.display = 'none';
+  });
+
+  // ---------- Parallax ----------
+  const b1 = document.querySelector('.b1'),
+        b2 = document.querySelector('.b2'),
+        b3 = document.querySelector('.b3');
+  let ticking = false;
+  function parallax() {
+    const y = scrollY;
+    b1.style.transform = `translateY(${y * 0.18}px)`;
+    b2.style.transform = `translateY(${y * -0.12}px)`;
+    b3.style.transform = `translateY(${y * 0.08}px)`;
+    ticking = false;
+  }
+  addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(parallax); ticking = true; }
+  }, { passive: true });
+
+  // ---------- Scroll reveal (staggered) ----------
+  const revealEls = document.querySelectorAll('.sec-label, h2, .sec-sub, .step, .feat, .privacy-item, table, .faq-item, .cta .btns');
+  if (!('IntersectionObserver' in window)) {
+    // 不支援的環境:全部直接顯示,不要永遠隱形
+  } else {
+  revealEls.forEach(el => el.classList.add('reveal'));
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      const siblings = [...el.parentElement.children].filter(c => c.classList.contains('reveal'));
+      el.style.transitionDelay = (siblings.indexOf(el) % 6) * 70 + 'ms';
+      el.classList.add('visible');
+      io.unobserve(el);
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => io.observe(el));
+  }
+
+  // ---------- Feature card cursor glow ----------
+  document.querySelectorAll('.feat').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const b = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (e.clientX - b.left) + 'px');
+      card.style.setProperty('--my', (e.clientY - b.top) + 'px');
+    });
+  });
+})();
+</script>
+</body>
+</html>
