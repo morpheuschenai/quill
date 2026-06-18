@@ -1,6 +1,6 @@
 # Quill — AI text actions, right where you need them
 
-Select text in any Mac app. Press a hotkey. Fix, translate, or summarize — without leaving the app you're in.
+Select text or take a screenshot in any Mac app. Press a hotkey. Fix, translate, or summarize — without leaving the app you're in.
 
 <!-- Add a screenshot or GIF here once available: ![Quill popup menu](docs/screenshot.png) -->
 
