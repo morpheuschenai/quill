@@ -14,7 +14,7 @@ Select text or take a screenshot in any Mac app. Press a hotkey. Fix, translate,
 
 ## How it works
 
-1. **Select text** in any app — Mail, Notes, Chrome, Slack, PDF, anywhere.
+1. **Select text or screenshot** in any app — Mail, Notes, Chrome, Slack, PDF, anywhere.
 2. **Press Control + Option + A** — Quill pops up right next to your selection.
 3. **Pick an action** — the result replaces your text in place, or appears in a floating panel for read-only contexts.
 
