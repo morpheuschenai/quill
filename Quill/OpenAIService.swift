@@ -141,6 +141,35 @@ class OpenAIService {
     send(body: body, completion: completion)
   }
 
+  // MARK: - Streaming chat（多輪對話 + 逐字輸出）
+
+  /// 回傳 task 供取消；messages 為 OpenAI chat 格式(可含 image_url content)。
+  @discardableResult
+  func streamChat(
+    messages: [[String: Any]],
+    model: String,
+    maxTokens: Int = 4000,
+    onDelta: @escaping (String) -> Void,
+    onComplete: @escaping (Result<String, Error>) -> Void
+  ) -> StreamingChatTask? {
+    guard !apiKey.isEmpty || isLocalEndpoint else {
+      onComplete(.failure(missingKeyError()))
+      return nil
+    }
+    let body: [String: Any] = [
+      "model": model,
+      "messages": messages,
+      "max_tokens": maxTokens,
+      "temperature": 0.3,
+      "stream": true
+    ]
+    return StreamingChatTask(
+      request: makeRequest(body: body),
+      onDelta: onDelta,
+      onComplete: onComplete
+    )
+  }
+
   // MARK: - Vision
 
   func analyzeImage(
@@ -168,5 +197,110 @@ class OpenAIService {
     ]
 
     send(body: body, completion: completion)
+  }
+}
+
+// MARK: - SSE streaming task
+
+/// 解析 OpenAI `stream: true` 的 Server-Sent Events 回應。
+/// Delegate callback 跑在 main queue,onDelta/onComplete 可直接更新 UI。
+final class StreamingChatTask: NSObject, URLSessionDataDelegate {
+  private var urlSession: URLSession!
+  private var lineBuffer = ""
+  private var fullText = ""
+  private var statusCode = 200
+  private var errorBody = Data()
+  private var finished = false
+  private let onDelta: (String) -> Void
+  private let onComplete: (Result<String, Error>) -> Void
+
+  init(
+    request: URLRequest,
+    onDelta: @escaping (String) -> Void,
+    onComplete: @escaping (Result<String, Error>) -> Void
+  ) {
+    self.onDelta = onDelta
+    self.onComplete = onComplete
+    super.init()
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = 60
+    urlSession = URLSession(configuration: config, delegate: self, delegateQueue: .main)
+    urlSession.dataTask(with: request).resume()
+  }
+
+  func cancel() {
+    finished = true
+    urlSession.invalidateAndCancel()
+  }
+
+  // MARK: URLSessionDataDelegate
+
+  func urlSession(
+    _ session: URLSession, dataTask: URLSessionDataTask,
+    didReceive response: URLResponse,
+    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+  ) {
+    statusCode = (response as? HTTPURLResponse)?.statusCode ?? 200
+    completionHandler(.allow)
+  }
+
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+    guard !finished else { return }
+    // 非 2xx:收集完整 body,結束時丟可讀錯誤
+    guard (200...299).contains(statusCode) else {
+      errorBody.append(data)
+      return
+    }
+    lineBuffer += String(data: data, encoding: .utf8) ?? ""
+    while let newline = lineBuffer.firstIndex(of: "\n") {
+      let line = String(lineBuffer[..<newline]).trimmingCharacters(in: .whitespaces)
+      lineBuffer.removeSubrange(...newline)
+      processLine(line)
+    }
+  }
+
+  private func processLine(_ line: String) {
+    guard line.hasPrefix("data:") else { return }
+    let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+    if payload == "[DONE]" {
+      finish(.success(fullText))
+      return
+    }
+    guard
+      let data = payload.data(using: .utf8),
+      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+      let choices = json["choices"] as? [[String: Any]],
+      let first = choices.first
+    else { return }
+
+    if let delta = first["delta"] as? [String: Any],
+       let content = delta["content"] as? String, !content.isEmpty {
+      fullText += content
+      onDelta(content)
+    }
+    if let reason = first["finish_reason"] as? String, !reason.isEmpty, reason != "stop", reason != "null" {
+      // e.g. "length" — 內容被截斷,仍回傳已收到的部分,不當成錯誤
+    }
+  }
+
+  func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+    if let error {
+      // 使用者取消不算錯誤
+      if (error as NSError).code == NSURLErrorCancelled { return }
+      finish(.failure(error))
+      return
+    }
+    guard (200...299).contains(statusCode) else {
+      finish(.failure(OpenAIService.parseAPIError(from: errorBody, statusCode: statusCode)))
+      return
+    }
+    finish(.success(fullText))
+  }
+
+  private func finish(_ result: Result<String, Error>) {
+    guard !finished else { return }
+    finished = true
+    onComplete(result)
+    urlSession.finishTasksAndInvalidate()
   }
 }

@@ -211,11 +211,16 @@ class TextCapture {
     let view = PromptListView(
       prompts: prompts,
       selectedText: text,
-      isEditable: isEditable
-    ) { [weak self] result in
-      self?.handleResult(result, element: element, isEditable: isEditable)
-      self?.dismiss()
-    }
+      isEditable: isEditable,
+      onResult: { [weak self] result in
+        // 僅可編輯情境會走到這裡:原地取代選取文字
+        if let element {
+          AXUIElementSetAttributeValue(element, kAXSelectedTextAttribute as CFString, result as CFTypeRef)
+        }
+        self?.dismiss()
+      },
+      onDismiss: { [weak self] in self?.dismiss() }
+    )
 
     let hosting = NSHostingView(rootView: view)
     hosting.wantsLayer = true
@@ -254,18 +259,6 @@ class TextCapture {
       globalClickMonitor = NSEvent.addGlobalMonitorForEvents(
         matching: [.leftMouseDown, .rightMouseDown]
       ) { [weak self] _ in self?.dismiss() }
-    }
-  }
-
-  // MARK: - Result handling
-
-  private func handleResult(_ result: String, element: AXUIElement?, isEditable: Bool) {
-    if isEditable, let el = element {
-      AXUIElementSetAttributeValue(el, kAXSelectedTextAttribute as CFString, result as CFTypeRef)
-    } else {
-      NSPasteboard.general.clearContents()
-      NSPasteboard.general.setString(result, forType: .string)
-      ResultPanel.show(text: result)
     }
   }
 

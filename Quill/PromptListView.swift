@@ -68,7 +68,11 @@ struct PromptListView: View {
   let selectedText: String
   let isEditable: Bool
   var imageData: Data? = nil
-  let onResult: (String) -> Void
+  var imageMime: String = "image/png"
+  /// 僅編輯情境使用:回傳完整結果以原地取代選取文字
+  var onResult: (String) -> Void = { _ in }
+  /// 選單應關閉時呼叫(結果已改在獨立視窗串流顯示)
+  var onDismiss: () -> Void = {}
 
   @State private var isLoading   = false
   @State private var loadingId: UUID? = nil
@@ -180,33 +184,39 @@ struct PromptListView: View {
 
   private func runPrompt(_ prompt: Prompt) {
     guard !isLoading else { return }
+
+    // 截圖:立即開啟串流結果視窗
+    if let imageData {
+      let session = ChatSession.forImage(title: prompt.title, imageData: imageData, mime: imageMime)
+      ChatWindowManager.open(session: session)
+      session.begin(apiUserContent: prompt.systemPrompt, displayUserText: nil)
+      onDismiss()
+      return
+    }
+
+    // 唯讀文字:同樣開串流視窗
+    guard isEditable else {
+      let session = ChatSession.forText(title: prompt.title, systemPrompt: prompt.systemPrompt)
+      ChatWindowManager.open(session: session)
+      session.begin(apiUserContent: selectedText, displayUserText: nil)
+      onDismiss()
+      return
+    }
+
+    // 可編輯文字:等完整結果後原地取代
     isLoading = true
     loadingId = prompt.id
-
-    if let imageData {
-      OpenAIService.shared.analyzeImage(imageData, prompt: prompt.systemPrompt) { result in
-        DispatchQueue.main.async {
-          isLoading = false
-          loadingId = nil
-          switch result {
-          case .success(let text): onResult(text)
-          case .failure(let error): showError(error)
-          }
-        }
-      }
-    } else {
-      OpenAIService.shared.complete(
-        prompt: prompt.systemPrompt,
-        text: selectedText,
-        maxTokens: prompt.maxTokens
-      ) { result in
-        DispatchQueue.main.async {
-          isLoading = false
-          loadingId = nil
-          switch result {
-          case .success(let text): onResult(text)
-          case .failure(let error): showError(error)
-          }
+    OpenAIService.shared.complete(
+      prompt: prompt.systemPrompt,
+      text: selectedText,
+      maxTokens: prompt.maxTokens
+    ) { result in
+      DispatchQueue.main.async {
+        isLoading = false
+        loadingId = nil
+        switch result {
+        case .success(let text): onResult(text)
+        case .failure(let error): showError(error)
         }
       }
     }
@@ -215,29 +225,40 @@ struct PromptListView: View {
   private func runCustomPrompt() {
     let instruction = customPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !instruction.isEmpty, !isLoading else { return }
-    isLoading = true
-    loadingId = nil
 
     if let imageData {
-      OpenAIService.shared.analyzeImage(imageData, prompt: instruction) { result in
-        DispatchQueue.main.async {
-          isLoading = false
-          switch result {
-          case .success(let text): onResult(text)
-          case .failure(let error): showError(error)
-          }
-        }
-      }
-    } else {
-      let systemPrompt = "Follow the user's instruction on the given text. Return only the result, no explanation."
-      let userMessage  = "Instruction: \(instruction)\n\nText: \(selectedText)"
-      OpenAIService.shared.complete(prompt: systemPrompt, text: userMessage) { result in
-        DispatchQueue.main.async {
-          isLoading = false
-          switch result {
-          case .success(let text): onResult(text)
-          case .failure(let error): showError(error)
-          }
+      let session = ChatSession.forImage(title: "Quill", imageData: imageData, mime: imageMime)
+      ChatWindowManager.open(session: session)
+      session.begin(apiUserContent: instruction, displayUserText: instruction)
+      onDismiss()
+      return
+    }
+
+    guard isEditable else {
+      let session = ChatSession.forText(
+        title: "Quill",
+        systemPrompt: "Follow the user's instruction on the given text."
+      )
+      ChatWindowManager.open(session: session)
+      session.begin(
+        apiUserContent: "Instruction: \(instruction)\n\nText: \(selectedText)",
+        displayUserText: instruction
+      )
+      onDismiss()
+      return
+    }
+
+    // 可編輯文字 + 自訂指令:原地取代
+    isLoading = true
+    loadingId = nil
+    let systemPrompt = "Follow the user's instruction on the given text. Return only the result, no explanation."
+    let userMessage  = "Instruction: \(instruction)\n\nText: \(selectedText)"
+    OpenAIService.shared.complete(prompt: systemPrompt, text: userMessage) { result in
+      DispatchQueue.main.async {
+        isLoading = false
+        switch result {
+        case .success(let text): onResult(text)
+        case .failure(let error): showError(error)
         }
       }
     }
