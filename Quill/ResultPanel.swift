@@ -236,7 +236,7 @@ struct ChatView: View {
           .padding(14)
           .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onChange(of: session.messages) { _ in
+        .onReceive(session.$messages) { _ in
           proxy.scrollTo("bottom", anchor: .bottom)
         }
       }
