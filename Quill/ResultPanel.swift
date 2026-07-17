@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 // MARK: - Chat session（一個結果視窗 = 一個 session,支援多輪追問）
