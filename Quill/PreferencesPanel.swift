@@ -86,7 +86,8 @@ private enum Route: Hashable { case apiKey, prompts, textShortcut, screenshotSho
 
 // MARK: - Hotkey helpers
 
-private let keyCodeMap: [UInt32: String] = [
+// 供 PreferencesPanel 與 OnboardingWindow 共用
+let keyCodeMap: [UInt32: String] = [
   0:"A",1:"S",2:"D",3:"F",4:"H",5:"G",6:"Z",7:"X",8:"C",9:"V",
   11:"B",12:"Q",13:"W",14:"E",15:"R",16:"Y",17:"T",
   31:"O",32:"U",34:"I",35:"P",37:"L",38:"J",40:"K",
@@ -100,7 +101,7 @@ private let keyCodeMap: [UInt32: String] = [
   122:"F1",120:"F2",118:"F4",
 ]
 
-private func shortcutLabel(keyCode: UInt32, modifiers: UInt32) -> String {
+func shortcutLabel(keyCode: UInt32, modifiers: UInt32) -> String {
   var parts = ""
   if modifiers & UInt32(controlKey) != 0 { parts += "⌃" }
   if modifiers & UInt32(optionKey)  != 0 { parts += "⌥" }

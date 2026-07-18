@@ -184,13 +184,30 @@ struct OnboardingView: View {
         .foregroundColor(.white.opacity(0.6))
 
       VStack(alignment: .leading, spacing: 14) {
-        hotkeyRow(icon: "camera.viewfinder", keys: "⌃ ⌥ I",
-                  title: "截圖問 AI", desc: "框選畫面 → 萃取文字、翻譯、解釋,結果當場出現")
-        hotkeyRow(icon: "text.cursor", keys: "⌃ ⌥ A",
-                  title: "選字改文字", desc: "選取文字 → 修正、改語氣、翻譯,直接取代原文")
+        // 顯示使用者實際設定的快捷鍵(可能已在 Preferences 改過)
+        hotkeyRow(
+          icon: "camera.viewfinder",
+          keys: shortcutLabel(
+            keyCode: PromptStore.shared.screenshotKeyCode,
+            modifiers: PromptStore.shared.screenshotModifiers
+          ),
+          title: "截圖問 AI", desc: "框選畫面 → 萃取文字、翻譯、解釋,結果當場出現"
+        )
+        hotkeyRow(
+          icon: "text.cursor",
+          keys: shortcutLabel(
+            keyCode: PromptStore.shared.textKeyCode,
+            modifiers: PromptStore.shared.textModifiers
+          ),
+          title: "選字改文字", desc: "選取文字 → 修正、改語氣、翻譯,直接取代原文"
+        )
       }
       .padding(20)
       .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
+
+      Text("快捷鍵可隨時在 Preferences 修改")
+        .font(.system(size: 11))
+        .foregroundColor(.white.opacity(0.35))
     }
   }
 
