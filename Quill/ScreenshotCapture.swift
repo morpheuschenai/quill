@@ -62,6 +62,7 @@ class ScreenshotCapture {
   private var eventHandlerRef: EventHandlerRef?
   private var promptPanel: ScreenshotPromptNSPanel?
   private var globalClickMonitor: Any?
+  private var escKeyMonitor: Any?
 
   // MARK: - Hotkey registration
 
@@ -222,6 +223,15 @@ class ScreenshotCapture {
         self?.dismissPromptPanel()
       }
     }
+    if escKeyMonitor == nil {
+      escKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        if event.keyCode == 53 {  // Esc
+          self?.dismissPromptPanel()
+          return nil
+        }
+        return event
+      }
+    }
   }
 
   private func dismissPromptPanel() {
@@ -229,6 +239,10 @@ class ScreenshotCapture {
     if let m = globalClickMonitor {
       NSEvent.removeMonitor(m)
       globalClickMonitor = nil
+    }
+    if let k = escKeyMonitor {
+      NSEvent.removeMonitor(k)
+      escKeyMonitor = nil
     }
   }
 }

@@ -9,6 +9,8 @@ struct Prompt: Identifiable {
   let maxTokens: Int
   let iconTint: Color
   let iconBackground: Color
+  /// 完成後自動把結果複製到剪貼簿(OCR 情境)
+  var autoCopy: Bool = false
 }
 
 extension Prompt {

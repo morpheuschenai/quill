@@ -17,6 +17,9 @@ final class ChatSession: ObservableObject {
   @Published var errorText: String?
 
   let title: String
+  /// 首輪完成後自動複製結果(OCR 情境)
+  let autoCopyResult: Bool
+  private var hasAutoCopied = false
   private let systemPrompt: String?
   private let imageData: Data?       // 已壓縮(JPEG)
   private let imageMime: String
@@ -29,30 +32,34 @@ final class ChatSession: ObservableObject {
     systemPrompt: String?,
     imageData: Data?,
     imageMime: String,
-    model: String
+    model: String,
+    autoCopyResult: Bool
   ) {
     self.title = title
     self.systemPrompt = systemPrompt
     self.imageData = imageData
     self.imageMime = imageMime
     self.model = model
+    self.autoCopyResult = autoCopyResult
   }
 
   /// 文字情境(選取文字 → 動作)
-  static func forText(title: String, systemPrompt: String) -> ChatSession {
+  static func forText(title: String, systemPrompt: String, autoCopy: Bool = false) -> ChatSession {
     ChatSession(
       title: title, systemPrompt: systemPrompt,
       imageData: nil, imageMime: "",
-      model: PromptStore.shared.textModel
+      model: PromptStore.shared.textModel,
+      autoCopyResult: autoCopy
     )
   }
 
   /// 截圖情境
-  static func forImage(title: String, imageData: Data, mime: String) -> ChatSession {
+  static func forImage(title: String, imageData: Data, mime: String, autoCopy: Bool = false) -> ChatSession {
     ChatSession(
       title: title, systemPrompt: nil,
       imageData: imageData, imageMime: mime,
-      model: PromptStore.shared.visionModel
+      model: PromptStore.shared.visionModel,
+      autoCopyResult: autoCopy
     )
   }
 
@@ -117,13 +124,19 @@ final class ChatSession: ObservableObject {
         guard let self else { return }
         self.isStreaming = false
         switch result {
-        case .success(let full):
+        case .success(let raw):
+          let full = OpenAIService.stripCodeFences(raw)
           if self.messages.indices.contains(index) { self.messages[index].text = full }
           if full.isEmpty {
             if self.messages.indices.contains(index) { self.messages.remove(at: index) }
             self.errorText = "沒有收到回應,請再試一次。"
           } else {
             self.apiMessages.append(["role": "assistant", "content": full])
+            if self.autoCopyResult && !self.hasAutoCopied {
+              self.hasAutoCopied = true
+              NSPasteboard.general.clearContents()
+              NSPasteboard.general.setString(full, forType: .string)
+            }
           }
         case .failure(let error):
           if self.messages.indices.contains(index), self.messages[index].text.isEmpty {
@@ -247,7 +260,8 @@ struct ChatView: View {
 
       // 追問輸入列 + 複製
       HStack(spacing: 8) {
-        TextField("追問…", text: $followUp)
+        TextField("追問…", text: $followUp, axis: .vertical)
+          .lineLimit(1...4)  // 超過一行自動長高,最多 4 行
           .textFieldStyle(.plain)
           .font(.system(size: 12.5))
           .foregroundColor(.white.opacity(0.85))

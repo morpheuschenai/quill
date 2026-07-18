@@ -187,7 +187,11 @@ struct PromptListView: View {
 
     // 截圖:立即開啟串流結果視窗
     if let imageData {
-      let session = ChatSession.forImage(title: prompt.title, imageData: imageData, mime: imageMime)
+      // title 比對是為既有安裝的舊設定檔補上 autoCopy 行為
+      let autoCopy = prompt.autoCopy || prompt.title == "Extract text"
+      let session = ChatSession.forImage(
+        title: prompt.title, imageData: imageData, mime: imageMime, autoCopy: autoCopy
+      )
       ChatWindowManager.open(session: session)
       session.begin(apiUserContent: prompt.systemPrompt, displayUserText: nil)
       onDismiss()
@@ -215,7 +219,7 @@ struct PromptListView: View {
         isLoading = false
         loadingId = nil
         switch result {
-        case .success(let text): onResult(text)
+        case .success(let text): onResult(OpenAIService.stripCodeFences(text))
         case .failure(let error): showError(error)
         }
       }
@@ -257,7 +261,7 @@ struct PromptListView: View {
       DispatchQueue.main.async {
         isLoading = false
         switch result {
-        case .success(let text): onResult(text)
+        case .success(let text): onResult(OpenAIService.stripCodeFences(text))
         case .failure(let error): showError(error)
         }
       }

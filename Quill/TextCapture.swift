@@ -18,6 +18,7 @@ class TextCapture {
   private var eventHandlerRef: EventHandlerRef?
   private var promptPanel: TextPromptPanel?
   private var globalClickMonitor: Any?
+  private var escKeyMonitor: Any?
 
   // MARK: - Hotkey registration
 
@@ -260,10 +261,20 @@ class TextCapture {
         matching: [.leftMouseDown, .rightMouseDown]
       ) { [weak self] _ in self?.dismiss() }
     }
+    if escKeyMonitor == nil {
+      escKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        if event.keyCode == 53 {  // Esc
+          self?.dismiss()
+          return nil
+        }
+        return event
+      }
+    }
   }
 
   private func dismiss() {
     promptPanel?.orderOut(nil)
     if let m = globalClickMonitor { NSEvent.removeMonitor(m); globalClickMonitor = nil }
+    if let k = escKeyMonitor { NSEvent.removeMonitor(k); escKeyMonitor = nil }
   }
 }

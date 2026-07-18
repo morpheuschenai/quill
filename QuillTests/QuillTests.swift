@@ -54,14 +54,33 @@ final class QuillTests: XCTestCase {
 
   // MARK: - OpenAIService error parsing
 
-  func testAPIErrorUsesMessageFromOpenAIErrorBody() {
-    let data = #"{"error":{"message":"Incorrect API key provided","type":"invalid_request_error"}}"#
+  func testAPIError401NeverLeaksKeyFromErrorBody() {
+    // 401 的 API 原文會含(部分遮蔽的)key,必須一律改用固定訊息
+    let data = #"{"error":{"message":"Incorrect API key provided: ask-proj******GuAA","type":"invalid_request_error"}}"#
       .data(using: .utf8)!
 
     let error = OpenAIService.parseAPIError(from: data, statusCode: 401)
 
     XCTAssertEqual(error.code, 401)
-    XCTAssertEqual(error.localizedDescription, "Incorrect API key provided")
+    XCTAssertFalse(error.localizedDescription.contains("ask-proj"))
+    XCTAssertFalse(error.localizedDescription.contains("***"))
+    XCTAssertTrue(error.localizedDescription.contains("API key"))
+  }
+
+  func testAPIErrorUsesSanitizedMessageForNon401() {
+    let data = #"{"error":{"message":"You exceeded your quota for key sk-abc123","type":"insufficient_quota"}}"#
+      .data(using: .utf8)!
+
+    let error = OpenAIService.parseAPIError(from: data, statusCode: 429)
+
+    XCTAssertTrue(error.localizedDescription.contains("exceeded your quota"))
+    XCTAssertFalse(error.localizedDescription.contains("sk-abc123"))
+  }
+
+  func testStripCodeFences() {
+    XCTAssertEqual(OpenAIService.stripCodeFences("```\nhello\nworld\n```"), "hello\nworld")
+    XCTAssertEqual(OpenAIService.stripCodeFences("```swift\nlet x = 1\n```"), "let x = 1")
+    XCTAssertEqual(OpenAIService.stripCodeFences("plain text"), "plain text")
   }
 
   func testAPIErrorFallsBackToReadableMessagePerStatusCode() {

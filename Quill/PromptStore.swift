@@ -11,6 +11,8 @@ struct PromptConfig: Codable, Identifiable {
   var maxTokens: Int
   var iconName: String
   var colorIndex: Int
+  /// 完成後自動把結果複製到剪貼簿(OCR 情境用);optional 以相容舊資料
+  var autoCopy: Bool?
 
   init(
     id: UUID = UUID(),
@@ -18,7 +20,8 @@ struct PromptConfig: Codable, Identifiable {
     systemPrompt: String,
     maxTokens: Int = 400,
     iconName: String = "custom-text",
-    colorIndex: Int = 0
+    colorIndex: Int = 0,
+    autoCopy: Bool? = nil
   ) {
     self.id = id
     self.title = title
@@ -26,6 +29,7 @@ struct PromptConfig: Codable, Identifiable {
     self.maxTokens = maxTokens
     self.iconName = iconName
     self.colorIndex = colorIndex
+    self.autoCopy = autoCopy
   }
 }
 
@@ -123,16 +127,18 @@ class PromptStore: ObservableObject {
     (Color(red: 251/255, green: 146/255, blue: 60/255),  Color(red: 251/255, green: 146/255, blue: 60/255).opacity(0.12)),  // 5 orange
   ]
 
+  // v2:2026-07 prompt 品質修正(Fix the text 強化、OCR 禁用 markdown、autoCopy)
+  // 換 key 讓既有安裝拿到新預設;舊自訂 prompt 不遷移(此階段可接受)
   private init() {
-    editablePrompts    = Self.load(key: "quill_prompts_editable",    defaults: Self.defaultEditable)
-    nonEditablePrompts = Self.load(key: "quill_prompts_noneditable", defaults: Self.defaultNonEditable)
-    screenshotPrompts  = Self.load(key: "quill_prompts_screenshot",  defaults: Self.defaultScreenshot)
+    editablePrompts    = Self.load(key: "quill_prompts_editable_v2",    defaults: Self.defaultEditable)
+    nonEditablePrompts = Self.load(key: "quill_prompts_noneditable_v2", defaults: Self.defaultNonEditable)
+    screenshotPrompts  = Self.load(key: "quill_prompts_screenshot_v2",  defaults: Self.defaultScreenshot)
   }
 
   func save() {
-    Self.persist(editablePrompts,    key: "quill_prompts_editable")
-    Self.persist(nonEditablePrompts, key: "quill_prompts_noneditable")
-    Self.persist(screenshotPrompts,  key: "quill_prompts_screenshot")
+    Self.persist(editablePrompts,    key: "quill_prompts_editable_v2")
+    Self.persist(nonEditablePrompts, key: "quill_prompts_noneditable_v2")
+    Self.persist(screenshotPrompts,  key: "quill_prompts_screenshot_v2")
   }
 
   private static func load(key: String, defaults: [PromptConfig]) -> [PromptConfig] {
@@ -156,7 +162,8 @@ class PromptStore: ObservableObject {
       iconName: c.iconName,
       maxTokens: c.maxTokens,
       iconTint: pair.tint,
-      iconBackground: pair.bg
+      iconBackground: pair.bg,
+      autoCopy: c.autoCopy ?? false
     )
   }
 
@@ -172,11 +179,12 @@ extension PromptStore {
     PromptConfig(
       title: "Fix the text",
       systemPrompt: """
-        Edit the following text to:
-        - Remove filler words and unnecessary repetition
-        - Auto-correct grammar and spelling errors
-        - Improve clarity and formatting
-        Return only the edited text, no explanation.
+        You are a meticulous copy editor. Rewrite the user's text with these rules:
+        - Correct EVERY spelling mistake and grammar error.
+        - Remove filler words (um, uh, like, you know, basically, actually, just) and redundant repetition.
+        - Keep the original language, meaning, tone, and approximate length. Do not add new content.
+        - If the text is already correct, return it unchanged.
+        Output ONLY the corrected text — no explanation, no quotes, no markdown.
         """,
       maxTokens: 400, iconName: "fix_text", colorIndex: 1
     ),
@@ -205,7 +213,7 @@ extension PromptStore {
   ]
 
   static let defaultScreenshot: [PromptConfig] = [
-    PromptConfig(title: "Extract text",  systemPrompt: "Extract all visible text from this screenshot exactly as it appears, preserving structure and line breaks.",                                                                                             maxTokens: 800, iconName: "fix_text",  colorIndex: 1),
+    PromptConfig(title: "Extract text",  systemPrompt: "Extract all visible text from this screenshot exactly as it appears, preserving structure and line breaks. Output plain text ONLY — never wrap the result in markdown, code fences (```), or quotes.", maxTokens: 800, iconName: "fix_text",  colorIndex: 1, autoCopy: true),
     PromptConfig(title: "Describe this", systemPrompt: "Describe what you see in this screenshot concisely. Include layout, content, and any key information.",                                                                                                 maxTokens: 500, iconName: "explain",   colorIndex: 4),
     PromptConfig(title: "Summarize",     systemPrompt: "Summarize the key information visible in this screenshot in bullet points.",                                                                                                                            maxTokens: 400, iconName: "summarize", colorIndex: 0),
     PromptConfig(title: "Translate",     systemPrompt: "Detect the language of the text in this screenshot. If Chinese, translate to English. If English or other, translate to Traditional Chinese. Return only the translation.",                             maxTokens: 600, iconName: "translate", colorIndex: 2),

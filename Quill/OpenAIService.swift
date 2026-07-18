@@ -40,25 +40,51 @@ class OpenAIService {
     return content.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
-  /// 從 OpenAI 錯誤回應抽出可讀訊息，例如 401 的 "Incorrect API key provided"。
+  /// 從 OpenAI 錯誤回應抽出可讀訊息。
+  /// 401 一律用固定訊息——API 回傳的原文會包含(部分遮蔽的)API key,不可顯示給使用者。
   /// 純函式，供 unit test 使用。
   static func parseAPIError(from data: Data?, statusCode: Int) -> NSError {
-    var message = "Request failed (HTTP \(statusCode))"
-    if let data,
+    var message: String
+    switch statusCode {
+    case 401:
+      message = "Invalid API key. Check it in Preferences (⌘,)."
+    case 429:
+      message = "Rate limited by OpenAI. Try again in a moment."
+    case 500...599:
+      message = "OpenAI service error (HTTP \(statusCode)). Try again later."
+    default:
+      message = "Request failed (HTTP \(statusCode))"
+    }
+
+    if statusCode != 401,
+       let data,
        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
        let error = json["error"] as? [String: Any],
        let apiMessage = error["message"] as? String, !apiMessage.isEmpty {
-      message = apiMessage
-    } else {
-      switch statusCode {
-      case 401: message = "Invalid API key. Check it in Preferences (⌘,)."
-      case 429: message = "Rate limited by OpenAI. Try again in a moment."
-      case 500...599: message = "OpenAI service error (HTTP \(statusCode)). Try again later."
-      default: break
-      }
+      message = sanitizeErrorMessage(apiMessage, fallback: message)
     }
     return NSError(domain: "QuillError", code: statusCode,
                    userInfo: [NSLocalizedDescriptionKey: message])
+  }
+
+  /// 移除訊息中疑似 API key 的字串(含 * 遮蔽或 sk- 開頭的 token)。
+  static func sanitizeErrorMessage(_ raw: String, fallback: String) -> String {
+    let words = raw.split(separator: " ")
+    let cleaned = words.filter { w in
+      !w.contains("***") && !w.hasPrefix("sk-") && !w.hasPrefix("ask-")
+    }
+    let result = cleaned.joined(separator: " ")
+    return result.isEmpty ? fallback : result
+  }
+
+  /// 模型輸出偶爾會把純文字包進 markdown 圍欄(```),對 OCR/取代情境是雜訊,拆掉。
+  static func stripCodeFences(_ text: String) -> String {
+    var t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard t.hasPrefix("```") else { return text }
+    guard let firstNewline = t.firstIndex(of: "\n") else { return "" }
+    t = String(t[t.index(after: firstNewline)...])
+    if t.hasSuffix("```") { t = String(t.dropLast(3)) }
+    return t.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   // MARK: - Shared request handling
@@ -135,7 +161,7 @@ class OpenAIService {
         ["role": "user",   "content": text]
       ],
       "max_tokens": effectiveMaxTokens,
-      "temperature": 0.3
+      "temperature": 0  // 校對/取代情境要求可預期的輸出
     ]
 
     send(body: body, completion: completion)
