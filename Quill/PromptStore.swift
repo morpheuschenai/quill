@@ -127,18 +127,23 @@ class PromptStore: ObservableObject {
     (Color(red: 251/255, green: 146/255, blue: 60/255),  Color(red: 251/255, green: 146/255, blue: 60/255).opacity(0.12)),  // 5 orange
   ]
 
-  // v2:2026-07 prompt 品質修正(Fix the text 強化、OCR 禁用 markdown、autoCopy)
+  // v3:Fix the text 補繁體保護與引號內修正規則(v2: OCR 禁 markdown、autoCopy)
   // 換 key 讓既有安裝拿到新預設;舊自訂 prompt 不遷移(此階段可接受)
+  private static let storageVersion = "v3"
+  private static var editableKey:    String { "quill_prompts_editable_\(storageVersion)" }
+  private static var nonEditableKey: String { "quill_prompts_noneditable_\(storageVersion)" }
+  private static var screenshotKey:  String { "quill_prompts_screenshot_\(storageVersion)" }
+
   private init() {
-    editablePrompts    = Self.load(key: "quill_prompts_editable_v2",    defaults: Self.defaultEditable)
-    nonEditablePrompts = Self.load(key: "quill_prompts_noneditable_v2", defaults: Self.defaultNonEditable)
-    screenshotPrompts  = Self.load(key: "quill_prompts_screenshot_v2",  defaults: Self.defaultScreenshot)
+    editablePrompts    = Self.load(key: Self.editableKey,    defaults: Self.defaultEditable)
+    nonEditablePrompts = Self.load(key: Self.nonEditableKey, defaults: Self.defaultNonEditable)
+    screenshotPrompts  = Self.load(key: Self.screenshotKey,  defaults: Self.defaultScreenshot)
   }
 
   func save() {
-    Self.persist(editablePrompts,    key: "quill_prompts_editable_v2")
-    Self.persist(nonEditablePrompts, key: "quill_prompts_noneditable_v2")
-    Self.persist(screenshotPrompts,  key: "quill_prompts_screenshot_v2")
+    Self.persist(editablePrompts,    key: Self.editableKey)
+    Self.persist(nonEditablePrompts, key: Self.nonEditableKey)
+    Self.persist(screenshotPrompts,  key: Self.screenshotKey)
   }
 
   private static func load(key: String, defaults: [PromptConfig]) -> [PromptConfig] {
@@ -179,12 +184,14 @@ extension PromptStore {
     PromptConfig(
       title: "Fix the text",
       systemPrompt: """
-        You are a meticulous copy editor. Rewrite the user's text with these rules:
-        - Correct EVERY spelling mistake and grammar error.
-        - Remove filler words (um, uh, like, you know, basically, actually, just) and redundant repetition.
-        - Keep the original language, meaning, tone, and approximate length. Do not add new content.
-        - If the text is already correct, return it unchanged.
-        Output ONLY the corrected text — no explanation, no quotes, no markdown.
+        You are a meticulous copy editor. Rewrite the user's text following ALL of these rules:
+        - Correct EVERY spelling mistake and grammar error — including words inside quotes 「」"", brackets, or after arrows. Example: 「Fixinng the text」 must become 「Fixing the text」.
+        - Remove filler words (um, uh, like, you know, basically, actually) and redundant repetition.
+        - CRITICAL: preserve the exact language AND script of each part. Traditional Chinese (繁體字) must stay Traditional Chinese — NEVER convert it to Simplified Chinese. English stays English. Never translate anything.
+        - Preserve all symbols and formatting exactly: markdown like **bold**, arrows →, brackets, quotes, line breaks.
+        - Do not add new content. Keep meaning, tone, and length.
+        - If a part is already correct, keep it character-for-character identical.
+        Output ONLY the corrected text — no explanation, no added quotes, no code fences.
         """,
       maxTokens: 400, iconName: "fix_text", colorIndex: 1
     ),
