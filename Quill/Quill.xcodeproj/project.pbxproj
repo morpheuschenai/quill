@@ -20,6 +20,7 @@
 		E30E0EE32FC6FF000002B61B /* PreferencesPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */; };
 		E30E0EE52FC6FF000002B61B /* TextCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE42FC6FF000002B61B /* TextCapture.swift */; };
 		E30E0EE72FC6FF000002B61B /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE62FC6FF000002B61B /* KeychainStore.swift */; };
+		E30E0EE92FC6FF000002B61B /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,7 @@
 		E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesPanel.swift; sourceTree = "<group>"; };
 		E30E0EE42FC6FF000002B61B /* TextCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCapture.swift; sourceTree = "<group>"; };
 		E30E0EE62FC6FF000002B61B /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 		E30E03332FC6B400002B61B /* QuillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E30E03342FC6B400002B61B /* QuillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuillTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -99,6 +101,7 @@
 				E30E03162FC688990002B61B /* AppDelegate.swift */,
 				E30E03182FC688990002B61B /* Info.plist */,
 				E30E0EE62FC6FF000002B61B /* KeychainStore.swift */,
+				E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */,
 				E30E03192FC688990002B61B /* OpenAIService.swift */,
 				E30E031A2FC688990002B61B /* Prompt.swift */,
 				E30E031B2FC688990002B61B /* PromptListView.swift */,
@@ -241,6 +244,7 @@
 				E30E03232FC688990002B61B /* ResultPanel.swift in Sources */,
 				E30E03252FC688990002B61B /* Prompt.swift in Sources */,
 				E30E0EE72FC6FF000002B61B /* KeychainStore.swift in Sources */,
+				E30E0EE92FC6FF000002B61B /* OnboardingWindow.swift in Sources */,
 				E30E03262FC688990002B61B /* OpenAIService.swift in Sources */,
 				E30E03272FC688990002B61B /* QuillApp.swift in Sources */,
 				E30E03DD2FC6FF000002B61B /* ScreenshotCapture.swift in Sources */,
