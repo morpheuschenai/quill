@@ -7,6 +7,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
     setupStatusBar()
+    if OnboardingWindow.shouldShowOnLaunch {
+      OnboardingWindow.open()
+    }
     checkAccessibilityPermission()
   }
 
@@ -24,6 +27,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       action: #selector(openPreferences),
       keyEquivalent: ","
     ))
+    menu.addItem(NSMenuItem(
+      title: "設定引導…",
+      action: #selector(openOnboarding),
+      keyEquivalent: ""
+    ))
     menu.addItem(.separator())
     menu.addItem(NSMenuItem(
       title: "Quit Quill",
@@ -33,64 +41,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     statusItem?.menu = menu
   }
 
-  // MARK: - Accessibility
-
-  private var accessibilityPrompted = false
+  // MARK: - Actions
 
   @objc private func openPreferences() {
     PreferencesPanel.open()
   }
+
+  @objc private func openOnboarding() {
+    OnboardingWindow.open()
+  }
+
+  // MARK: - Accessibility(權限引導交給 OnboardingWindow;這裡靜默輪詢,授權後啟動監聽)
 
   private func checkAccessibilityPermission() {
     if AXIsProcessTrusted() {
       startMonitoring()
       return
     }
-
-    if !accessibilityPrompted {
-      accessibilityPrompted = true
-      showAccessibilityGuide()
-    }
-
-    // 靜默輪詢直到使用者開啟權限（alert 只顯示一次，之後靜默等待）
     DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
       self?.checkAccessibilityPermission()
     }
   }
 
-  private func showAccessibilityGuide() {
-    // 找到 app 所在路徑，方便使用者手動加入
-    let appPath = Bundle.main.bundlePath
-
-    let alert = NSAlert()
-    alert.messageText = "Quill 需要 Accessibility 權限"
-    alert.informativeText = """
-      請手動加入一次（之後每次 build 都不用重加）：
-
-      1. 點「開啟設定」→ 左下角「＋」
-      2. 按 Cmd+Shift+G，貼入以下路徑：
-
-      \(appPath)
-
-      3. 選 Quill.app → 開啟開關
-      """
-    alert.addButton(withTitle: "開啟 Accessibility 設定")
-    alert.addButton(withTitle: "稍後")
-
-    // 把路徑複製到剪貼簿，方便貼上
-    NSPasteboard.general.clearContents()
-    NSPasteboard.general.setString(appPath, forType: .string)
-
-    if alert.runModal() == .alertFirstButtonReturn {
-      NSWorkspace.shared.open(
-        URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-      )
-    }
-  }
-
   // MARK: - Monitoring
 
+  private var monitoringStarted = false
+
   func startMonitoring() {
+    guard !monitoringStarted else { return }
+    monitoringStarted = true
     ScreenshotCapture.shared.register()
     TextCapture.shared.register()
   }

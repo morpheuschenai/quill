@@ -11,7 +11,7 @@
 - [ ] 按「複製」→ 顯示「已複製」,貼上內容正確
 
 ## 文字流程4
-- [ ] TextEdit 選字 + `Ctrl+Opt+A` → 「Fixinng the text」→ 文字**原被取代**(行為不變)
+- [ ] TextEdit 選字 + `Ctrl+Opt+A` → 「Fixing the text」→ 文字**已被取代**(行為不變)
 - [ ] Safari 網頁選字 + `Ctrl+Opt+A` → 「Summarize」→ 開串流視窗(不再是舊面板)
 - [ ] 做完動作後,剪貼簿裡原本的內容**沒有被覆蓋**
 
