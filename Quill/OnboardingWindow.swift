@@ -99,6 +99,7 @@ struct OnboardingView: View {
   @StateObject private var state = OnboardingState()
   @State private var step = 0
   @State private var apiKeyInput = ""
+  @State private var pathCopied = false
 
   private let bg     = Color(red: 20/255, green: 20/255, blue: 26/255)
   private let accent = Color(red: 96/255, green: 165/255, blue: 250/255)
@@ -292,6 +293,18 @@ struct OnboardingView: View {
           .fixedSize(horizontal: false, vertical: true)
         Button(buttonTitle, action: action)
           .buttonStyle(OnboardingPrimaryStyle())
+        // 清單裡沒有 Quill 時的逃生口:點「+」手動加入,路徑先複製好
+        Button(pathCopied ? "已複製,到設定按「+」貼上路徑" : "清單裡沒有 Quill?複製 App 路徑") {
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.setString(Bundle.main.bundlePath, forType: .string)
+          pathCopied = true
+          DispatchQueue.main.asyncAfter(deadline: .now() + 4) { pathCopied = false }
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 11))
+        .foregroundColor(pathCopied
+          ? Color(red: 52/255, green: 211/255, blue: 153/255)
+          : .white.opacity(0.4))
       } else {
         Text("設定完成,可以進入下一步。")
           .font(.system(size: 12))
