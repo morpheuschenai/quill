@@ -250,15 +250,30 @@ struct OnboardingView: View {
   }
 
   private var screenStep: some View {
-    permissionStep(
-      icon: "camera.viewfinder",
-      title: "允許「螢幕錄製」",
-      granted: state.screenGranted,
-      why: "截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往你設定的 AI 服務。",
-      how: "點下方按鈕 → 勾選 Quill。若勾選後截圖仍拍不到視窗,請重啟 Quill 一次。",
-      buttonTitle: "開啟螢幕錄製設定",
-      action: state.requestScreenRecording
-    )
+    VStack(spacing: 12) {
+      permissionStep(
+        icon: "camera.viewfinder",
+        title: "允許「螢幕錄製」",
+        granted: state.screenGranted,
+        why: "截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往你設定的 AI 服務。",
+        how: "點下方按鈕 → 勾選 Quill → 回來點「重新啟動」讓權限生效。",
+        buttonTitle: "開啟螢幕錄製設定",
+        action: state.requestScreenRecording
+      )
+      // macOS 規定:螢幕錄製權限變更後,App 必須重啟才生效
+      Button("已勾選?重新啟動 Quill 讓權限生效") {
+        Self.relaunchApp()
+      }
+      .buttonStyle(OnboardingSecondaryStyle())
+    }
+  }
+
+  private static func relaunchApp() {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+    task.arguments = ["-n", Bundle.main.bundlePath]
+    try? task.run()
+    NSApp.terminate(nil)
   }
 
   private func permissionStep(
