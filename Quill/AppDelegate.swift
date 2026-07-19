@@ -55,9 +55,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func checkAccessibilityPermission() {
     if AXIsProcessTrusted() {
+      NSLog("[Quill] AXIsProcessTrusted = true → 啟動快捷鍵監聽")
       startMonitoring()
       return
     }
+    NSLog("[Quill] AXIsProcessTrusted = false,2 秒後重試(路徑:%@)", Bundle.main.bundlePath)
     DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
       self?.checkAccessibilityPermission()
     }
@@ -72,5 +74,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     monitoringStarted = true
     ScreenshotCapture.shared.register()
     TextCapture.shared.register()
+    NSLog("[Quill] 快捷鍵註冊完成:截圖 keyCode=%u mods=%u / 文字 keyCode=%u mods=%u",
+          PromptStore.shared.screenshotKeyCode, PromptStore.shared.screenshotModifiers,
+          PromptStore.shared.textKeyCode, PromptStore.shared.textModifiers)
   }
 }

@@ -104,7 +104,8 @@ class ScreenshotCapture {
     var hotKeyID = EventHotKeyID()
     hotKeyID.signature = 0x5175696C  // 'Quil'
     hotKeyID.id = 1
-    RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+    let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+    NSLog("[Quill] ScreenshotCapture RegisterEventHotKey status=%d (0=成功)", status)
   }
 
   // MARK: - Screenshot capture

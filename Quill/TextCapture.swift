@@ -53,12 +53,14 @@ class TextCapture {
     var hotKeyID = EventHotKeyID()
     hotKeyID.signature = 0x5175696C  // 'Quil'
     hotKeyID.id = 2
-    RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+    let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+    NSLog("[Quill] TextCapture RegisterEventHotKey status=%d (0=成功)", status)
   }
 
   // MARK: - Trigger
 
   func trigger() {
+    NSLog("[Quill] 文字快捷鍵觸發")
     let (text, element, isEditable) = readSelectionViaAX()
     if !text.isEmpty {
       showPromptPanel(text: text, element: element, isEditable: isEditable)
