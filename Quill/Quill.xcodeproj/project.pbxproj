@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E30E0FA32FC6FF000002B61B /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = E30E0FA22FC6FF000002B61B /* Sparkle */; };
 		E30E031F2FC688990002B61B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E30E03182FC688990002B61B /* Info.plist */; };
 		E30E03202FC688990002B61B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E03162FC688990002B61B /* AppDelegate.swift */; };
 		E30E03212FC688990002B61B /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E031B2FC688990002B61B /* PromptListView.swift */; };
@@ -79,6 +80,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E30E0FA32FC6FF000002B61B /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +154,7 @@
 			);
 			name = Quill;
 			packageProductDependencies = (
+				E30E0FA22FC6FF000002B61B /* Sparkle */,
 			);
 			productName = Quill;
 			productReference = E30E03072FC6883C0002B61B /* Quill.app */;
@@ -207,6 +210,9 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E30E03082FC6883C0002B61B /* Products */;
+			packageReferences = (
+				E30E0FA12FC6FF000002B61B /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -271,6 +277,25 @@
 			targetProxy = E30E03382FC6B400002B61B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E30E0FA12FC6FF000002B61B /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E30E0FA22FC6FF000002B61B /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E30E0FA12FC6FF000002B61B /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E30E03102FC6883E0002B61B /* Debug */ = {

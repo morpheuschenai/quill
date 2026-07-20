@@ -4,5 +4,11 @@
 <dict>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>Quill needs Accessibility access to detect your text selection.</string>
+
+	<!-- Sparkle 自動更新;SUPublicEDKey 在首次發佈時用 generate_keys 產生後填入 -->
+	<key>SUFeedURL</key>
+	<string>https://quill.morpheuschen.com/appcast.xml</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 </dict>
 </plist>
