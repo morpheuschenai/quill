@@ -269,6 +269,16 @@
   .shotlist { list-style: none; font-size: 15px; color: var(--text-dim); }
   .shotlist li { padding: 7px 0 7px 28px; position: relative; }
   .shotlist li::before { content: '✓'; position: absolute; left: 4px; color: var(--green); font-weight: 700; }
+  /* hero 截圖示範句 */
+  .shot-target-wrap { margin-top: 22px; animation: rise 0.7s 0.12s ease both; }
+  .shot-target { font-size: 16.5px; line-height: 1.65; color: var(--text); background: var(--bg-card); border: 1.5px dashed rgba(59,130,246,0.55); border-radius: 12px; padding: 14px 18px; max-width: 470px; font-style: italic; }
+  .shot-hint { margin-top: 8px; font-size: 12.5px; color: var(--text-dim); }
+  /* 文字段落的錯字互動 */
+  .text-demo-block { max-width: 560px; margin: 26px auto 6px; text-align: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; box-shadow: var(--shadow); }
+  .text-demo { font-size: 20px; font-weight: 700; margin-top: 6px; }
+  .text-demo-hint { font-size: 12.5px; color: var(--text-dim); }
+  /* 結果面板追問示意 */
+  .panel-followup { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 9px; font-size: 12px; color: rgba(255,255,255,0.4); }
 </style>
 </head>
 <body>
@@ -317,15 +327,16 @@
   <header>
     <div class="hero-grid">
       <div>
-        <div class="hero-title-wrap">
-          <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
-          <p class="demo-hint">上方標題有兩個錯字 — 選取後按一個快捷鍵修正</p>
+        <h1>看不懂的畫面，<br><span class="grad">框起來問 AI。</span></h1>
+        <div class="shot-target-wrap">
+          <p id="shotTarget" class="shot-target" lang="en">The quarterly report shows a 23% increase in recurring revenue, driven primarily by enterprise adoption.</p>
+          <p class="shot-hint">📸 看不懂這句?點下方「試試截圖」框選它 — 當場翻譯</p>
         </div>
-        <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">框選畫面問 AI，或選取文字直接改寫 —<br>結果當場出現。</p>
+        <p class="hero-sub">框選螢幕任何區域 — 翻譯、擷取文字、解釋內容，<br>結果當場浮現，還能追問。</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
+          <button class="btn btn-ghost" id="heroShotBtn"><svg class="ic-svg" style="width:15px;height:15px"><use href="#i-camera"/></svg> 在這頁試試截圖</button>
         </div>
-        <div><button id="resetChip">↺ 重置標題</button></div>
       </div>
       <div>
       <div class="demo-panel">
@@ -345,40 +356,24 @@
   </header>
 
   <section id="shot">
-    <div class="sec-label"><svg class="ic-svg"><use href="#i-camera"/></svg> 主打功能</div>
-    <h2>截圖問 AI，答案當場出現。</h2>
-    <p class="sec-sub">看不懂的畫面框起來就好。不用存檔、不用切視窗、不用貼到聊天機器人。</p>
-    <div class="shotwrap">
-      <div class="shotmock">
-        <div class="shotmock-doc">
-          <div class="shotmock-line w85"></div>
-          <div class="shotmock-line"></div>
-          <div class="shotmock-sel">
-            <span class="shotmock-tag">⌃⌥I</span>
-            <div class="shotmock-line"></div>
-            <div class="shotmock-line w60"></div>
-          </div>
-          <div class="shotmock-line w85"></div>
-          <div class="shotmock-line w60"></div>
-        </div>
-        <div class="shotmock-result">
-          <div class="shotmock-rt"><span>解釋這是什麼</span><span>✕</span></div>
-          <div>這段錯誤訊息的意思是:應用程式無法連上伺服器。可以先檢查網路設定,再重新啟動一次<span class="shotmock-caret"></span></div>
-          <div class="shotmock-input">追問…</div>
-        </div>
-      </div>
-      <ul class="shotlist">
-        <li><b>外文網頁、原文報告</b> — 整段框選直接翻成中文</li>
-        <li><b>圖片裡的文字</b> — 擷取文字自動進剪貼簿</li>
-        <li><b>看不懂的錯誤訊息</b> — 直接問「這是什麼意思」</li>
-        <li><b>結果逐字串流</b> — 視窗釘在畫面上，可追問、可並排多開</li>
-      </ul>
-    </div>
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-camera"/></svg> 使用情境</div>
+    <h2>這些時刻，框起來就好。</h2>
+    <ul class="shotlist" style="max-width:560px;margin:32px auto 0">
+      <li><b>外文網頁、原文報告</b> — 整段框選直接翻成中文</li>
+      <li><b>圖片裡的文字</b> — 擷取文字自動進剪貼簿</li>
+      <li><b>看不懂的錯誤訊息</b> — 直接問「這是什麼意思」，還能追問</li>
+      <li><b>會議簡報變待辦</b> — 框住投影片，AI 整理成行動清單</li>
+    </ul>
   </section>
 
   <section id="how">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-keyboard"/></svg> 文字也一樣快</div>
     <h2>三個步驟。零切換。</h2>
+    <div class="text-demo-block">
+      <p class="text-demo-hint">這段文字有兩個錯字 — 用滑鼠選取它，體驗一鍵修正</p>
+      <p id="heroTitle" class="demo-unit text-demo" data-unit="title">AI <span class="typo">動坐</span>，就在你<span class="typo">需耍</span>的地方出現。</p>
+      <button id="resetChip">↺ 重置</button>
+    </div>
     <div class="steps">
       <div class="step">
         <div class="num">1</div>
@@ -550,7 +545,7 @@
 <!-- Floating UI -->
 <div id="hintBubble"><svg class="ic-svg" style="width:13px;height:13px;display:inline-block;vertical-align:-1px"><use href="#i-fix"/></svg> 修正 — 或按 <kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
 <div id="quillMenu"></div>
-<div id="resultPanel"><h4><span id="resultTitle">結果</span><button id="resultClose">✕</button></h4><div id="resultBody"></div></div>
+<div id="resultPanel"><h4><span id="resultTitle">結果</span><button id="resultClose">✕</button></h4><div id="resultBody"></div><div class="panel-followup">追問…</div></div>
 <div id="shotOverlay"><div class="shot-tip">拖曳選取區域 — <b>Esc</b> 取消</div></div>
 <div id="marquee"></div>
 
@@ -558,8 +553,8 @@
 (function () {
   const UNITS = {
     title: {
-      origHTML: 'AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span>',
-      fixHTML:  'AI <span class="fixed">動作</span>，<br>就在你<span class="fixed">需要</span><span class="grad">的地方出現。</span>',
+      origHTML: 'AI <span class="typo">動坐</span>，就在你<span class="typo">需耍</span>的地方出現。',
+      fixHTML:  'AI <span class="fixed">動作</span>，就在你<span class="fixed">需要</span>的地方出現。',
       en:     'AI actions, right where you need them.',
       formal: '人工智慧功能，精準呈現於您所需之處。',
       emoji:  '✨ AI 動作，📍 就在你需要的地方出現！🚀'
@@ -656,7 +651,7 @@
   hint.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); openTextMenu(); });
 
   const TABS = {
-    text: { desc: '選取標題文字，修正、翻譯或摘要。標題裡故意留了兩個錯別字——你來修。', keys: ['⌃', '⌥', 'A'], cta: '修正標題' },
+    text: { desc: '選取下方文字段落，修正、翻譯或摘要。示範句裡故意留了兩個錯別字——你來修。', keys: ['⌃', '⌥', 'A'], cta: '修正示範文字' },
     shot: { desc: '在畫面上框選一個區域，擷取文字、描述內容或翻譯。現在就試試看。', keys: ['⌃', '⌥', 'I'], cta: '截取這個頁面' }
   };
   let activeTab = 'shot';
@@ -676,6 +671,7 @@
 
   function runTextDemo() {
     const titleEl = document.getElementById('heroTitle');
+    titleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const sel = window.getSelection();
     sel.removeAllRanges();
     const range = document.createRange();
@@ -740,6 +736,7 @@
   function enterShot() { hideMenu(); panel.style.display = 'none'; hint.style.display = 'none'; overlay.style.display = 'block'; }
   function exitShot()  { overlay.style.display = 'none'; marquee.style.display = 'none'; drag = null; }
   document.getElementById('shotBtn').addEventListener('click', enterShot);
+  document.getElementById('heroShotBtn').addEventListener('click', enterShot);
   overlay.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY }; });
   overlay.addEventListener('mousemove', e => {
     if (!drag) return;
@@ -756,7 +753,7 @@
     showMenu(anchor.x, anchor.y, [
       { key: 'extract',   label: '擷取文字',   icon: 'i-keyboard',  color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
       { key: 'summarize', label: '摘要',        icon: 'i-summarize', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-      { key: 'translate', label: '翻譯成英文',  icon: 'i-translate', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+      { key: 'translate', label: '翻譯',        icon: 'i-translate', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
       { key: 'describe',  label: '描述此區域',  icon: 'i-explain',   color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
     ], key => {
       marquee.style.display = 'none';
@@ -830,6 +827,11 @@
 
   function translateRegion(r) {
     const intersects = el => { const b = el.getBoundingClientRect(); return b.width > 0 && b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y; };
+    // 框到 hero 英文示範句 → 翻成中文(產品的招牌情境)
+    const target = document.getElementById('shotTarget');
+    if (target && intersects(target)) {
+      return '季度報告顯示，經常性收入成長了 23%，主要動力來自企業客戶的採用。';
+    }
     const out = [];
     document.querySelectorAll('h1, h2, h3, p, li, th, td, .sec-label, .price, .badge, .tab, button.try').forEach(el => {
       if (!intersects(el)) return;
