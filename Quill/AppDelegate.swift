@@ -18,7 +18,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   private func setupStatusBar() {
     statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     if let button = statusItem?.button {
-      button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Quill")
+      // 品牌 logo(template 模式,自動適應深淺選單列);找不到時退回 sparkles
+      if let path = Bundle.main.path(forResource: "quill_logo", ofType: "svg"),
+         let logo = NSImage(contentsOfFile: path) {
+        logo.isTemplate = true
+        logo.size = NSSize(width: 18, height: 18)
+        button.image = logo
+      } else {
+        button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Quill")
+      }
     }
 
     let menu = NSMenu()

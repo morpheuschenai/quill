@@ -43,14 +43,14 @@
 		E30E031C2FC688990002B61B /* Quill.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Quill.entitlements; sourceTree = "<group>"; };
 		E30E031D2FC688990002B61B /* QuillApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuillApp.swift; sourceTree = "<group>"; };
 		E30E031E2FC688990002B61B /* ResultPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultPanel.swift; sourceTree = "<group>"; };
+		E30E03332FC6B400002B61B /* QuillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E30E03342FC6B400002B61B /* QuillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuillTests.swift; sourceTree = "<group>"; };
 		E30E03CC2FC6FF000002B61B /* ScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCapture.swift; sourceTree = "<group>"; };
 		E30E0EE02FC6FF000002B61B /* PromptStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptStore.swift; sourceTree = "<group>"; };
 		E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesPanel.swift; sourceTree = "<group>"; };
 		E30E0EE42FC6FF000002B61B /* TextCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCapture.swift; sourceTree = "<group>"; };
 		E30E0EE62FC6FF000002B61B /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
-		E30E03332FC6B400002B61B /* QuillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E30E03342FC6B400002B61B /* QuillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuillTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -96,7 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				E30E03092FC6883C0002B61B /* Quill */,
-				E30E03362FC6B400002B61B /* QuillTests */,
+				E30E03362FC6B400002B61B /* ../QuillTests */,
 				E30E03082FC6883C0002B61B /* Products */,
 				E30E03162FC688990002B61B /* AppDelegate.swift */,
 				E30E03182FC688990002B61B /* Info.plist */,
@@ -124,7 +124,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		E30E03362FC6B400002B61B /* QuillTests */ = {
+		E30E03362FC6B400002B61B /* ../QuillTests */ = {
 			isa = PBXGroup;
 			children = (
 				E30E03342FC6B400002B61B /* QuillTests.swift */,

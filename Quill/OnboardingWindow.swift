@@ -174,9 +174,11 @@ struct OnboardingView: View {
 
   private var welcomeStep: some View {
     VStack(spacing: 18) {
-      Image(systemName: "sparkles")
-        .font(.system(size: 44))
-        .foregroundColor(accent)
+      // 真實 App icon,和 Dock/Finder 一致
+      Image(nsImage: NSApp.applicationIconImage)
+        .resizable()
+        .scaledToFit()
+        .frame(width: 76, height: 76)
       Text("歡迎使用 Quill")
         .font(.system(size: 26, weight: .bold))
         .foregroundColor(.white)
