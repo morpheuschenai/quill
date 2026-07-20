@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quill — 截圖問 AI,答案當場出現</title>
-<meta name="description" content="在 Mac 上框選任何畫面,按一個快捷鍵,翻譯、萃取文字、解釋內容——結果直接浮在旁邊,不用切去 ChatGPT。">
+<title>Quill — 截圖問 AI，答案當場出現</title>
 <meta property="og:type"        content="website">
 <meta property="og:url"         content="https://quill.morpheuschen.com/">
-<meta property="og:title"       content="Quill — 截圖問 AI,答案當場出現">
-<meta property="og:description" content="框選畫面 → 按快捷鍵 → 翻譯、萃取文字、解釋內容,結果當場浮現。">
+<meta property="og:title"       content="Quill — 截圖問 AI，答案當場出現">
+<meta property="og:description" content="框選畫面問 AI，或選取文字直接改寫 — 結果當場出現，不用切去聊天機器人。">
 <meta property="og:image"       content="https://quill.morpheuschen.com/og-image.png">
 <meta property="og:site_name"   content="Quill">
 <meta name="twitter:card"        content="summary_large_image">
-<meta name="twitter:title"       content="Quill — 截圖問 AI,答案當場出現">
-<meta name="twitter:description" content="框選畫面 → 按快捷鍵 → 結果當場浮現。">
-<meta name="twitter:image"      content="https://quill.morpheuschen.com/og-image.png">
+<meta name="twitter:title"       content="Quill — 截圖問 AI，答案當場出現">
+<meta name="twitter:description" content="框選畫面問 AI，或選取文字直接改寫 — 結果當場出現，不用切去聊天機器人。">
+<meta name="twitter:image"       content="https://quill.morpheuschen.com/og-image.png">
+<meta name="description" content="在 Mac 上框選任何畫面問 AI — 翻譯、擷取文字、解釋內容，結果當場浮現還能追問。也能選取文字直接改寫。">
 <style>
   :root {
     --bg: #fafaf8;
@@ -27,343 +27,859 @@
     --blue-soft: rgba(59,130,246,0.10);
     --green: #10b981;
     --purple: #7c5cf0;
+    --yellow: #d97706;
+    --cyan: #0891b2;
     --orange: #ea580c;
+    --red: #ef4444;
     --border: rgba(20,20,40,0.09);
     --shadow: 0 1px 2px rgba(20,20,40,0.04), 0 8px 28px rgba(20,20,40,0.06);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body {
-    font-family: -apple-system, 'SF Pro Text', 'PingFang TC', BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg); color: var(--text); line-height: 1.7;
+    font-family: -apple-system, 'SF Pro Text', BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
     -webkit-font-smoothing: antialiased; overflow-x: hidden;
   }
   ::selection { background: rgba(59,130,246,0.25); }
   a { text-decoration: none; }
   a:not(.btn) { color: var(--blue); }
   .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; position: relative; }
-
-  .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 11px 22px; border-radius: 12px; font-size: 15px; font-weight: 600;
-    transition: transform .15s ease, box-shadow .15s ease; cursor: pointer;
-  }
+  .ic-svg { width: 1em; height: 1em; display: block; fill: none; }
+  .blob { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(90px); will-change: transform; }
+  .b1 { width: 560px; height: 560px; top: -180px; left: -160px; background: radial-gradient(circle, rgba(59,130,246,0.13), transparent 65%); animation: drift1 16s ease-in-out infinite alternate; }
+  .b2 { width: 500px; height: 500px; top: 180px; right: -200px; background: radial-gradient(circle, rgba(124,92,240,0.11), transparent 65%); animation: drift2 21s ease-in-out infinite alternate; }
+  .b3 { width: 400px; height: 400px; bottom: -140px; left: 30%; background: radial-gradient(circle, rgba(16,185,129,0.08), transparent 65%); animation: drift1 25s ease-in-out infinite alternate-reverse; }
+  @keyframes drift1 { to { transform: translate(60px, 40px) scale(1.08); } }
+  @keyframes drift2 { to { transform: translate(-50px, 60px) scale(0.94); } }
+  main, nav { position: relative; z-index: 1; }
+  .navbar { position: sticky; top: 0; z-index: 50; background: rgba(250,250,248,0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(20,20,40,0.06); }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); }
+  .logo-mark { display: grid; place-items: center; color: var(--text); }
+  .logo-mark .ic-svg { width: 26px; height: 26px; }
+  .nav-links { display: flex; gap: 22px; align-items: center; font-size: 14px; }
+  .nav-links a { color: var(--text-dim); transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 19px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s, border-color 0.18s; }
   .btn:hover { transform: translateY(-1px); }
-  .btn-primary { background: var(--text); color: #fff; box-shadow: var(--shadow); }
-  .btn-ghost { color: var(--text); border: 1.5px solid var(--border); background: var(--bg-card); }
-
-  /* ---------- Nav ---------- */
-  nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 0; position: relative; z-index: 5;
-  }
-  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
-  .logo svg { width: 26px; height: 26px; }
-  .nav-links { display: flex; align-items: center; gap: 22px; font-size: 14.5px; }
-  .nav-links a:not(.btn) { color: var(--text-dim); }
-  .nav-links a:not(.btn):hover { color: var(--text); }
-
-  /* ---------- Hero ---------- */
-  .hero { padding: 72px 0 60px; }
-  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; }
-  @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; gap: 44px; } }
-  h1 { font-size: clamp(34px, 5vw, 46px); line-height: 1.25; letter-spacing: -0.5px; font-weight: 800; }
-  .grad {
-    background: linear-gradient(92deg, var(--blue), var(--purple));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .hero-sub { margin-top: 18px; font-size: 17px; color: var(--text-dim); }
-  .kbd {
-    font-family: ui-monospace, 'SF Mono', monospace; font-size: 0.85em;
-    background: var(--bg-card); border: 1px solid var(--border); border-bottom-width: 2px;
-    border-radius: 6px; padding: 1px 7px; color: var(--text); white-space: nowrap;
-  }
-  .hero-actions { margin-top: 26px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .hero-note { font-size: 13px; color: var(--text-dim); }
-  .hero-dev { margin-top: 30px; font-size: 13.5px; color: var(--text-dim); }
-
-  /* ---------- Hero mock ---------- */
-  .mock { position: relative; filter: drop-shadow(0 24px 40px rgba(20,20,40,0.14)); }
-  .mock-doc {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 40px 26px 26px; font-size: 13px; color: var(--text-dim); line-height: 1.9;
-    position: relative;
-  }
-  .mock-doc::before {
-    content: '● ● ●'; position: absolute; top: 12px; left: 18px;
-    font-size: 9px; letter-spacing: 3px; color: rgba(20,20,40,0.18);
-  }
-  .mock-line { height: 9px; border-radius: 5px; background: rgba(20,20,40,0.07); margin: 12px 0; }
-  .mock-line.w60 { width: 60%; }
-  .mock-line.w85 { width: 85%; }
-  .selection {
-    position: relative; border: 1.5px dashed var(--blue); border-radius: 8px;
-    background: var(--blue-soft); padding: 10px 12px; margin: 14px 0;
-    animation: pulse 2.6s ease infinite;
-  }
-  @keyframes pulse { 0%,100% { border-color: rgba(59,130,246,.9); } 50% { border-color: rgba(59,130,246,.35); } }
-  .selection .mock-line { background: rgba(59,130,246,0.22); margin: 8px 0; }
-  .sel-tag {
-    position: absolute; top: -13px; right: 10px; background: var(--blue); color: #fff;
-    font-size: 10.5px; font-weight: 700; border-radius: 6px; padding: 2px 8px;
-    font-family: ui-monospace, 'SF Mono', monospace;
-  }
-  .result {
-    position: absolute; right: -14px; bottom: -46px; width: 78%;
-    background: linear-gradient(180deg, var(--panel-hi), var(--panel-lo));
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
-    padding: 14px 16px 12px; color: rgba(255,255,255,0.85); font-size: 12.5px;
-    box-shadow: 0 18px 44px rgba(10,10,30,0.35);
-  }
-  @media (max-width: 860px) { .result { right: 0; } }
-  .result-title {
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 8px; font-weight: 600;
-  }
-  .result-body { line-height: 1.75; }
-  .type-caret {
-    display: inline-block; width: 7px; height: 13px; background: var(--blue);
-    vertical-align: -2px; margin-left: 2px; border-radius: 1.5px;
-    animation: blink 0.9s steps(1) infinite;
-  }
-  @keyframes blink { 50% { opacity: 0; } }
-  .result-input {
-    margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 9px;
-    font-size: 11.5px; color: rgba(255,255,255,0.4);
-  }
-
-  /* ---------- Sections ---------- */
-  section { padding: 64px 0; position: relative; z-index: 1; }
-  .sec-title { font-size: clamp(26px, 3.6vw, 34px); font-weight: 800; letter-spacing: -0.4px; text-align: center; }
-  .sec-sub { text-align: center; color: var(--text-dim); margin: 12px auto 0; max-width: 560px; font-size: 15.5px; }
-
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
-  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
-  .step {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 26px 22px; box-shadow: var(--shadow);
-  }
-  .step-num {
-    width: 30px; height: 30px; border-radius: 9px; background: var(--blue-soft); color: var(--blue);
-    display: grid; place-items: center; font-weight: 800; font-size: 14px; margin-bottom: 14px;
-  }
+  .btn-primary { background: var(--text); color: #fff; }
+  .btn-primary:hover { background: #2e2e3c; color: #fff; box-shadow: 0 8px 24px rgba(20,20,40,0.22); }
+  a.btn-primary, a.btn-primary:visited { color: #fff; }
+  .btn-ghost { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .btn-ghost:hover { border-color: rgba(20,20,40,0.2); }
+  .btn-cta { background: var(--blue); color: #fff; }
+  .btn-cta:hover { background: #2563eb; color: #fff; box-shadow: 0 8px 24px rgba(59,130,246,0.32); transform: translateY(-1px); }
+  header { padding: 84px 0 100px; }
+  .hero-grid { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 56px; align-items: center; }
+  @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
+  h1 { font-size: clamp(36px, 5.4vw, 58px); font-weight: 800; letter-spacing: -0.028em; line-height: 1.14; cursor: text; animation: rise 0.7s ease both; transition: opacity 0.25s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(22px); } }
+  h1 .grad { background: linear-gradient(90deg, var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .typo { text-decoration-line: underline; text-decoration-style: wavy; text-decoration-color: var(--red); text-decoration-thickness: 2.5px; text-underline-offset: 7px; }
+  .fixed { border-radius: 6px; animation: fixedFlash 2s ease both; }
+  @keyframes fixedFlash { 0% { background: rgba(16,185,129,0.35); } 100% { background: rgba(16,185,129,0); } }
+  .hero-sub { margin: 20px 0 0; max-width: 480px; font-size: 18px; color: var(--text-dim); cursor: text; animation: rise 0.7s 0.1s ease both; transition: opacity 0.25s; }
+  .demo-unit.working { opacity: 0.3; animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.12; } }
+  .demo-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); animation: rise 0.7s 0.18s ease both; text-align: left; }
+  .tabs { display: flex; gap: 5px; background: rgba(20,20,40,0.05); border-radius: 11px; padding: 4px; margin-bottom: 18px; }
+  .tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; border-radius: 8px; border: none; background: none; font-size: 13.5px; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: color 0.15s, background 0.15s, box-shadow 0.15s; font-family: inherit; }
+  .tab .ic-svg { width: 16px; height: 16px; }
+  .tab.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(20,20,40,0.10); }
+  .tab.active.t-text .ic-svg { color: var(--green); }
+  .tab.active.t-shot .ic-svg { color: var(--cyan); }
+  .panel-body { animation: pop 0.18s ease; }
+  .panel-body p { font-size: 14.5px; color: var(--text-dim); line-height: 1.6; min-height: 66px; }
+  .hotkey-row { display: flex; align-items: center; gap: 9px; margin: 16px 0 18px; font-size: 12.5px; color: var(--text-dim); }
+  .hotkey-row .kbds { display: flex; gap: 3px; }
+  #tryBtn { width: 100%; justify-content: center; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  #tryBtn:hover { border-color: rgba(20,20,40,0.2); }
+  kbd { font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; background: #fff; border: 1px solid rgba(20,20,40,0.16); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; color: var(--text-dim); }
+  #hintBubble kbd { background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border-color: rgba(255,255,255,0.14); color: #f0f0f6; }
+  .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  #resetChip { display: none; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; margin-top: 18px; }
+  #resetChip:hover { color: var(--text); }
+  #hintBubble { position: fixed; z-index: 80; display: none; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: #f0f0f6; box-shadow: 0 12px 32px rgba(20,20,40,0.35); cursor: pointer; user-select: none; -webkit-user-select: none; animation: pop 0.18s ease; }
+  #hintBubble:hover { border-color: rgba(96,165,250,0.6); }
+  @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
+  #quillMenu { position: fixed; z-index: 90; display: none; width: 238px; background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 7px; animation: pop 0.15s ease; color: #e8e8f0; }
+  .menu-row { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; transition: background 0.12s; }
+  .menu-row:hover { background: rgba(255,255,255,0.06); }
+  .menu-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
+  .menu-ic .ic-svg { width: 16px; height: 16px; }
+  .menu-div { height: 1px; background: rgba(255,255,255,0.09); margin: 6px 8px; }
+  .menu-note { font-size: 11px; color: #9a9aac; padding: 4px 10px 6px; }
+  #resultPanel { position: fixed; z-index: 95; display: none; width: min(380px, 88vw); background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 16px 18px; animation: pop 0.15s ease; text-align: left; color: #e8e8f0; }
+  #resultPanel h4 { font-size: 12px; font-weight: 600; color: #9a9aac; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 9px; display: flex; justify-content: space-between; align-items: center; }
+  #resultPanel h4 button { background: none; border: none; color: #9a9aac; cursor: pointer; font-size: 14px; }
+  #resultBody { font-size: 14px; white-space: pre-wrap; line-height: 1.65; }
+  #shotOverlay { position: fixed; inset: 0; z-index: 100; display: none; background: rgba(20,20,40,0.30); cursor: crosshair; }
+  #shotOverlay .shot-tip { position: fixed; top: 22px; left: 50%; transform: translateX(-50%); background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.14); border-radius: 999px; padding: 7px 16px; font-size: 13px; color: #f0f0f6; pointer-events: none; }
+  #marquee { position: fixed; border: 1.5px solid var(--blue); background: rgba(59,130,246,0.10); display: none; pointer-events: none; border-radius: 3px; z-index: 101; box-shadow: 0 0 0 9999px rgba(20,20,40,0.18); }
+  section { padding: 84px 0; }
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .reveal.visible { opacity: 1; transform: none; }
+  .sec-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); margin-bottom: 10px; }
+  .sec-label .ic-svg { width: 16px; height: 16px; }
+  h2 { font-size: clamp(26px, 4vw, 36px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .sec-sub { color: var(--text-dim); max-width: 620px; font-size: 16px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 40px; }
+  .step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: var(--shadow); transition: transform 0.25s ease, border-color 0.25s; }
+  .step:hover { transform: translateY(-4px); border-color: rgba(59,130,246,0.35); }
+  .step .num { width: 30px; height: 30px; border-radius: 50%; font-size: 14px; font-weight: 700; background: var(--blue-soft); color: var(--blue); display: grid; place-items: center; margin-bottom: 14px; }
   .step h3 { font-size: 16.5px; margin-bottom: 6px; }
   .step p { font-size: 14px; color: var(--text-dim); }
-
-  .cases { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 40px; }
-  @media (max-width: 700px) { .cases { grid-template-columns: 1fr; } }
-  .case {
-    display: flex; gap: 14px; background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); font-size: 14.5px;
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 40px; }
+  .feat { position: relative; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 26px; box-shadow: var(--shadow); transition: transform 0.25s ease, border-color 0.25s; }
+  .feat::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s; background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(59,130,246,0.07), transparent 55%); pointer-events: none; }
+  .feat:hover { transform: translateY(-4px); border-color: rgba(20,20,40,0.18); }
+  .feat:hover::before { opacity: 1; }
+  .feat .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 16px; }
+  .feat .ic .ic-svg { width: 21px; height: 21px; }
+  .feat h3 { font-size: 17px; margin-bottom: 7px; }
+  .feat p { font-size: 14px; color: var(--text-dim); }
+  .feat .try { display: inline-block; margin-top: 13px; font-size: 13.5px; font-weight: 600; color: var(--blue); cursor: pointer; background: none; border: none; padding: 0; }
+  .feat .try:hover { text-decoration: underline; }
+  .feat-wide { grid-column: 1 / -1; }
+  .prompt-ticker-h { margin-top: 20px; overflow: hidden; display: flex; flex-direction: column; gap: 8px; -webkit-mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); mask-image: linear-gradient(90deg, transparent, black 5%, black 95%, transparent); }
+  .ticker-row { display: flex; gap: 14px; width: max-content; flex-shrink: 0; }
+  .ticker-row.r1 { animation: scrollLeft 52s linear infinite; }
+  .ticker-row.r2 { animation: scrollRight 68s linear infinite; }
+  .feat-wide:hover .ticker-row { animation-play-state: paused; }
+  @keyframes scrollLeft  { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
+  @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+  .ticker-pill { display: inline-flex; align-items: center; padding: 5px 13px; border-radius: 999px; font-size: 12px; font-weight: 500; background: rgba(124,92,240,0.09); color: var(--purple); white-space: nowrap; border: 1px solid rgba(124,92,240,0.14); flex-shrink: 0; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 40px; }
+  .plan { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0; transition: transform 0.25s ease; }
+  .plan:hover { transform: translateY(-4px); }
+  .plan.featured { border-color: rgba(59,130,246,0.45); box-shadow: 0 1px 2px rgba(20,20,40,0.04), 0 12px 36px rgba(59,130,246,0.12); }
+  .plan .badge { align-self: flex-start; font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 999px; padding: 4px 11px; margin-bottom: 14px; }
+  .plan .badge.oss { background: rgba(16,185,129,0.12); color: var(--green); }
+  .plan .badge.soon { background: var(--blue-soft); color: var(--blue); }
+  .plan h3 { font-size: 20px; margin-bottom: 4px; }
+  .plan .price { font-size: 15px; color: var(--text-dim); margin-bottom: 18px; }
+  .plan ul { list-style: none; display: grid; gap: 10px; margin-bottom: 24px; }
+  .plan li { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; color: var(--text-dim); }
+  .plan li .ic-svg { width: 17px; height: 17px; color: var(--green); flex-shrink: 0; margin-top: 2px; }
+  .plan .btn { margin-top: auto; justify-content: center; }
+  .plan-platforms { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .plat-tag { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 999px; background: rgba(20,20,40,0.06); color: var(--text-dim); border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 4px; }
+  .plat-tag .ic-svg { width: 11px; height: 11px; flex-shrink: 0; }
+  .plat-tag.roadmap { opacity: 0.55; }
+  .privacy-list { margin-top: 28px; display: grid; gap: 14px; }
+  .privacy-item { display: flex; gap: 13px; align-items: flex-start; font-size: 15px; }
+  .privacy-item .ic-svg { width: 19px; height: 19px; color: var(--green); flex-shrink: 0; margin-top: 3px; }
+  .privacy-item span:last-child { color: var(--text-dim); }
+  .privacy-item b { color: var(--text); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(20,20,40,0.06); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 13px; }
+  .tag { font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .tag.full { background: rgba(16,185,129,0.12); color: var(--green); }
+  .tag.read { background: var(--blue-soft); color: var(--blue); }
+  .tag.clip { background: rgba(217,119,6,0.12); color: var(--yellow); }
+  .faq-item { border-bottom: 1px solid rgba(20,20,40,0.06); padding: 20px 0; }
+  .faq-item h3 { font-size: 16.5px; font-weight: 600; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; -webkit-user-select: none; }
+  .faq-item h3::after { content: '+'; font-size: 22px; font-weight: 300; color: var(--text-dim); margin-left: 16px; flex-shrink: 0; }
+  .faq-item.open h3::after { content: '−'; }
+  .faq-item > p, .faq-item > table { font-size: 14.5px; color: var(--text-dim); display: none; margin-top: 0; }
+  .faq-item.open > p, .faq-item.open > table { display: block; margin-top: 10px; }
+  .step-mock { margin-bottom: 14px; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.6; height: 132px; overflow: hidden; }
+  .step-mock .typo { text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .mit-badge { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+  .mit-q { width: 15px; height: 15px; border-radius: 50%; background: rgba(20,20,40,0.1); color: var(--text-dim); font-size: 10px; font-weight: 700; cursor: help; display: inline-flex; align-items: center; justify-content: center; }
+  .mit-tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1c1c28; color: #e8e8f0; font-size: 12px; font-weight: 400; padding: 7px 11px; border-radius: 8px; width: 230px; text-align: center; line-height: 1.5; pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: normal; z-index: 20; }
+  .mit-tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #1c1c28; }
+  .mit-badge:hover .mit-tip { opacity: 1; }
+  .sm-line { padding: 1px 0; color: var(--text); }
+  .sm-dim  { color: var(--text-dim); }
+  .sm-hl   { background: rgba(59,130,246,0.22); border-radius: 2px; padding: 0 3px; }
+  .sm-fixed{ background: rgba(16,185,129,0.22); border-radius: 2px; padding: 0 3px; color: var(--text); }
+  .sm-check{ margin-top: 6px; color: var(--green); font-size: 11px; font-weight: 600; }
+  .sm-select, .sm-result { background: var(--bg); border: 1px solid var(--border); }
+  .sm-menu  { background: #1b1b24; border: 0.5px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px 5px 1px; }
+  .sm-item  { padding: 5px 8px; border-radius: 6px; color: rgba(232,232,240,0.6); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .sm-item-hi { background: rgba(255,255,255,0.07); color: #e8e8f0; }
+  .sm-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sm-ic    { width: 10px; height: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-kbds { display: flex; gap: 4px; align-items: center; margin: 10px 0 12px; min-height: 28px; }
+  .step-kbds kbd { background: #fff; border: 1px solid rgba(20,20,40,0.15); border-bottom-width: 2px; border-radius: 5px; padding: 2px 6px; color: var(--text-dim); font-size: 12px; font-family: 'SF Mono', ui-monospace, monospace; }
+  .sm-kbds  { display: flex; gap: 3px; margin-bottom: 6px; }
+  .cta { text-align: center; }
+  .cta h2 { max-width: 560px; margin: 0 auto 14px; }
+  .cta .sec-sub { margin: 0 auto; }
+  .cta .btns { margin-top: 28px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .cta-note { margin-top: 16px; font-size: 13px; color: var(--text-dim); }
+  footer { padding: 36px 0 48px; border-top: 1px solid rgba(20,20,40,0.06); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 13.5px; color: var(--text-dim); position: relative; z-index: 1; }
+  /* Hero title wrap + demo-hint tooltip */
+  .hero-title-wrap { display: block; position: relative; }
+  .demo-hint {
+    position: absolute; bottom: calc(100% + 8px); left: 0;
+    white-space: nowrap; z-index: 10;
+    font-size: 12px; font-weight: 500; color: #e8e8f0;
+    background: #252530; border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 999px; padding: 5px 12px;
+    box-shadow: 0 6px 18px rgba(20,20,40,0.28);
+    display: inline-flex; align-items: center; gap: 6px;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
   }
-  .case-emoji { font-size: 22px; line-height: 1.4; }
-  .case b { display: block; margin-bottom: 2px; }
-  .case span { color: var(--text-dim); font-size: 13.5px; }
+  .demo-hint::after { content: ''; position: absolute; top: 100%; left: 18px; border: 5px solid transparent; border-top-color: #252530; }
+  .demo-hint::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--red); opacity: 0.85; flex-shrink: 0; }
+  .hero-title-wrap:hover .demo-hint { opacity: 1; }
+  /* Dev link below demo panel */
+  .hero-dev-link { margin-top: 12px; font-size: 13px; color: var(--text-dim); animation: rise 0.7s 0.22s ease both; text-align: center; }
+  /* Pricing 2:1 layout */
+  .plans-b { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-top: 32px; align-items: stretch; }
+  @media (max-width: 680px) { .plans-b { grid-template-columns: 1fr; } }
+  .plan-mini { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0; transition: transform 0.25s ease; }
+  .plan-mini:hover { transform: translateY(-4px); }
+  .plan-mini h3 { font-size: 18px; margin-bottom: 6px; }
+  .plan-mini .mini-desc { font-size: 13.5px; color: var(--text-dim); margin-bottom: 6px; line-height: 1.6; }
+  .plan-mini .mini-note { font-size: 12px; color: var(--text-dim); opacity: 0.7; margin-bottom: 24px; }
+  .plan-mini .btn { margin-top: auto; justify-content: center; }
+  /* Plan note */
+  .plan-note { margin-bottom: 14px; font-size: 12px; color: var(--yellow); display: flex; align-items: center; gap: 6px; }
+  .plan-note .ic-svg { color: var(--yellow); flex-shrink: 0; }
+  /* Section padding gap */
+  #features { padding-bottom: 56px; }
+  #pricing  { padding-top: 56px; }
+  #how { border-top: none; }
+  @media (max-width: 600px) { .nav-links a:not(.btn) { display: none; } header { padding: 60px 0 68px; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .reveal { opacity: 1; transform: none; } }
 
-  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 44px; }
-  @media (max-width: 760px) { .duo { grid-template-columns: 1fr; } }
-  .plan {
-    background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 18px;
-    padding: 30px 28px; box-shadow: var(--shadow);
-  }
-  .plan.hi { border-color: rgba(59,130,246,0.55); position: relative; }
-  .plan .tag {
-    position: absolute; top: -12px; left: 24px; background: var(--blue); color: #fff;
-    font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 7px;
-  }
-  .plan h3 { font-size: 19px; }
-  .plan .price { font-size: 15px; color: var(--text-dim); margin: 6px 0 16px; }
-  .plan ul { list-style: none; font-size: 14.5px; }
-  .plan li { padding: 5px 0 5px 24px; position: relative; color: var(--text-dim); }
-  .plan li::before { content: '✓'; position: absolute; left: 2px; color: var(--green); font-weight: 700; }
-  .plan .btn { margin-top: 18px; width: 100%; justify-content: center; }
-
-  .privacy {
-    margin-top: 44px; background: linear-gradient(180deg, var(--panel-hi), var(--panel-lo));
-    border-radius: 20px; padding: 40px 36px; color: rgba(255,255,255,0.8);
-  }
-  .privacy h2 { color: #fff; font-size: 24px; letter-spacing: -0.3px; }
-  .privacy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 24px; font-size: 14px; }
-  @media (max-width: 760px) { .privacy-grid { grid-template-columns: 1fr; } }
-  .privacy b { display: block; color: #fff; margin-bottom: 4px; font-size: 14.5px; }
-  .privacy span { color: rgba(255,255,255,0.55); }
-
-  .faq { max-width: 720px; margin: 40px auto 0; }
-  .faq-item {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 20px 24px; margin-bottom: 12px; box-shadow: var(--shadow);
-  }
-  .faq-item h3 { font-size: 15.5px; margin-bottom: 6px; }
-  .faq-item p { font-size: 14px; color: var(--text-dim); }
-
-  footer {
-    border-top: 1px solid var(--border); padding: 32px 0 44px; margin-top: 40px;
-    font-size: 13.5px; color: var(--text-dim);
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-  }
-
-  .rise { animation: rise .7s ease both; }
-  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  /* ---------- Screenshot showcase ---------- */
+  .shotwrap { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; margin-top: 36px; }
+  @media (max-width: 860px) { .shotwrap { grid-template-columns: 1fr; } }
+  .shotmock { position: relative; filter: drop-shadow(0 22px 38px rgba(20,20,40,0.13)); margin-bottom: 40px; }
+  .shotmock-doc { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 38px 24px 22px; position: relative; }
+  .shotmock-doc::before { content: '● ● ●'; position: absolute; top: 12px; left: 16px; font-size: 9px; letter-spacing: 3px; color: rgba(20,20,40,0.18); }
+  .shotmock-line { height: 9px; border-radius: 5px; background: rgba(20,20,40,0.07); margin: 11px 0; }
+  .shotmock-line.w60 { width: 60%; } .shotmock-line.w85 { width: 85%; }
+  .shotmock-sel { position: relative; border: 1.5px dashed var(--blue); border-radius: 8px; background: var(--blue-soft); padding: 9px 11px; margin: 13px 0; animation: shotpulse 2.6s ease infinite; }
+  @keyframes shotpulse { 0%,100% { border-color: rgba(59,130,246,.9); } 50% { border-color: rgba(59,130,246,.35); } }
+  .shotmock-sel .shotmock-line { background: rgba(59,130,246,0.22); margin: 7px 0; }
+  .shotmock-tag { position: absolute; top: -13px; right: 10px; background: var(--blue); color: #fff; font-size: 10.5px; font-weight: 700; border-radius: 6px; padding: 2px 8px; font-family: ui-monospace, 'SF Mono', monospace; }
+  .shotmock-result { position: absolute; right: -12px; bottom: -40px; width: 80%; background: linear-gradient(180deg, var(--panel-hi), var(--panel-lo)); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 13px 15px 11px; color: rgba(255,255,255,0.85); font-size: 12.5px; box-shadow: 0 18px 44px rgba(10,10,30,0.35); }
+  @media (max-width: 860px) { .shotmock-result { right: 0; } }
+  .shotmock-rt { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 7px; font-weight: 600; }
+  .shotmock-caret { display: inline-block; width: 7px; height: 13px; background: var(--blue); vertical-align: -2px; margin-left: 2px; border-radius: 1.5px; animation: shotblink 0.9s steps(1) infinite; }
+  @keyframes shotblink { 50% { opacity: 0; } }
+  .shotmock-input { margin-top: 9px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; font-size: 11.5px; color: rgba(255,255,255,0.4); }
+  .shotlist { list-style: none; font-size: 15px; color: var(--text-dim); }
+  .shotlist li { padding: 7px 0 7px 28px; position: relative; }
+  .shotlist li::before { content: '✓'; position: absolute; left: 4px; color: var(--green); font-weight: 700; }
 </style>
 </head>
 <body>
-<div class="wrap">
 
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-apple" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M19.1001 19.16C19.6901 18.26 19.9101 17.8 20.3601 16.79C17.0401 15.53 16.5101 10.8 19.7901 8.98999C18.7901 7.72999 17.3801 7 16.0501 7C15.0901 7 14.4301 7.25001 13.8401 7.48001C13.3401 7.67001 12.8901 7.84 12.3301 7.84C11.7301 7.84 11.2001 7.65001 10.6401 7.45001C10.0301 7.23001 9.39006 7 8.59006 7C7.10006 7 5.51007 7.91 4.50007 9.47C3.08007 11.67 3.33007 15.79 5.62007 19.31C6.44007 20.57 7.54007 21.98 8.97007 22C9.57007 22.01 9.96007 21.83 10.3901 21.64C10.8801 21.42 11.4101 21.18 12.3401 21.18C13.2701 21.17 13.7901 21.42 14.2801 21.64C14.7001 21.83 15.0801 22.01 15.6701 22C17.1201 21.98 18.2801 20.42 19.1001 19.16Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M15.8404 2C16.0004 3.1 15.5504 4.19001 14.9604 4.95001C14.3304 5.77001 13.2304 6.41 12.1704 6.37C11.9804 5.31 12.4704 4.21999 13.0704 3.48999C13.7404 2.68999 14.8704 2.07 15.8404 2Z" fill="currentColor"/></symbol>
+  <symbol id="i-windows" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M20.8 2.23949L12.8 3.83949C12.33 3.92949 12 4.3395 12 4.8195V9.9995C12 10.5495 12.45 10.9995 13 10.9995H21C21.55 10.9995 22 10.5495 22 9.9995V3.2195C22 2.5895 21.42 2.11949 20.8 2.23949Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M20.8 21.76L12.8 20.16C12.33 20.07 12 19.66 12 19.18V14C12 13.45 12.45 13 13 13H21C21.55 13 22 13.45 22 14V20.78C22 21.41 21.42 21.88 20.8 21.76Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M8.78998 4.55959L2.78998 5.82958C2.32998 5.92958 2 6.33959 2 6.80959V9.99959C2 10.5496 2.45 10.9996 3 10.9996H9C9.55 10.9996 10 10.5496 10 9.99959V5.52959C10 4.89959 9.40998 4.41959 8.78998 4.55959Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M8.78998 19.44L2.78998 18.17C2.32998 18.07 2 17.66 2 17.19V14C2 13.45 2.45 13 3 13H9C9.55 13 10 13.45 10 14V18.47C10 19.1 9.40998 19.58 8.78998 19.44Z" fill="currentColor"/></symbol>
+  <symbol id="i-android" viewBox="0 0 24 24"><path d="M11 18V21C11 21.55 10.55 22 10 22C9.45 22 9 21.55 9 21V18H11Z" fill="currentColor"/><path d="M15 18V21C15 21.55 14.55 22 14 22C13.45 22 13 21.55 13 21V18H15Z" fill="currentColor"/><path d="M17 11V16C17 17.1 16.1 18 15 18H9C7.9 18 7 17.1 7 16V11C7 9.9 7.9 9 9 9H15C16.1 9 17 9.9 17 11Z" fill="currentColor"/><path d="M5 11V15C5 15.55 4.55 16 4 16C3.45 16 3 15.55 3 15V11C3 10.45 3.45 10 4 10C4.55 10 5 10.45 5 11Z" fill="currentColor"/><path d="M21 11V15C21 15.55 20.55 16 20 16C19.45 16 19 15.55 19 15V11C19 10.45 19.45 10 20 10C20.55 10 21 10.45 21 11Z" fill="currentColor"/><path d="M9.59998 7.60001H14.4C15.28 7.60001 16 6.88 16 6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6C8 6.88 8.71998 7.60001 9.59998 7.60001Z" fill="currentColor"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M17 2H7C5.9 2 5 2.9 5 4V20C5 21.1 5.9 22 7 22H17C18.1 22 19 21.1 19 20V4C19 2.9 18.1 2 17 2ZM12 21C11.45 21 11 20.55 11 20C11 19.45 11.45 19 12 19C12.55 19 13 19.45 13 20C13 20.55 12.55 21 12 21ZM17 18H7V4H17V18Z" fill="currentColor"/></symbol>
+  <symbol id="i-quill-logo" viewBox="0 0 36 36"><path d="M4.32931 31.6789C5.09735 28.7446 6.10181 25.8671 8.40875 21.6093M8.40875 21.6093C12.9072 13.3066 18.7038 6.45709 29.6914 3.23457C30.1403 3.10293 30.5947 3.42625 30.6114 3.89368C31.0531 16.2473 19.8997 20.7027 8.40875 21.6093Z" stroke="currentColor" stroke-width="2.24252" stroke-linecap="round"/><path d="M19.8012 12.4725C21.8632 12.271 24.5561 12.2735 27.6994 12.8208C27.2071 13.5287 26.6875 14.1648 26.3207 14.5691C24.6958 13.7559 22.1193 13.0023 19.8012 12.4725Z" fill="currentColor" stroke="currentColor" stroke-width="1.49501" stroke-linecap="round"/><path d="M25.4521 9.00872C26.6109 8.86245 27.9481 8.78085 29.438 8.82057C29.2271 9.14879 29.0173 9.44196 28.8467 9.66334C27.9324 9.38611 26.7037 9.16846 25.4521 9.00872Z" fill="currentColor" stroke="currentColor" stroke-width="1.49501" stroke-linecap="round"/><path d="M9.40395 31.4048C11.1783 29.0871 16.5919 33.35 16.4682 30.3639C16.3017 26.342 20.8653 33.818 22.4741 30.8636C23.517 28.9483 22.242 25.2604 24.1092 25.1831C25.9764 25.1057 27.9827 28.3893 28.1219 31.7502" stroke="currentColor" stroke-width="2.24252" stroke-linecap="round"/></symbol>
+  <symbol id="i-fix" viewBox="0 0 24 24"><path d="M5.5 3C7.43 3 9 4.57 9 6.5C9 8.43 7.43 10 5.5 10C3.57 10 2 8.43 2 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 21C7.433 21 9 19.433 9 17.5C9 15.567 7.433 14 5.5 14C3.567 14 2 15.567 2 17.5C2 19.433 3.567 21 5.5 21Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.9984 6L8.64844 15.98" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.9984 17.9705L8.64844 7.98047" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-formal" viewBox="0 0 24 24"><path d="M21.3708 14L21.7108 10.43C21.9708 7.99 21.2708 6 17.0008 6H7.0008C2.7308 6 2.0308 7.99 2.3008 10.43L3.0508 18.43C3.2608 20.39 3.9808 22 8.0008 22H16.0008C20.0208 22 20.7408 20.39 20.9508 18.43" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V5.2C8 3.43 8 2 11.2 2H12.8C16 2 16 3.43 16 5.2V6" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 13V14C14 14.01 14 14.01 14 14.02C14 15.11 13.99 16 12 16C10.02 16 10 15.12 10 14.03V13C10 12 10 12 11 12H13C14 12 14 12 14 13Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.65 11C19.34 12.68 16.7 13.68 14 14.02" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.62109 11.2695C4.87109 12.8095 7.41109 13.7395 10.0011 14.0295" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-translate" viewBox="0 0 24 24"><path d="M19.0612 18.6703L16.9212 14.4004L14.7812 18.6703" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.1719 17.9102H18.6919" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.9216 21.0198C19.0816 21.6298 18.0515 21.9998 16.9315 21.9998C14.1315 21.9998 11.8516 19.7298 11.8516 16.9198C11.8516 14.1198 14.1215 11.8398 16.9315 11.8398C19.7315 11.8398 22.0116 14.1098 22.0116 16.9198" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.95 8.93024C12 11.0002 11 12.0003 8.92999 11.9503H5.00999C2.99999 12.0003 2 11.0002 2 8.93024V5.01025C2 2.99025 3 1.99023 5.02 1.99023H8.94C11.01 1.99023 12.01 2.99025 11.96 5.01025" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.01312 5.84961H4.95312" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.97266 5.16992V5.84991" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.99141 5.83984C7.99141 7.58984 6.62141 9.00983 4.94141 9.00983" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.01015 9.01001C8.28015 9.01001 7.62016 8.62 7.16016 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 15C2 18.87 5.13 22 9 22L7.95 20.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 9C22 5.13 18.87 2 15 2L16.05 3.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-summarize" viewBox="0 0 24 24"><path d="M11 19.5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12.5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 12.5H16.49" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5.5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21C6.10457 21 7 20.1046 7 19C7 17.8954 6.10457 17 5 17C3.89543 17 3 17.8954 3 19C3 20.1046 3.89543 21 5 21Z" fill="currentColor"/><path d="M5 14C6.10457 14 7 13.1046 7 12C7 10.8954 6.10457 10 5 10C3.89543 10 3 10.8954 3 12C3 13.1046 3.89543 14 5 14Z" fill="currentColor"/><path d="M5 7C6.10457 7 7 6.10457 7 5C7 3.89543 6.10457 3 5 3C3.89543 3 3 3.89543 3 5C3 6.10457 3.89543 7 5 7Z" fill="currentColor"/></symbol>
+  <symbol id="i-explain" viewBox="0 0 24 24"><path d="M13.2 21.3697C12.54 22.2497 11.46 22.2497 10.8 21.3697L9.29999 19.3697C9.12999 19.1497 8.77 18.9697 8.5 18.9697H8C4 18.9697 2 17.9697 2 12.9697V7.96973C2 3.96973 4 1.96973 8 1.96973H16C20 1.96973 22 3.96973 22 7.96973V12.9697" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.4 18.2C21.4 19.97 19.97 21.4 18.2 21.4C16.43 21.4 15 19.97 15 18.2C15 16.43 16.43 15 18.2 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 22L21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.9945 11H16.0035" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.9945 11H12.0035" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.99451 11H8.00349" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-custom" viewBox="0 0 24 24"><path d="M2 12.94V15C2 20 4 22 9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 8.89039C10.15 7.32039 13.85 7.32039 17 8.89039" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16.2997V7.92969" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M2.77017 18.25C2.89017 20.31 4.00017 22 6.76017 22H17.2402C20.0002 22 21.1002 20.31 21.2302 18.25L21.7502 9.99C21.8902 7.83 20.1702 6 18.0002 6C17.3902 6 16.8302 5.65 16.5502 5.11L15.8302 3.66C15.3702 2.75 14.1702 2 13.1502 2H10.8602C9.83017 2 8.63017 2.75 8.17017 3.66L7.45017 5.11C7.17017 5.65 6.61017 6 6.00017 6C3.83017 6 2.11017 7.83 2.25017 9.99L2.51017 14.06" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 8H13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18C13.79 18 15.25 16.54 15.25 14.75C15.25 12.96 13.79 11.5 12 11.5C10.21 11.5 8.75 12.96 8.75 14.75C8.75 16.54 10.21 18 12 18Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><path d="M4 6C2.75 7.67 2 9.75 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2C10.57 2 9.2 2.3 7.97 2.85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 10.38L16.12 9.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.87891 12L10.6189 14.75L13.1689 12.21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 8.5C10.9 8.5 10 9.4 10 10.5C10 11.6 10.9 12.5 12 12.5C13.1 12.5 14 11.6 14 10.5" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12.5V15.5" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.5902 7.11957C20.5902 5.88957 19.6502 4.52957 18.5002 4.09957L13.5102 2.22957C12.6802 1.91957 11.3202 1.91957 10.4902 2.22957L5.50016 4.10957C4.35016 4.53957 3.41016 5.89957 3.41016 7.11957V14.5496C3.41016 15.7296 4.19016 17.2796 5.14016 17.9896L9.44016 21.1996C10.8502 22.2596 13.1702 22.2596 14.5802 21.1996L18.8802 17.9896C19.8302 17.2796 20.6102 15.7296 20.6102 14.5496V11.0296" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><path d="M2 7.26001C2 3.70001 2.75 2.40003 5.52 2.09003C6.04 2.02003 6.61 2 7.27 2H16.74C17.39 2 17.97 2.02003 18.49 2.09003C21.26 2.40003 22.01 3.70001 22.01 7.26001V13.58C22.01 17.14 21.26 18.44 18.49 18.75C17.97 18.82 17.4 18.84 16.74 18.84H7.27C6.62 18.84 6.04 18.82 5.52 18.75C2.75 18.44 2 17.14 2 13.58V11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5781 8.32031H17.2581" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.73828 14.1104H6.75827H17.2683" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 22H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.19373 8.2998H7.20271" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.4945 8.2998H10.5035" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M20.0992 5.69035C21.6592 4.57035 22.4092 5.14035 21.7692 6.95035L17.7292 18.2604C17.5892 18.6604 17.1192 18.9904 16.6992 18.9904H7.29922C6.87922 18.9904 6.40922 18.6604 6.26922 18.2604L2.12922 6.67035C1.53922 5.01035 2.22922 4.50035 3.64922 5.52035L7.54922 8.31035C8.19922 8.76035 8.93922 8.53035 9.21922 7.80035L10.9792 3.11035C11.5392 1.61035 12.4692 1.61035 13.0292 3.11035L14.7892 7.80035C15.0692 8.53035 15.8092 8.76035 16.4492 8.31035L17.0792 7.86035" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 22H17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 14H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+
+<div class="navbar"><div class="wrap">
   <nav>
-    <div class="logo">
-      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4.32931 31.6789C5.09735 28.7446 6.10181 25.8671 8.40875 21.6093M8.40875 21.6093C12.9072 13.3066 18.7038 6.45709 29.6914 3.23457C30.1403 3.10293 30.5947 3.42625 30.6114 3.89368C31.0531 16.2473 19.8997 20.7027 8.40875 21.6093Z" stroke="currentColor" stroke-width="2.24252" stroke-linecap="round"/>
-        <path d="M9.40395 31.4048C11.1783 29.0871 16.5919 33.35 16.4682 30.3639C16.3017 26.342 20.8653 33.818 22.4741 30.8636C23.517 28.9483 22.242 25.2604 24.1092 25.1831C25.9764 25.1057 27.9827 28.3893 28.1219 31.7502" stroke="currentColor" stroke-width="2.24252" stroke-linecap="round"/>
-      </svg>
-      Quill
-    </div>
+    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill</div>
     <div class="nav-links">
-      <a href="#how">怎麼用</a>
-      <a href="#pricing">方案</a>
-      <a href="https://github.com/morpheuschenai/quill">GitHub</a>
-      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入等候名單</a>
+      <a href="#how">如何運作</a>
+      <a href="#features">功能</a>
+      <a href="#faq">常見問題</a>
+      <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
+      <a href="index.html" title="English version" style="font-size:13px;opacity:0.6">EN</a>
+      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
     </div>
   </nav>
+</div></div>
 
-  <!-- ░░ Hero ░░ -->
-  <header class="hero">
+<div class="wrap">
+  <main>
+  <header>
     <div class="hero-grid">
-      <div class="rise">
-        <h1>截圖問 AI,<br><span class="grad">答案當場出現。</span></h1>
-        <p class="hero-sub">
-          看不懂的畫面,框起來就好。按 <span class="kbd">⌃⌥I</span> 框選螢幕任何區域——
-          翻譯、萃取文字、解釋內容,結果直接浮在旁邊。<br>
-          不用存檔、不用切視窗、不用貼到 ChatGPT。
-        </p>
+      <div>
+        <div class="hero-title-wrap">
+          <h1 id="heroTitle" class="demo-unit" data-unit="title">AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span></h1>
+          <p class="demo-hint">上方標題有兩個錯字 — 選取後按一個快捷鍵修正</p>
+        </div>
+        <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">框選畫面問 AI，或選取文字直接改寫 —<br>結果當場出現。</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入等候名單</a>
-          <span class="hero-note">Quill Cloud 即將推出<br>前 50 名享一個月免費</span>
+          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
         </div>
-        <p class="hero-dev">開發者?<a href="https://github.com/morpheuschenai/quill">GitHub 開源版,自帶 API key →</a></p>
+        <div><button id="resetChip">↺ 重置標題</button></div>
       </div>
-
-      <div class="mock rise" style="animation-delay:.15s">
-        <div class="mock-doc">
-          <div class="mock-line w85"></div>
-          <div class="mock-line"></div>
-          <div class="selection">
-            <span class="sel-tag">⌃⌥I</span>
-            <div class="mock-line"></div>
-            <div class="mock-line w60"></div>
-          </div>
-          <div class="mock-line w85"></div>
-          <div class="mock-line w60"></div>
+      <div>
+      <div class="demo-panel">
+        <div class="tabs">
+          <button class="tab t-text" data-tab="text"><svg class="ic-svg"><use href="#i-fix"/></svg> 文字操作</button>
+          <button class="tab t-shot active" data-tab="shot"><svg class="ic-svg"><use href="#i-camera"/></svg> 截圖 AI</button>
         </div>
-        <div class="result">
-          <div class="result-title"><span>解釋這是什麼</span><span>✕</span></div>
-          <div class="result-body">
-            這段錯誤訊息的意思是:應用程式無法連上伺服器。可以先檢查網路設定,再重新啟動一次<span class="type-caret"></span>
-          </div>
-          <div class="result-input">追問…</div>
+        <div class="panel-body" id="panelBody">
+          <p id="panelDesc"></p>
+          <div class="hotkey-row"><span class="kbds" id="panelKeys"></span><span id="panelKeyNote"></span></div>
+          <button class="btn btn-primary" id="tryBtn"></button>
         </div>
+      </div>
+      <p class="hero-dev-link">開發者？<a href="https://github.com/morpheuschenai/quill">從 GitHub 原始碼建立 →</a></p>
       </div>
     </div>
   </header>
 
-  <!-- ░░ Steps ░░ -->
+  <section id="shot">
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-camera"/></svg> 主打功能</div>
+    <h2>截圖問 AI，答案當場出現。</h2>
+    <p class="sec-sub">看不懂的畫面框起來就好。不用存檔、不用切視窗、不用貼到聊天機器人。</p>
+    <div class="shotwrap">
+      <div class="shotmock">
+        <div class="shotmock-doc">
+          <div class="shotmock-line w85"></div>
+          <div class="shotmock-line"></div>
+          <div class="shotmock-sel">
+            <span class="shotmock-tag">⌃⌥I</span>
+            <div class="shotmock-line"></div>
+            <div class="shotmock-line w60"></div>
+          </div>
+          <div class="shotmock-line w85"></div>
+          <div class="shotmock-line w60"></div>
+        </div>
+        <div class="shotmock-result">
+          <div class="shotmock-rt"><span>解釋這是什麼</span><span>✕</span></div>
+          <div>這段錯誤訊息的意思是:應用程式無法連上伺服器。可以先檢查網路設定,再重新啟動一次<span class="shotmock-caret"></span></div>
+          <div class="shotmock-input">追問…</div>
+        </div>
+      </div>
+      <ul class="shotlist">
+        <li><b>外文網頁、原文報告</b> — 整段框選直接翻成中文</li>
+        <li><b>圖片裡的文字</b> — 擷取文字自動進剪貼簿</li>
+        <li><b>看不懂的錯誤訊息</b> — 直接問「這是什麼意思」</li>
+        <li><b>結果逐字串流</b> — 視窗釘在畫面上，可追問、可並排多開</li>
+      </ul>
+    </div>
+  </section>
+
   <section id="how">
-    <h2 class="sec-title">三步,答案就在眼前</h2>
-    <p class="sec-sub">把「截圖 → 切去 AI 網站 → 上傳 → 等待 → 切回來」壓縮成一個動作。</p>
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-keyboard"/></svg> 文字也一樣快</div>
+    <h2>三個步驟。零切換。</h2>
     <div class="steps">
       <div class="step">
-        <div class="step-num">1</div>
-        <h3>按 <span class="kbd">⌃⌥I</span> 框選</h3>
-        <p>任何 App、任何畫面——網頁、PDF、影片字幕、聊天視窗、程式錯誤訊息,框哪裡問哪裡。</p>
+        <div class="num">1</div>
+        <div class="step-mock sm-select">
+          <div class="sm-line">「求知若<span class="typo">肌</span>，<span class="sm-hl">虛心若愚。」</span></div>
+          <div class="sm-line sm-dim">— Steve Jobs，2005</div>
+        </div>
+        <div class="step-kbds"></div>
+        <h3>選取文字</h3>
+        <p>在任何 App 選取文字——Email、文件、PDF、瀏覽器、聊天視窗都行。</p>
       </div>
       <div class="step">
-        <div class="step-num">2</div>
-        <h3>選一個動作</h3>
-        <p>翻譯、萃取文字、摘要、解釋,或輸入任何自訂指令。常用動作可以自己加。</p>
+        <div class="num">2</div>
+        <div class="step-mock sm-menu">
+          <div class="sm-item sm-item-hi"><span class="sm-ic" style="color:#34d399"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-fix"/></svg></span>修正文字</div>
+          <div class="sm-item"><span class="sm-ic" style="color:#a78bfa"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-translate"/></svg></span>翻譯</div>
+          <div class="sm-item"><span class="sm-ic" style="color:#60a5fa"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-summarize"/></svg></span>摘要</div>
+          <div style="height:1px;background:rgba(255,255,255,0.09);margin:3px 4px"></div>
+          <div class="sm-item"><span class="sm-ic" style="color:#c084fc"><svg class="ic-svg" style="width:10px;height:10px"><use href="#i-custom"/></svg></span>自訂指令...</div>
+        </div>
+        <div class="step-kbds"></div>
+        <h3>按快捷鍵</h3>
+        <p>Quill 選單直接彈在選取文字旁。選一個動作，或輸入自訂指令。</p>
       </div>
       <div class="step">
-        <div class="step-num">3</div>
-        <h3>結果當場浮現</h3>
-        <p>逐字即時輸出,看不夠可以直接在視窗裡追問。視窗釘在畫面上,你關它才消失。</p>
+        <div class="num">3</div>
+        <div class="step-mock sm-result">
+          <div class="sm-line">「求知若飢，虛心若<span class="sm-fixed">愚。」</span></div>
+          <div class="sm-line sm-dim">— Steve Jobs，2005</div>
+          <div class="sm-check">✓ 已在原位改寫</div>
+        </div>
+        <div class="step-kbds"></div>
+        <h3>結果，就在原位</h3>
+        <p>可編輯欄位：AI 直接在原處改寫。唯讀內容：結果顯示在浮動視窗，逐字串流、可繼續追問。</p>
       </div>
     </div>
   </section>
 
-  <!-- ░░ Use cases ░░ -->
-  <section>
-    <h2 class="sec-title">這些時刻,框起來就好</h2>
-    <div class="cases">
-      <div class="case"><div class="case-emoji">🌐</div><div><b>外文網頁、原文報告</b><span>整段框選直接翻成中文,不用複製貼上。</span></div></div>
-      <div class="case"><div class="case-emoji">🧾</div><div><b>圖片裡的文字</b><span>發票、名片、簡報截圖——萃取文字自動進剪貼簿。</span></div></div>
-      <div class="case"><div class="case-emoji">⚠️</div><div><b>看不懂的錯誤訊息</b><span>「這是什麼意思?我該怎麼辦?」直接問,還能追問。</span></div></div>
-      <div class="case"><div class="case-emoji">📋</div><div><b>會議簡報變待辦</b><span>框住投影片,讓 AI 整理成行動清單。</span></div></div>
-    </div>
-  </section>
-
-  <!-- ░░ Text flow(secondary)░░ -->
-  <section>
-    <h2 class="sec-title">還能直接改你選取的文字</h2>
-    <p class="sec-sub">在任何輸入框選取文字,按 <span class="kbd">⌃⌥A</span>——修錯字、改語氣、翻譯,結果直接取代原文,不離開你正在用的 App。</p>
-  </section>
-
-  <!-- ░░ Privacy ░░ -->
-  <section>
-    <div class="privacy">
-      <h2>你的畫面,只去你允許的地方</h2>
-      <div class="privacy-grid">
-        <div><b>只在你按下快捷鍵時</b><span>Quill 不會在背景擷取任何畫面,截圖永遠由你主動觸發。</span></div>
-        <div><b>不留存、不訓練</b><span>內容只在取得 AI 回覆的當下傳輸,我們不儲存你的截圖與文字。</span></div>
-        <div><b>金鑰存在 Keychain</b><span>開源版自帶 API key,金鑰存於 macOS Keychain,程式碼全部公開可查。</span></div>
+  <section id="features">
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-fix"/></svg> 功能</div>
+    <h2>一個快捷鍵，所有 App。</h2>
+    <div class="features">
+      <div class="feat"><div class="ic" style="background:rgba(8,145,178,0.10);color:var(--cyan)"><svg class="ic-svg"><use href="#i-camera"/></svg></div><h3>截圖 AI</h3><p>框選任何畫面區域——擷取文字、描述內容、翻譯，結果視窗還能繼續追問。</p><button class="try" id="shotBtn">在這頁試試 →</button></div>
+      <div class="feat"><div class="ic" style="background:rgba(16,185,129,0.10);color:var(--green)"><svg class="ic-svg"><use href="#i-fix"/></svg></div><h3>原地改寫</h3><p>修正文法、調整語氣、翻譯——選取的文字直接在原位被替換，不需離開當前 App。</p></div>
+      <div class="feat"><div class="ic" style="background:var(--blue-soft);color:var(--blue)"><svg class="ic-svg"><use href="#i-summarize"/></svg></div><h3>分析任何內容</h3><p>摘要、解釋、擷取行動項目——適用於網頁、PDF 及其他唯讀文字。</p></div>
+      
+      <div class="feat feat-wide">
+        <div class="ic" style="background:rgba(124,92,240,0.10);color:var(--purple)"><svg class="ic-svg"><use href="#i-custom"/></svg></div>
+        <h3>自訂提示</h3>
+        <p>你的工作流程，你的語言。加入任何自訂系統提示，想建幾個就建幾個。</p>
+        <div class="prompt-ticker-h">
+          <div class="ticker-row r1">
+            <span class="ticker-pill">🎯 縮短這段文字</span>
+            <span class="ticker-pill">🌐 翻譯成英文</span>
+            <span class="ticker-pill">📋 擷取待辦事項</span>
+            <span class="ticker-pill">😄 加點幽默感</span>
+            <span class="ticker-pill">🔥 讓它更有力</span>
+            <span class="ticker-pill">🔍 仔細校對</span>
+            <span class="ticker-pill">📧 正式信件語氣</span>
+            <span class="ticker-pill">💼 主管摘要版本</span>
+            <span class="ticker-pill">🎯 縮短這段文字</span>
+            <span class="ticker-pill">🌐 翻譯成英文</span>
+            <span class="ticker-pill">📋 擷取待辦事項</span>
+            <span class="ticker-pill">😄 加點幽默感</span>
+            <span class="ticker-pill">🔥 讓它更有力</span>
+            <span class="ticker-pill">🔍 仔細校對</span>
+            <span class="ticker-pill">📧 正式信件語氣</span>
+            <span class="ticker-pill">💼 主管摘要版本</span>
+          </div>
+          <div class="ticker-row r2">
+            <span class="ticker-pill">🧒 用五歲小孩能懂的方式說</span>
+            <span class="ticker-pill">⚡ 壓縮成一則推文</span>
+            <span class="ticker-pill">🎭 改寫成對話格式</span>
+            <span class="ticker-pill">📊 加上條列重點</span>
+            <span class="ticker-pill">🎓 學術語氣</span>
+            <span class="ticker-pill">🌙 輕鬆日常語氣</span>
+            <span class="ticker-pill">💡 加上一個例子</span>
+            <span class="ticker-pill">🏃 讓它更有緊迫感</span>
+            <span class="ticker-pill">🧒 用五歲小孩能懂的方式說</span>
+            <span class="ticker-pill">⚡ 壓縮成一則推文</span>
+            <span class="ticker-pill">🎭 改寫成對話格式</span>
+            <span class="ticker-pill">📊 加上條列重點</span>
+            <span class="ticker-pill">🎓 學術語氣</span>
+            <span class="ticker-pill">🌙 輕鬆日常語氣</span>
+            <span class="ticker-pill">💡 加上一個例子</span>
+            <span class="ticker-pill">🏃 讓它更有緊迫感</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ░░ Pricing ░░ -->
   <section id="pricing">
-    <h2 class="sec-title">兩種用法</h2>
-    <p class="sec-sub">想要零設定就等 Quill Cloud;會用 API key 的現在就能免費開始。</p>
-    <div class="duo">
-      <div class="plan hi">
-        <span class="tag">即將推出</span>
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-tick"/></svg> 定價</div>
+    <h2>下載。安裝。完成。</h2>
+    <p class="sec-sub">不需 API Key，不需技術設定。加入候補名單，搶先體驗 Quill Cloud。</p>
+    <div class="plans-b">
+      <!-- Cloud — 2/3 width, featured -->
+      <div class="plan featured">
+        <span class="badge soon">即將推出</span>
         <h3>Quill Cloud</h3>
-        <div class="price">下載即用,免 API key・每天有免費額度</div>
+        <div class="plan-platforms">
+          <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS</span>
+          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-windows"/></svg> Windows</span>
+          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-phone"/></svg> iPhone</span>
+          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-android"/></svg> Android</span>
+        </div>
+        <div class="price">搶先體驗 — 加入候補名單</div>
         <ul>
-          <li>雙擊安裝,不用任何技術設定</li>
-          <li>每天免費使用額度,超過再升級</li>
-          <li>自動更新、優先支援</li>
-          <li>前 50 名等候名單成員,首月免費</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>下載後雙擊即可安裝，不需任何技術設定</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>不需 API Key — 每天免費額度，重度使用再升級</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自動更新</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>支援 Mail、備忘錄、Chrome、Slack 等所有 App</li>
         </ul>
-        <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入等候名單</a>
+        <p class="plan-note"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>前 50 位會員獲贈一個月免費使用 — 無需信用卡</p>
+        <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
       </div>
-      <div class="plan">
-        <h3>開源版</h3>
-        <div class="price">免費・MIT 授權・自帶 OpenAI 相容 API key</div>
-        <ul>
-          <li>功能完整,每一行程式碼公開</li>
-          <li>支援 OpenAI、Groq、OpenRouter、本機 Ollama</li>
-          <li>需要 Xcode 自行建置</li>
-        </ul>
-        <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill">GitHub 建置指南</a>
+      <!-- OSS — 1/3 width, minimal -->
+      <div class="plan-mini">
+        <div class="sec-label" style="color:var(--green);margin-bottom:10px"><svg class="ic-svg"><use href="#i-tick"/></svg> MIT 授權</div>
+        <h3>開放原始碼</h3>
+        <p class="mini-desc">自備 API Key，完全掌控，無需訂閱。</p>
+        <p class="mini-note">需要 Xcode + Apple Developer 帳號</p>
+        <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill">在 GitHub 查看 →</a>
       </div>
     </div>
   </section>
 
-  <!-- ░░ FAQ ░░ -->
-  <section>
-    <h2 class="sec-title">常見問題</h2>
-    <div class="faq">
-      <div class="faq-item"><h3>Quill Cloud 什麼時候推出?</h3><p>正在最後開發階段。加入等候名單就排進 beta 測試順位,公開上線前會先聯絡早期成員,前 50 名享首月免費。</p></div>
-      <div class="faq-item"><h3>支援哪些 Mac?</h3><p>macOS 13 以上,Intel 與 Apple Silicon 都支援——不需要 Apple Intelligence,舊 Mac 也能用。</p></div>
-      <div class="faq-item"><h3>跟直接用 ChatGPT 差在哪?</h3><p>省掉整個切換流程:不用截圖存檔、不用切視窗、不用上傳貼上。在原本的畫面上框選、當場看到答案,還能就地追問。</p></div>
-      <div class="faq-item"><h3>我的截圖會被存起來嗎?</h3><p>不會。內容只在取得 AI 回覆的當下傳輸,Quill 不留存、不用於訓練。開源版更是直連你自己設定的 AI 服務。</p></div>
-      <div class="faq-item"><h3>需要什麼權限?</h3><p>「螢幕錄製」(截圖用)與「輔助使用」(讀取選取文字用)。首次啟動有引導精靈一步步帶你完成。</p></div>
+  <section id="privacy">
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-shield"/></svg> 隱私</div>
+    <h2>你的資料不繞道。</h2>
+    <p class="sec-sub">內容只為取得 AI 回覆而傳輸 — 不留存、不訓練、不追蹤。</p>
+    <div class="privacy-list">
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>不留存你的內容。</b> <span>開源版直連你設定的 AI 服務；Quill Cloud 也承諾不儲存你的截圖與文字、不用於訓練。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>不需要帳號。</b> <span>不需要註冊、沒有個人資料、我們這邊不儲存任何資料。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>零追蹤。</b> <span>沒有使用數據、沒有分析，什麼紀錄都不收集。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>剪貼板安全。</b> <span>若 Quill 需要透過剪貼板讀取文字，完成後會自動還原你原本的內容。</span></span></div>
     </div>
   </section>
+
+  <section id="faq">
+    <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> 常見問題</div>
+    <h2>常見問題，一次說清。</h2>
+    <div class="faq-item"><h3>Quill Cloud 什麼時候上線？</h3><p>我們正在開發中。加入候補名單代表你排在 beta 測試的前列——正式公開前，我們會優先通知早期會員。</p></div>
+    <div class="faq-item"><h3>加入候補名單可以獲得什麼？</h3><p>公開前的 beta 搶先體驗，以及直接影響產品開發方向的機會。名額到了，我們會寄送邀請連結給你。</p></div>
+    <div class="faq-item"><h3>Quill 支援哪些 Mac App？</h3><p>幾乎所有 App 都支援——Mail、備忘錄、Pages、訊息、Slack、Safari、Chrome 等。Quill 讀取你選取的文字後直接在原位改寫，唯讀 App（如 PDF）則在浮動面板顯示結果。</p></div>
+    <div class="faq-item"><h3>Quill 需要哪些權限？</h3><p>「螢幕錄製」（截圖用）與「輔助使用」（讀取選取文字用）。首次啟動的引導精靈會一步步帶你完成，各授權一次即可，不會存取其他任何資料。</p></div>
+    <div class="faq-item"><h3>舊 Mac 能用嗎？</h3><p>macOS 13 以上都支援，Intel 與 Apple Silicon 皆可——不需要 Apple Intelligence。</p></div>
+    <div class="faq-item"><h3>加入候補名單是免費的嗎？</h3><p>完全免費——不需信用卡，沒有任何承諾。我們會在 beta 開放前分享定價細節。</p></div>
+    <div class="faq-item"><h3>標題的 demo 有真的呼叫 API 嗎？</h3><p>沒有——這個頁面的互動是腳本模擬，用來呈現真實的操作流程。真正的 App 會將你的選取內容送到你設定的 AI 模型。</p></div>
+  </section>
+
+  <section class="cta">
+    <h2>別再複製貼上進聊天機器人了。</h2>
+    <p class="sec-sub" style="margin:0 auto">框選畫面或選取文字，按一個快捷鍵 — 答案當場出現，不用離開你正在用的 App。</p>
+    <p class="cta-note">前 50 位會員獲贈一個月免費使用 · 無需信用卡</p>
+    <div class="btns">
+      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">加入候補名單</a>
+    </div>
+  </section>
+  </main>
 
   <footer>
-    <div>© 2026 Quill</div>
-    <div><a href="https://github.com/morpheuschenai/quill">GitHub</a> · <a href="https://tally.so/r/68VMRP">等候名單</a> · <a href="index-en-v3.html">English</a></div>
+    <div>Quill — MIT 授權 · 開放原始碼 · <a href="https://github.com/morpheuschenai/quill">GitHub</a></div>
+    <div><a href="https://github.com/morpheuschenai/quill/issues">問題回報</a> · <a href="index-en-v3.html">EN</a></div>
   </footer>
-
 </div>
+
+<!-- Floating UI -->
+<div id="hintBubble"><svg class="ic-svg" style="width:13px;height:13px;display:inline-block;vertical-align:-1px"><use href="#i-fix"/></svg> 修正 — 或按 <kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
+<div id="quillMenu"></div>
+<div id="resultPanel"><h4><span id="resultTitle">結果</span><button id="resultClose">✕</button></h4><div id="resultBody"></div></div>
+<div id="shotOverlay"><div class="shot-tip">拖曳選取區域 — <b>Esc</b> 取消</div></div>
+<div id="marquee"></div>
+
+<script>
+(function () {
+  const UNITS = {
+    title: {
+      origHTML: 'AI <span class="typo">動坐</span>，<br>就在你<span class="typo">需耍</span><span class="grad">的地方出現。</span>',
+      fixHTML:  'AI <span class="fixed">動作</span>，<br>就在你<span class="fixed">需要</span><span class="grad">的地方出現。</span>',
+      en:     'AI actions, right where you need them.',
+      formal: '人工智慧功能，精準呈現於您所需之處。',
+      emoji:  '✨ AI 動作，📍 就在你需要的地方出現！🚀'
+    },
+    sub: {
+      origHTML: '框選畫面問 AI，或選取文字直接改寫 — 結果當場出現。',
+      fixHTML:  '框選畫面問 AI，或選取文字直接改寫 — 結果當場出現。',
+      en:     'Frame any part of your screen and ask AI — answers appear right there.',
+      formal: '可框選螢幕任意區域交由 AI 分析，或選取文字逕行改寫，結果即時呈現。',
+      emoji:  '📸 框選畫面問 AI，✍️ 選字直接改寫 — ⚡ 結果當場出現！'
+    }
+  };
+  const SUMMARY = '• 快捷鍵在所有 App 都有效\n• 文字直接在原位轉換\n• 開放原始碼——可查核，可擴充';
+
+  const units     = [...document.querySelectorAll('.demo-unit')];
+  const hint      = document.getElementById('hintBubble');
+  const menu      = document.getElementById('quillMenu');
+  const panel     = document.getElementById('resultPanel');
+  const resetChip = document.getElementById('resetChip');
+  let selectedKeys = [];
+  let anchor = { x: innerWidth / 2, y: 200 };
+
+  function selectionInHero() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    const keys = units.filter(u => range.intersectsNode(u)).map(u => u.dataset.unit);
+    return keys.length ? { keys, rect: range.getBoundingClientRect() } : null;
+  }
+
+  function refreshHint() {
+    const found = selectionInHero();
+    if (found) {
+      selectedKeys = found.keys;
+      anchor = { x: found.rect.left + found.rect.width / 2, y: found.rect.bottom };
+      hint.style.display = 'block';
+      const w = hint.offsetWidth || 220;
+      hint.style.left = Math.min(Math.max(anchor.x - w / 2, 12), innerWidth - w - 12) + 'px';
+      hint.style.top  = (found.rect.bottom + 12) + 'px';
+    } else if (menu.style.display !== 'block') {
+      hint.style.display = 'none';
+    }
+  }
+  document.addEventListener('mouseup', e => {
+    if (hint.contains(e.target) || menu.contains(e.target)) return;
+    setTimeout(refreshHint, 10);
+  });
+  document.addEventListener('touchend', () => setTimeout(refreshHint, 150));
+
+  const ACTIONS = [
+    { key: 'fixdemo', label: '修正文字',      icon: 'i-fix',       color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
+    { key: 'formal',  label: '正式語氣',      icon: 'i-formal',    color: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
+    { key: 'en',      label: '翻譯成英文',    icon: 'i-translate', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+    { key: 'sum',     label: '摘要',          icon: 'i-summarize', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
+    { key: 'emoji',   label: '加表情 🎉',      icon: 'i-custom',    color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
+  ];
+
+  function showMenu(x, y, actions, onPick, note) {
+    menu.innerHTML = '';
+    actions.forEach(a => {
+      const row = document.createElement('div');
+      row.className = 'menu-row';
+      const ic = document.createElement('span');
+      ic.className = 'menu-ic';
+      ic.style.color = a.color; ic.style.background = a.bg;
+      ic.innerHTML = `<svg class="ic-svg"><use href="#${a.icon}"/></svg>`;
+      row.appendChild(ic);
+      row.appendChild(document.createTextNode(a.label));
+      row.addEventListener('pointerdown', e => e.preventDefault());
+      row.addEventListener('click', () => { hideMenu(); onPick(a.key); });
+      menu.appendChild(row);
+    });
+    if (note) {
+      const div = document.createElement('div'); div.className = 'menu-div'; menu.appendChild(div);
+      const n = document.createElement('div'); n.className = 'menu-note'; n.textContent = note; menu.appendChild(n);
+    }
+    menu.style.display = 'block';
+    const w = 238, h = menu.offsetHeight;
+    menu.style.left = Math.min(Math.max(x - w / 2, 12), innerWidth - w - 12) + 'px';
+    menu.style.top  = (y + h + 24 > innerHeight ? Math.max(y - h - 12, 12) : y + 12) + 'px';
+  }
+  function hideMenu() { menu.style.display = 'none'; }
+
+  function openTextMenu() {
+    if (!selectedKeys.length) {
+      selectedKeys = ['title'];
+      const r = document.getElementById('heroTitle').getBoundingClientRect();
+      anchor = { x: r.left + r.width / 2, y: r.bottom };
+    }
+    hint.style.display = 'none';
+    showMenu(anchor.x, anchor.y, ACTIONS, applyAction, '');
+  }
+
+  hint.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); openTextMenu(); });
+
+  const TABS = {
+    text: { desc: '選取標題文字，修正、翻譯或摘要。標題裡故意留了兩個錯別字——你來修。', keys: ['⌃', '⌥', 'A'], cta: '修正標題' },
+    shot: { desc: '在畫面上框選一個區域，擷取文字、描述內容或翻譯。現在就試試看。', keys: ['⌃', '⌥', 'I'], cta: '截取這個頁面' }
+  };
+  let activeTab = 'shot';
+
+  function renderPanel() {
+    const d = TABS[activeTab];
+    document.getElementById('panelDesc').textContent = d.desc;
+    document.getElementById('panelKeys').innerHTML = d.keys.map(k => `<kbd>${k}</kbd>`).join('');
+    document.getElementById('panelKeyNote').textContent = '預設快捷鍵，可在偏好設定中修改';
+    document.getElementById('tryBtn').textContent = d.cta;
+    document.querySelectorAll('.tab').forEach(tb => tb.classList.toggle('active', tb.dataset.tab === activeTab));
+    const body = document.getElementById('panelBody');
+    body.style.animation = 'none'; void body.offsetWidth; body.style.animation = '';
+  }
+  document.querySelectorAll('.tab').forEach(tb => { tb.addEventListener('click', () => { activeTab = tb.dataset.tab; renderPanel(); }); });
+  renderPanel();
+
+  function runTextDemo() {
+    const titleEl = document.getElementById('heroTitle');
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    const range = document.createRange();
+    range.selectNodeContents(titleEl);
+    sel.addRange(range);
+    selectedKeys = ['title'];
+    const r = titleEl.getBoundingClientRect();
+    anchor = { x: r.left + r.width / 2, y: r.bottom };
+    setTimeout(openTextMenu, 50);
+  }
+  document.getElementById('tryBtn').addEventListener('click', () => { activeTab === 'text' ? runTextDemo() : enterShot(); });
+
+  function typeInto(el, text) {
+    el.classList.remove('working');
+    el.textContent = '';
+    let i = 0;
+    (function tick() { el.textContent = text.slice(0, ++i); if (i < text.length) setTimeout(tick, 14); })();
+  }
+
+  function applyAction(key) {
+    window.getSelection().removeAllRanges();
+    if (key === 'sum') { showPanel('摘要', SUMMARY); return; }
+    const els = selectedKeys.map(k => document.querySelector(`.demo-unit[data-unit="${k}"]`));
+    if (key === 'fixdemo') {
+      const targets = els.filter(el => el.querySelector('.typo'));
+      if (!targets.length) { showPanel('修正文字', '這裡沒有需要修正的——錯別字在上面的標題。😉'); return; }
+      targets.forEach(el => el.classList.add('working'));
+      setTimeout(() => {
+        targets.forEach(el => { el.classList.remove('working'); el.innerHTML = UNITS[el.dataset.unit].fixHTML; });
+        resetChip.style.display = 'inline';
+      }, 600);
+      return;
+    }
+    els.forEach(el => el.classList.add('working'));
+    setTimeout(() => {
+      els.forEach((el, n) => setTimeout(() => typeInto(el, UNITS[el.dataset.unit][key]), n * 140));
+      resetChip.style.display = 'inline';
+    }, 600);
+  }
+
+  resetChip.addEventListener('click', () => {
+    units.forEach(u => { u.innerHTML = UNITS[u.dataset.unit].origHTML; u.classList.remove('working'); });
+    resetChip.style.display = 'none';
+  });
+
+  function showPanel(title, text) {
+    document.getElementById('resultTitle').textContent = title;
+    const body = document.getElementById('resultBody');
+    panel.style.display = 'block';
+    const w = Math.min(380, innerWidth * 0.88);
+    panel.style.left = Math.min(Math.max(anchor.x - w / 2, 12), innerWidth - w - 12) + 'px';
+    panel.style.top  = Math.min(anchor.y + 12, innerHeight - 240) + 'px';
+    body.textContent = '';
+    let i = 0;
+    (function tick() { body.textContent = text.slice(0, i += 3); if (i < text.length) setTimeout(tick, 12); })();
+  }
+  document.getElementById('resultClose').addEventListener('click', () => panel.style.display = 'none');
+
+  const overlay = document.getElementById('shotOverlay');
+  const marquee = document.getElementById('marquee');
+  let drag = null;
+  function enterShot() { hideMenu(); panel.style.display = 'none'; hint.style.display = 'none'; overlay.style.display = 'block'; }
+  function exitShot()  { overlay.style.display = 'none'; marquee.style.display = 'none'; drag = null; }
+  document.getElementById('shotBtn').addEventListener('click', enterShot);
+  overlay.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY }; });
+  overlay.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const r = rectFrom(drag, e);
+    marquee.style.display = 'block';
+    Object.assign(marquee.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+  });
+  overlay.addEventListener('mouseup', e => {
+    if (!drag) return;
+    const r = rectFrom(drag, e); drag = null;
+    if (r.w < 24 || r.h < 16) { exitShot(); return; }
+    overlay.style.display = 'none';
+    anchor = { x: r.x + r.w / 2, y: r.y + r.h };
+    showMenu(anchor.x, anchor.y, [
+      { key: 'extract',   label: '擷取文字',   icon: 'i-keyboard',  color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
+      { key: 'summarize', label: '摘要',        icon: 'i-summarize', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
+      { key: 'translate', label: '翻譯成英文',  icon: 'i-translate', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+      { key: 'describe',  label: '描述此區域',  icon: 'i-explain',   color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
+    ], key => {
+      marquee.style.display = 'none';
+      if (key === 'extract')   showPanel('擷取文字', extractText(r) || '（此區域無文字）');
+      if (key === 'summarize') showPanel('摘要', summarizeRegion(r));
+      if (key === 'translate') showPanel('翻譯', translateRegion(r));
+      if (key === 'describe')  showPanel('區域描述', describeRegion(r));
+    }, '');
+  });
+  function rectFrom(a, e) { return { x: Math.min(a.x, e.clientX), y: Math.min(a.y, e.clientY), w: Math.abs(a.x - e.clientX), h: Math.abs(a.y - e.clientY) }; }
+
+  function extractText(r) {
+    const out = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => n.textContent.trim() && !['SCRIPT','STYLE'].includes(n.parentElement?.tagName) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+    });
+    let node;
+    while ((node = walker.nextNode())) {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const cr of range.getClientRects()) {
+        const overlap = Math.max(0, Math.min(cr.right, r.x + r.w) - Math.max(cr.left, r.x)) * Math.max(0, Math.min(cr.bottom, r.y + r.h) - Math.max(cr.top, r.y));
+        if (overlap > cr.width * cr.height * 0.5) { out.push(node.textContent.trim()); break; }
+      }
+    }
+    return [...new Set(out)].join('\n');
+  }
+
+  function summarizeRegion(r) {
+    const intersects = el => { const b = el.getBoundingClientRect(); return b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y; };
+    const bullets = [];
+    document.querySelectorAll('h1, h2, h3').forEach(el => {
+      if (intersects(el)) { const t = el.textContent.trim().replace(/\s+/g, ' '); if (t && !bullets.includes('• ' + t)) bullets.push('• ' + t.slice(0, 70)); }
+    });
+    const counts = [['.feat', '功能卡片'],['.step', '步驟'],['.plan', '定價方案'],['.faq-item', 'FAQ 條目']].map(([sel, name]) => {
+      const n = [...document.querySelectorAll(sel)].filter(intersects).length; return n ? `• ${n} 個${name}` : null;
+    }).filter(Boolean);
+    bullets.push(...counts);
+    if (!bullets.length) { const lines = (extractText(r) || '').split('\n').filter(Boolean).slice(0, 3); if (!lines.length) return '（此區域無內容可摘要）'; return lines.map(l => '• ' + l.slice(0, 70)).join('\n'); }
+    return bullets.slice(0, 6).join('\n');
+  }
+
+  function describeRegion(r) {
+    const hits = [];
+    document.querySelectorAll('h1, h2, h3, table, .feat, .step, .plan').forEach(el => {
+      const b = el.getBoundingClientRect();
+      if (b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y)
+        hits.push(el.tagName === 'TABLE' ? '一個相容性表格' : el.classList.contains('feat') ? '一張功能卡片' : el.classList.contains('step') ? '一個步驟說明' : el.classList.contains('plan') ? '一張定價卡片' : '"' + el.textContent.trim().replace(/\s+/g, ' ').slice(0, 60) + '"');
+    });
+    return hits.length ? 'Quill 網站的一個區域，包含 ' + [...new Set(hits)].slice(0, 4).join('、') + '。淺色主題，藍色強調色。' : 'Quill 網站的一個淺色主題區域，無顯著內容。';
+  }
+
+  const EN = {
+    'AI 動坐，就在你需耍的地方出現。': '(原文故意留了兩個錯字 😉)\nAI actions, right where you need them.',
+    'AI 動作，就在你需要的地方出現。': 'AI actions, right where you need them.',
+    '在任何 App 修正、翻譯或摘要文字——只要一個快捷鍵。': 'Fix, translate, or summarize text in any app — with one hotkey.',
+    '三個步驟。零切換。': 'Three steps. Zero context switching.',
+    '一個快捷鍵，所有 App。': 'One hotkey, every app.',
+    '自己建？免費。不想搞？開箱即用。': 'Free for tinkerers. Effortless for everyone else.',
+    '你的資料不繞道。': 'Your data never takes a detour.',
+    '常見問題，一次說清。': 'Questions, answered.',
+    '別再複製貼上進聊天機器人了。': 'Stop copy-pasting into chatbots.',
+    '就地改寫': 'Rewrite in place',
+    '分析任何內容': 'Analyze anything',
+    '截圖 AI': 'Screenshot AI',
+    '自訂 prompt': 'Custom prompts',
+    '開放原始碼': 'Open source',
+    'Quill Cloud': 'Quill Cloud',
+    '免費、開源、可審閱。': 'Free, open source, and yours to audit.',
+  };
+
+  function translateRegion(r) {
+    const intersects = el => { const b = el.getBoundingClientRect(); return b.width > 0 && b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y; };
+    const out = [];
+    document.querySelectorAll('h1, h2, h3, p, li, th, td, .sec-label, .price, .badge, .tab, button.try').forEach(el => {
+      if (!intersects(el)) return;
+      const key = el.textContent.trim().replace(/\s+/g, ' ');
+      const en = EN[key];
+      if (en && !out.includes(en)) out.push(en);
+    });
+    if (!out.length) return '(This demo translates the page\'s own copy — try framing a headline or a section.)';
+    return out.slice(0, 8).join('\n');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Escape' || e.key === 'Escape') { exitShot(); hideMenu(); panel.style.display = 'none'; return; }
+    if (!(e.ctrlKey && e.altKey)) return;
+    if (e.code === 'KeyA') { e.preventDefault(); openTextMenu(); }
+    if (e.code === 'KeyI') { e.preventDefault(); enterShot(); }
+  });
+  document.addEventListener('pointerdown', e => {
+    if (!menu.contains(e.target) && !hint.contains(e.target)) hideMenu();
+    if (!panel.contains(e.target)) panel.style.display = 'none';
+  });
+
+  const b1 = document.querySelector('.b1'), b2 = document.querySelector('.b2'), b3 = document.querySelector('.b3');
+  let ticking = false;
+  function parallax() { const y = scrollY; b1.style.transform = `translateY(${y * 0.18}px)`; b2.style.transform = `translateY(${y * -0.12}px)`; b3.style.transform = `translateY(${y * 0.08}px)`; ticking = false; }
+  addEventListener('scroll', () => { if (!ticking) { requestAnimationFrame(parallax); ticking = true; } }, { passive: true });
+
+  document.querySelectorAll('.faq-item h3').forEach(h3 => {
+    h3.addEventListener('click', () => h3.closest('.faq-item').classList.toggle('open'));
+  });
+
+  const revealEls = document.querySelectorAll('.sec-label, h2, .sec-sub, .step, .feat, .plan, .privacy-item, .faq-item, .cta .btns');
+  if ('IntersectionObserver' in window) {
+    revealEls.forEach(el => el.classList.add('reveal'));
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        const el = en.target;
+        const siblings = [...el.parentElement.children].filter(c => c.classList.contains('reveal'));
+        el.style.transitionDelay = (siblings.indexOf(el) % 6) * 70 + 'ms';
+        el.classList.add('visible'); io.unobserve(el);
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(el => io.observe(el));
+  }
+  document.querySelectorAll('.feat, .plan').forEach(card => {
+    card.addEventListener('mousemove', e => { const b = card.getBoundingClientRect(); card.style.setProperty('--mx', (e.clientX - b.left) + 'px'); card.style.setProperty('--my', (e.clientY - b.top) + 'px'); });
+  });
+
+})();
+</script>
 </body>
 </html>
