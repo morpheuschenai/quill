@@ -9,11 +9,11 @@ Quill App ──(共享密鑰 + 裝置ID)──▶ Railway 服務(Hono)
                                         ├ 裝置每日額度(Redis,預設 10 次/天)
                                         ├ 全域每日上限(Redis,預設 5000 次/天,保護錢包)
                                         │
-                                        └ 全部走 Claude Haiku(Anthropic)
-                                          App 送 OpenAI 格式 → 後端轉 Anthropic → 再轉回
+                                        └ 全部走 OpenAI gpt-4o-mini(vision + 文字)
+                                          OpenAI 原生相容格式,pass-through 即可
 ```
 
-免費期成本由 Anthropic credit 出。真實金鑰只存在 Railway 環境變數,永不進 App、不進 git。
+真實金鑰只存在 Railway 環境變數,永不進 App、不進 git。
 
 ## 部署到 Railway(約 10 分鐘)
 
@@ -24,9 +24,9 @@ Quill App ──(共享密鑰 + 裝置ID)──▶ Railway 服務(Hono)
 3. **設環境變數**(專案 → Variables):
    ```
    QUILL_APP_SECRET = <自訂一組長隨機字串,要和 App 內建值相同>
-   ANTHROPIC_KEY    = <你的 Anthropic API key,console.anthropic.com>
+   OPENAI_KEY       = <你的 OpenAI API key,platform.openai.com>
    ```
-   選填(有預設值):`DAILY_LIMIT=10`、`GLOBAL_DAILY_CAP=5000`、`ANTHROPIC_MODEL=claude-haiku-4-5`
+   選填(有預設值):`DAILY_LIMIT=10`、`GLOBAL_DAILY_CAP=5000`、`OPENAI_MODEL=gpt-4o-mini`
 4. Railway 用 `npm start`(= `tsx src/index.ts`)自動啟動,產生一個 `*.up.railway.app` 網址。
 5. 把網址 + `/v1` 填進 App 端 `CloudConfig.endpoint`,把 `QUILL_APP_SECRET` 填進 `CloudConfig.appSecret`。
 
@@ -36,7 +36,7 @@ Quill App ──(共享密鑰 + 裝置ID)──▶ Railway 服務(Hono)
 cd cloud
 npm install
 # 需要本機 Redis(brew install redis && redis-server),或跳過額度測試
-QUILL_APP_SECRET=test-secret-123 ANTHROPIC_KEY=你的key npm start
+QUILL_APP_SECRET=test-secret-123 OPENAI_KEY=你的key npm start
 # 服務起在 http://localhost:8787
 ```
 

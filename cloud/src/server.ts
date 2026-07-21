@@ -5,24 +5,19 @@
  *   Authorization: Bearer <QUILL_APP_SECRET>   共享密鑰
  *   X-Quill-Device: <匿名裝置 UUID>            每日額度用
  *
- * 免費期一律走 Claude(Anthropic),成本由 $100 Anthropic credit 出。
- * App 送 OpenAI 格式,後端轉成 Anthropic 格式再轉回來(見 anthropic.ts)。
+ * 免費期一律走 OpenAI(gpt-4o-mini,vision + 文字同一顆)。
+ * OpenAI 原生就是 OpenAI 相容格式,所以只需覆寫 model + 換上游 key,pass-through。
  *
  * 三道防線:共享密鑰、裝置每日額度(Redis,預設 10)、全域每日上限(Redis)。
  *
  * createApp 接受可注入的 redis / fetchImpl,方便單元測試。
  */
 import { Hono } from "hono";
-import {
-  buildAnthropicCall,
-  anthropicStreamToOpenAI,
-  anthropicToOpenAIResponse,
-} from "./anthropic.ts";
 
 export interface QuillEnv {
   QUILL_APP_SECRET: string;
-  ANTHROPIC_KEY: string;
-  ANTHROPIC_MODEL?: string;   // 預設 claude-haiku-4-5
+  OPENAI_KEY: string;
+  OPENAI_MODEL?: string;      // 預設 gpt-4o-mini
   DAILY_LIMIT?: string;       // 每裝置每日,預設 10
   GLOBAL_DAILY_CAP?: string;  // 全域每日,預設 5000
 }
@@ -37,6 +32,8 @@ export interface Deps {
   env: QuillEnv;
   fetchImpl?: typeof fetch;
 }
+
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -54,7 +51,7 @@ export function createApp({ redis, env, fetchImpl }: Deps): Hono {
   const doFetch = fetchImpl ?? fetch;
   const dailyLimit = parseInt(env.DAILY_LIMIT || "10", 10);
   const globalCap = parseInt(env.GLOBAL_DAILY_CAP || "5000", 10);
-  const model = env.ANTHROPIC_MODEL || "claude-haiku-4-5";
+  const model = env.OPENAI_MODEL || "gpt-4o-mini";
 
   app.get("/health", (c) => c.text("ok"));
 
@@ -96,37 +93,35 @@ export function createApp({ redis, env, fetchImpl }: Deps): Hono {
     } catch {
       return errJSON("Invalid request body.", 400);
     }
+    body.model = model; // 統一模型,忽略 App 送來的
     const isStream = body?.stream === true;
 
-    // ── 轉成 Anthropic 格式呼叫 Claude ──
-    const call = buildAnthropicCall(body, env.ANTHROPIC_KEY, model);
     let upstream: Response;
     try {
-      upstream = await doFetch(call.url, { method: "POST", headers: call.headers, body: call.body });
+      upstream = await doFetch(OPENAI_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.OPENAI_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
     } catch {
       return errJSON("Upstream connection failed.", 502);
     }
 
     if (!upstream.ok) {
+      // 不回傳上游原文(可能含金鑰線索)
       return errJSON(
         `AI 服務暫時無法回應(${upstream.status})。請稍後再試。`,
         upstream.status >= 500 ? 502 : 400
       );
     }
 
-    if (isStream && upstream.body) {
-      // Anthropic SSE → OpenAI SSE,邊收邊轉
-      return new Response(anthropicStreamToOpenAI(upstream.body), {
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    }
-
-    // 非串流:轉成 OpenAI 回應格式
-    const json = await upstream.json();
-    return new Response(JSON.stringify(anthropicToOpenAIResponse(json)), {
+    // OpenAI 相容:串流與非串流都原樣 pass-through
+    return new Response(upstream.body, {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": isStream ? "text/event-stream" : "application/json" },
     });
   });
 
