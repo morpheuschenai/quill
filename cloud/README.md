@@ -17,7 +17,7 @@ Quill App ──(共享密鑰 + 裝置ID)──▶ Railway 服務(Hono)
 
 ## 部署到 Railway(約 10 分鐘)
 
-前置:[Railway 帳號](https://railway.app)、一把 [Gemini key](https://aistudio.google.com/apikey)、一把 [OpenAI key](https://platform.openai.com/api-keys)。
+前置:[Railway 帳號](https://railway.app)、一把 [OpenAI key](https://platform.openai.com/api-keys)。
 
 1. **建立專案**:Railway → New Project → Deploy from GitHub repo,選這個 repo,Root Directory 設 `cloud/`。
 2. **加 Redis**:專案內 → New → Database → Redis(Railway 會自動注入 `REDIS_URL`)。
