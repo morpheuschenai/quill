@@ -2,14 +2,17 @@
   "name": "quill-cloud",
   "version": "0.1.0",
   "private": true,
-  "description": "Quill Cloud — Cloudflare Worker proxying Gemini with per-device daily quota",
+  "type": "module",
+  "description": "Quill Cloud — Hono service on Railway, tiered routing (Gemini vision / OpenAI text) with per-device daily quota",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "test": "node --experimental-strip-types --test src/server.test.ts"
   },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241106.0",
-    "wrangler": "^3.86.0"
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14",
+    "ioredis": "^5.4.1",
+    "tsx": "^4.19.2"
   }
 }
