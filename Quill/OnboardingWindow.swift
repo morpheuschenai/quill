@@ -98,7 +98,6 @@ struct OnboardingView: View {
 
   @StateObject private var state = OnboardingState()
   @State private var step = 0
-  @State private var apiKeyInput = ""
   @State private var pathCopied = false
 
   private let bg     = Color(red: 20/255, green: 20/255, blue: 26/255)
@@ -165,7 +164,7 @@ struct OnboardingView: View {
   }
 
   private func finish() {
-    state.saveAPIKey(apiKeyInput)
+    // Cloud 模式免 key;不再於 onboarding 收集 API key
     state.stopPolling()
     onFinish()
   }
@@ -332,56 +331,48 @@ struct OnboardingView: View {
 
   private var apiKeyStep: some View {
     VStack(spacing: 16) {
-      Image(systemName: "key.fill")
-        .font(.system(size: 34))
-        .foregroundColor(accent)
-      Text("連接 AI 服務")
+      ZStack {
+        Circle().fill(green.opacity(0.15)).frame(width: 76, height: 76)
+        Image(systemName: "checkmark")
+          .font(.system(size: 30, weight: .bold))
+          .foregroundColor(green)
+      }
+      Text("一切就緒,免費開通")
         .font(.system(size: 21, weight: .bold))
         .foregroundColor(.white)
 
-      if state.hasAPIKey && apiKeyInput.isEmpty {
-        Text("已偵測到 API key,直接開始即可。想更換的話貼上新的 key 就會覆蓋。")
-          .font(.system(size: 13))
-          .foregroundColor(green.opacity(0.85))
-          .multilineTextAlignment(.center)
-          .fixedSize(horizontal: false, vertical: true)
-      } else {
-        Text("貼上你的 OpenAI API key(儲存在 macOS Keychain,只用來直連 AI 服務,不會經過任何其他伺服器)。")
-          .font(.system(size: 13))
-          .foregroundColor(.white.opacity(0.6))
-          .multilineTextAlignment(.center)
-          .lineSpacing(3)
-          .fixedSize(horizontal: false, vertical: true)
+      Text("不用申請 API key、不用任何設定 —— Quill Cloud 已為你開通。每天有免費使用額度,直接開始截圖問 AI。")
+        .font(.system(size: 13))
+        .foregroundColor(.white.opacity(0.6))
+        .multilineTextAlignment(.center)
+        .lineSpacing(3)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: 380)
+
+      VStack(alignment: .leading, spacing: 8) {
+        readyRow(icon: "bolt.fill", text: "每天免費額度,超過再升級")
+        readyRow(icon: "lock.fill", text: "內容不留存、不訓練")
       }
+      .padding(16)
+      .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
 
-      SecureField("sk-…", text: $apiKeyInput)
-        .textFieldStyle(.plain)
-        .font(.system(size: 13, design: .monospaced))
-        .foregroundColor(.white.opacity(0.9))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 9)
-        .background(
-          RoundedRectangle(cornerRadius: 8)
-            .fill(Color.white.opacity(0.05))
-            .overlay(
-              RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-            )
-        )
-        .frame(maxWidth: 360)
-
-      Button("前往 platform.openai.com 取得 API key") {
-        NSWorkspace.shared.open(URL(string: "https://platform.openai.com/api-keys")!)
-      }
-      .buttonStyle(.plain)
-      .font(.system(size: 12))
-      .foregroundColor(accent)
-
-      Text("也支援任何 OpenAI 相容服務(Groq、OpenRouter、本機 Ollama),可稍後在 Preferences 修改。")
+      Text("進階:想改用自己的 OpenAI/Gemini API key?到選單列 → 偏好設定 切換即可。")
         .font(.system(size: 11))
         .foregroundColor(.white.opacity(0.35))
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  private func readyRow(icon: String, text: String) -> some View {
+    HStack(spacing: 10) {
+      Image(systemName: icon)
+        .font(.system(size: 12))
+        .foregroundColor(green)
+        .frame(width: 18)
+      Text(text)
+        .font(.system(size: 13))
+        .foregroundColor(.white.opacity(0.8))
     }
   }
 }
