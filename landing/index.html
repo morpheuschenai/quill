@@ -98,8 +98,8 @@
   kbd { font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; background: #fff; border: 1px solid rgba(20,20,40,0.16); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; color: var(--text-dim); }
   #hintBubble kbd { background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border-color: rgba(255,255,255,0.14); color: #f0f0f6; }
   .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-  #resetChip { visibility: hidden; background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 13px; }
-  #resetChip:hover { color: #fff; }
+  #resetChip { visibility: hidden; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; }
+  #resetChip:hover { color: var(--text); }
   #hintBubble { position: fixed; z-index: 80; display: none; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: #f0f0f6; box-shadow: 0 12px 32px rgba(20,20,40,0.35); cursor: pointer; user-select: none; -webkit-user-select: none; animation: pop 0.18s ease; }
   #hintBubble:hover { border-color: rgba(96,165,250,0.6); }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
@@ -300,9 +300,9 @@
   .usecase h3 { font-size: 16.5px; margin-bottom: 6px; }
   .usecase p { font-size: 14px; color: var(--text-dim); line-height: 1.65; }
   /* 文字段落的錯字互動 */
-  .text-demo-block { margin: 30px 0 6px; text-align: center; background: linear-gradient(180deg, #252530, #16161f); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 30px 24px; }
-  .text-demo { font-size: 21px; font-weight: 700; margin-top: 6px; color: #fff; }
-  .text-demo-hint { font-size: 12.5px; color: rgba(255,255,255,0.5); }
+  .text-demo-block { margin: 30px 0 6px; text-align: center; background: linear-gradient(135deg, rgba(59,130,246,0.07), rgba(124,92,240,0.07)); border: 1px solid rgba(59,130,246,0.16); border-radius: 16px; padding: 30px 24px; }
+  .text-demo { font-size: 21px; font-weight: 700; margin-top: 6px; color: var(--text); }
+  .text-demo-hint { font-size: 12.5px; color: var(--text-dim); }
   /* 結果面板追問示意 */
   .panel-followup { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 9px; font-size: 12px; color: rgba(255,255,255,0.4); }
 </style>
@@ -371,7 +371,7 @@
               <div class="mail-avatar">S</div>
               <div>
                 <div class="mail-from">Sarah Chen</div>
-                <div class="mail-meta">Product Team · 上午 9:14</div>
+                <div class="mail-meta">Product Team · 9:14 AM</div>
               </div>
             </div>
             <div class="mail-subj">Q3 Performance Update</div>
@@ -796,6 +796,17 @@
   });
   function rectFrom(a, e) { return { x: Math.min(a.x, e.clientX), y: Math.min(a.y, e.clientY), w: Math.abs(a.x - e.clientX), h: Math.abs(a.y - e.clientY) }; }
 
+  // Mail mock 當成一封全英文信:框任一部分都能正確翻譯/摘要/描述
+  const MAIL_ITEMS = [
+    { sel: '.mail-from', zh: 'Sarah Chen（寄件人）' },
+    { sel: '.mail-meta', zh: '產品團隊 · 上午 9:14' },
+    { sel: '.mail-subj', zh: '第三季績效更新' },
+    { sel: '#shotTarget', zh: '季度報告顯示，經常性收入成長了 23%，主要動力來自企業客戶的採用。' },
+  ];
+  function rectHitsEl(el, r) { const b = el.getBoundingClientRect(); return b.width > 0 && b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y; }
+  function inAppmock(r) { const m = document.querySelector('.appmock'); return m ? rectHitsEl(m, r) : false; }
+  function mailItemsIn(r) { return MAIL_ITEMS.filter(it => { const el = document.querySelector(it.sel); return el && rectHitsEl(el, r); }); }
+
   function extractText(r) {
     const out = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
@@ -814,6 +825,15 @@
   }
 
   function summarizeRegion(r) {
+    if (inAppmock(r)) {
+      const mi = mailItemsIn(r);
+      if (!mi.length) return '（框到的地方沒有可摘要的內容，試著框住信件主旨或內文。）';
+      const b = [];
+      if (mi.some(x => x.sel === '.mail-from' || x.sel === '.mail-meta')) b.push('• 來自 Sarah Chen（產品團隊）的郵件');
+      if (mi.some(x => x.sel === '.mail-subj')) b.push('• 主旨：第三季績效更新');
+      if (mi.some(x => x.sel === '#shotTarget')) b.push('• 重點：經常性收入成長 23%，主要來自企業客戶採用');
+      return b.join('\n');
+    }
     const intersects = el => { const b = el.getBoundingClientRect(); return b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y; };
     const bullets = [];
     document.querySelectorAll('h1, h2, h3').forEach(el => {
@@ -828,6 +848,9 @@
   }
 
   function describeRegion(r) {
+    if (inAppmock(r)) {
+      return '一封電子郵件。寄件人 Sarah Chen（產品團隊），主旨「Q3 Performance Update」，內文提到季度營收成長。';
+    }
     const hits = [];
     document.querySelectorAll('h1, h2, h3, table, .feat, .step, .plan').forEach(el => {
       const b = el.getBoundingClientRect();
@@ -857,12 +880,12 @@
   };
 
   function translateRegion(r) {
+    // Mail mock:整封英文信,框任一部分 → 翻成中文
+    const mi = mailItemsIn(r);
+    if (mi.length) return mi.map(it => it.zh).join('\n');
+    if (inAppmock(r)) return '（框到的地方沒有文字，試著框住信件主旨或內文。）';
+    // 頁面其他中文區域 → 翻成英文(語言偵測雙向)
     const intersects = el => { const b = el.getBoundingClientRect(); return b.width > 0 && b.left < r.x + r.w && b.right > r.x && b.top < r.y + r.h && b.bottom > r.y; };
-    // 框到 hero 英文示範句 → 翻成中文(產品的招牌情境)
-    const target = document.getElementById('shotTarget');
-    if (target && intersects(target)) {
-      return '季度報告顯示，經常性收入成長了 23%，主要動力來自企業客戶的採用。';
-    }
     const out = [];
     document.querySelectorAll('h1, h2, h3, p, li, th, td, .sec-label, .price, .badge, .tab, button.try').forEach(el => {
       if (!intersects(el)) return;
@@ -870,7 +893,7 @@
       const en = EN[key];
       if (en && !out.includes(en)) out.push(en);
     });
-    if (!out.length) return '(This demo translates the page\'s own copy — try framing a headline or a section.)';
+    if (!out.length) return '（這一區沒有偵測到可翻譯的文字，試著框住一段標題或內文。）';
     return out.slice(0, 8).join('\n');
   }
 
