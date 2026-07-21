@@ -1,0 +1,19 @@
+name = "quill-cloud"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# 每裝置每日額度、全域每日上限、代理模型(可在此調整,不需改程式)
+[vars]
+GEMINI_MODEL = "gemini-2.0-flash"
+DAILY_LIMIT = "20"
+GLOBAL_DAILY_CAP = "5000"
+
+# 額度計數用 KV;部署前先建立並把 id 填進來:
+#   npx wrangler kv namespace create QUILL_KV
+[[kv_namespaces]]
+binding = "QUILL_KV"
+id = "REPLACE_WITH_KV_ID"
+
+# 機密(GEMINI_KEY、QUILL_APP_SECRET)不寫在這裡,用:
+#   npx wrangler secret put GEMINI_KEY
+#   npx wrangler secret put QUILL_APP_SECRET
