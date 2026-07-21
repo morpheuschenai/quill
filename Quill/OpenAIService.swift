@@ -3,15 +3,25 @@ import Foundation
 class OpenAIService {
   static let shared = OpenAIService()
 
+  private var useCloud: Bool { PromptStore.shared.useCloud }
   private var apiKey: String { PromptStore.shared.apiKey }
+
+  /// Cloud 模式用 Cloud endpoint;否則用自帶 endpoint。
+  private var baseEndpoint: String {
+    useCloud ? PromptStore.shared.cloudEndpoint : PromptStore.shared.apiEndpoint
+  }
   private var endpoint: URL {
-    let base = PromptStore.shared.apiEndpoint.trimmingCharacters(in: .init(charactersIn: "/"))
+    let base = baseEndpoint.trimmingCharacters(in: .init(charactersIn: "/"))
     return URL(string: base + "/chat/completions")
       ?? URL(string: "https://api.openai.com/v1/chat/completions")!
   }
   private var isLocalEndpoint: Bool {
-    let ep = PromptStore.shared.apiEndpoint
+    let ep = baseEndpoint
     return ep.contains("localhost") || ep.contains("127.0.0.1")
+  }
+  /// 能否送出請求:Cloud 模式免 key;自帶模式需 key 或本機端點。
+  private var canRequest: Bool {
+    useCloud || !apiKey.isEmpty || isLocalEndpoint
   }
   private static let requestTimeout: TimeInterval = 30
 
@@ -100,7 +110,11 @@ class OpenAIService {
     var request = URLRequest(url: endpoint)
     request.httpMethod = "POST"
     request.timeoutInterval = Self.requestTimeout
-    if !apiKey.isEmpty {
+    if useCloud {
+      // Cloud 模式:共享密鑰 + 匿名裝置 ID(供每日額度)
+      request.setValue("Bearer \(CloudConfig.appSecret)", forHTTPHeaderField: "Authorization")
+      request.setValue(CloudConfig.deviceID, forHTTPHeaderField: "X-Quill-Device")
+    } else if !apiKey.isEmpty {
       request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
     }
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -144,7 +158,7 @@ class OpenAIService {
     maxTokens: Int = 500,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
-    guard !apiKey.isEmpty || isLocalEndpoint else {
+    guard canRequest else {
       completion(.failure(missingKeyError()))
       return
     }
@@ -178,7 +192,7 @@ class OpenAIService {
     onDelta: @escaping (String) -> Void,
     onComplete: @escaping (Result<String, Error>) -> Void
   ) -> StreamingChatTask? {
-    guard !apiKey.isEmpty || isLocalEndpoint else {
+    guard canRequest else {
       onComplete(.failure(missingKeyError()))
       return nil
     }
@@ -203,7 +217,7 @@ class OpenAIService {
     prompt: String,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
-    guard !apiKey.isEmpty || isLocalEndpoint else {
+    guard canRequest else {
       completion(.failure(missingKeyError()))
       return
     }

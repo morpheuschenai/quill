@@ -2,6 +2,26 @@ import Foundation
 import Combine
 import SwiftUI
 
+// MARK: - Quill Cloud 設定
+
+enum CloudConfig {
+  /// 部署 cloud/ Worker 後,把網址填在這裡(結尾 /v1,不含 /chat/completions)。
+  /// 本機測試可用 `defaults write com.morpheus.quill quill_cloud_endpoint http://localhost:8787/v1` 覆寫。
+  static let endpoint = "https://quill-cloud.example.workers.dev/v1"
+
+  /// 與 Worker 的 QUILL_APP_SECRET 相同的共享密鑰。發佈前務必改成你設定的值。
+  static let appSecret = "REPLACE_WITH_APP_SECRET"
+
+  /// 匿名裝置 ID,只用於每日額度計數,不含任何個資。
+  static var deviceID: String {
+    let key = "quill_device_id"
+    if let v = UserDefaults.standard.string(forKey: key) { return v }
+    let v = UUID().uuidString
+    UserDefaults.standard.set(v, forKey: key)
+    return v
+  }
+}
+
 // MARK: - Data model
 
 struct PromptConfig: Codable, Identifiable {
@@ -77,6 +97,26 @@ class PromptStore: ObservableObject {
       return v.isEmpty ? Self.defaultEndpoint : v
     }
     set { UserDefaults.standard.set(newValue, forKey: "quill_api_endpoint") }
+  }
+
+  // MARK: - Quill Cloud（免 key 開箱即用;進階用戶可關掉改自帶 key）
+
+  /// 預設走 Cloud。關閉後改用自帶 API key(apiEndpoint + apiKey)。
+  var useCloud: Bool {
+    get {
+      // 尚未設定過 → 預設 true
+      (UserDefaults.standard.object(forKey: "quill_use_cloud") as? Bool) ?? true
+    }
+    set { UserDefaults.standard.set(newValue, forKey: "quill_use_cloud") }
+  }
+
+  /// Cloud endpoint;預設用 CloudConfig,可被 UserDefaults 覆寫(本機測試用)。
+  var cloudEndpoint: String {
+    get {
+      let v = UserDefaults.standard.string(forKey: "quill_cloud_endpoint") ?? ""
+      return v.isEmpty ? CloudConfig.endpoint : v
+    }
+    set { UserDefaults.standard.set(newValue, forKey: "quill_cloud_endpoint") }
   }
 
   // Text selection hotkey — Ctrl(4096) + Option(2048) = 6144, kVK_ANSI_A = 0
