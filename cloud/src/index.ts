@@ -8,16 +8,14 @@ import { createApp, type QuillEnv } from "./server.ts";
 
 const env: QuillEnv = {
   QUILL_APP_SECRET: process.env.QUILL_APP_SECRET || "",
-  GEMINI_KEY: process.env.GEMINI_KEY || "",
-  OPENAI_KEY: process.env.OPENAI_KEY || "",
-  GEMINI_MODEL: process.env.GEMINI_MODEL,
-  OPENAI_MODEL: process.env.OPENAI_MODEL,
+  ANTHROPIC_KEY: process.env.ANTHROPIC_KEY || "",
+  ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
   DAILY_LIMIT: process.env.DAILY_LIMIT,
   GLOBAL_DAILY_CAP: process.env.GLOBAL_DAILY_CAP,
 };
 
-if (!env.QUILL_APP_SECRET || !env.GEMINI_KEY || !env.OPENAI_KEY) {
-  console.error("[quill-cloud] 缺少必要環境變數:QUILL_APP_SECRET / GEMINI_KEY / OPENAI_KEY");
+if (!env.QUILL_APP_SECRET || !env.ANTHROPIC_KEY) {
+  console.error("[quill-cloud] 缺少必要環境變數:QUILL_APP_SECRET / ANTHROPIC_KEY");
   process.exit(1);
 }
 
