@@ -126,6 +126,7 @@ class ScreenshotCapture {
           return
         }
         try? FileManager.default.removeItem(atPath: tempPath)
+        UsageTracker.shared.markCaptured()   // 引導的「試試看」頁用來確認成功
         let compressed = ImageProcessor.compressForUpload(data)
         ScreenshotCapture.shared.showPromptPanel(imageData: compressed.data, imageMime: compressed.mime)
       }

@@ -22,6 +22,17 @@ enum AppLanguage: String, CaseIterable {
   }
 }
 
+/// 記錄使用者是否已成功用過一次截圖(引導的「試試看」頁用來判斷成功)。
+final class UsageTracker: ObservableObject {
+  static let shared = UsageTracker()
+  @Published var didCaptureOnce = false
+  private init() {}
+
+  func markCaptured() {
+    DispatchQueue.main.async { self.didCaptureOnce = true }
+  }
+}
+
 /// 語言設定中心。切換時發出 objectWillChange,SwiftUI 介面即時重繪。
 final class LocaleStore: ObservableObject {
   static let shared = LocaleStore()
@@ -127,6 +138,17 @@ enum L10n {
     "ob.perm.done": ("設定完成,可以進入下一步。", "All set — you can continue."),
     "ob.perm.copyPath": ("清單裡沒有 Quill?複製 App 路徑", "Quill not in the list? Copy app path"),
     "ob.perm.copied": ("已複製,到設定按「+」貼上路徑", "Copied — click + in Settings and paste"),
+
+    // Onboarding — 試試看
+    "ob.try.title": ("現在試一次", "Try it now"),
+    "ob.try.sub": ("按下快捷鍵,把下面這句英文框起來,看 AI 怎麼回你。",
+                   "Press the hotkey and frame the sentence below to see what AI does."),
+    "ob.try.sample": ("The quarterly report shows a 23% increase in recurring revenue.",
+                      "The quarterly report shows a 23% increase in recurring revenue."),
+    "ob.try.hint": ("→ 拖曳框選上面那句話", "→ then drag to frame the sentence above"),
+    "ob.try.done": ("成功了!", "Nice — it works!"),
+    "ob.try.doneSub": ("這就是 Quill:看到什麼都能框起來問。在任何 App 都能這樣用。",
+                       "That's Quill: frame anything you see and ask. Works in every app."),
 
     // Onboarding — 完成
     "ob.ready.title": ("一切就緒,免費開通", "You're all set — free to use"),

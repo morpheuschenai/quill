@@ -125,13 +125,14 @@ struct OnboardingView: View {
 
   @StateObject private var state = OnboardingState()
   @ObservedObject private var loc = LocaleStore.shared
+  @ObservedObject private var usage = UsageTracker.shared
   @State private var step = 0
   @State private var pathCopied = false
 
   private let bg     = Color(red: 20/255, green: 20/255, blue: 26/255)
   private let accent = Color(red: 96/255, green: 165/255, blue: 250/255)
   private let green  = Color(red: 52/255, green: 211/255, blue: 153/255)
-  private let totalSteps = 4
+  private let totalSteps = 5
 
   var body: some View {
     VStack(spacing: 0) {
@@ -142,6 +143,7 @@ struct OnboardingView: View {
         case 0: welcomeStep
         case 1: accessibilityStep
         case 2: screenStep
+        case 3: tryItStep
         default: apiKeyStep
         }
       }
@@ -196,6 +198,7 @@ struct OnboardingView: View {
     case 1: return state.accessibilityGranted ? L10n.t("ob.next") : L10n.t("ob.skip")
     // 螢幕錄製:勾選後一定要重啟才生效,所以直接把主按鈕變成重新啟動
     case 2: return state.screenGranted ? L10n.t("ob.next") : L10n.t("ob.relaunch")
+    case 3: return usage.didCaptureOnce ? L10n.t("ob.next") : L10n.t("ob.skip")
     default: return L10n.t("ob.next")
     }
   }
@@ -373,6 +376,77 @@ struct OnboardingView: View {
         Text(L10n.t("ob.perm.done"))
           .font(.system(size: 12))
           .foregroundColor(green.opacity(0.8))
+      }
+    }
+  }
+
+  private var tryItStep: some View {
+    VStack(spacing: 16) {
+      ZStack {
+        Circle()
+          .fill((usage.didCaptureOnce ? green : accent).opacity(0.15))
+          .frame(width: 76, height: 76)
+        Group {
+          if usage.didCaptureOnce {
+            Image(systemName: "checkmark").resizable().scaledToFit()
+          } else if let img = Self.svgIcon("camera") {
+            Image(nsImage: img).renderingMode(.template).resizable().scaledToFit()
+          } else {
+            Image(systemName: "camera.viewfinder").resizable().scaledToFit()
+          }
+        }
+        .frame(width: 30, height: 30)
+        .foregroundColor(usage.didCaptureOnce ? green : accent)
+      }
+
+      Text(usage.didCaptureOnce ? L10n.t("ob.try.done") : L10n.t("ob.try.title"))
+        .font(.system(size: 21, weight: .bold))
+        .foregroundColor(.white)
+
+      Text(usage.didCaptureOnce ? L10n.t("ob.try.doneSub") : L10n.t("ob.try.sub"))
+        .font(.system(size: 13))
+        .foregroundColor(.white.opacity(0.6))
+        .multilineTextAlignment(.center)
+        .lineSpacing(3)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: 400)
+
+      if !usage.didCaptureOnce {
+        // 讓使用者框選的示範句(跟官網 demo 同一招:看不懂 → 框起來 → 秒懂)
+        Text(L10n.t("ob.try.sample"))
+          .font(.system(size: 14))
+          .italic()
+          .foregroundColor(.white.opacity(0.85))
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.horizontal, 16)
+          .padding(.vertical, 12)
+          .frame(maxWidth: 420)
+          .background(
+            RoundedRectangle(cornerRadius: 10)
+              .fill(accent.opacity(0.10))
+              .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                  .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                  .foregroundColor(accent.opacity(0.55))
+              )
+          )
+
+        HStack(spacing: 8) {
+          Text(Self.shortcutWords(
+            keyCode: PromptStore.shared.screenshotKeyCode,
+            modifiers: PromptStore.shared.screenshotModifiers
+          ))
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundColor(.white.opacity(0.9))
+          .padding(.horizontal, 9)
+          .padding(.vertical, 4)
+          .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.12)))
+
+          Text(L10n.t("ob.try.hint"))
+            .font(.system(size: 12))
+            .foregroundColor(.white.opacity(0.5))
+        }
       }
     }
   }
