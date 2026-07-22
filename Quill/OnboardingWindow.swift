@@ -422,15 +422,7 @@ struct OnboardingView: View {
           .padding(.horizontal, 16)
           .padding(.vertical, 12)
           .frame(maxWidth: 420)
-          .background(
-            RoundedRectangle(cornerRadius: 10)
-              .fill(accent.opacity(0.10))
-              .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                  .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                  .foregroundColor(accent.opacity(0.55))
-              )
-          )
+          .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.07)))
 
         if usage.didCaptureOnce {
           // 已框選但還沒看到 AI 回覆:提示選一個動作
@@ -488,11 +480,6 @@ struct OnboardingView: View {
       .padding(16)
       .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
 
-      Text(L10n.t("ob.ready.advanced"))
-        .font(.system(size: 11))
-        .foregroundColor(.white.opacity(0.35))
-        .multilineTextAlignment(.center)
-        .fixedSize(horizontal: false, vertical: true)
     }
   }
 

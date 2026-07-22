@@ -164,10 +164,6 @@ private struct PrefMainList: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      PrefRow(icon: "api_key", iconColor: prefAccent, label: L10n.t("pref.provider")) {
-        path.append(Route.apiKey)
-      }
-      Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(icon: "prompt", iconColor: Color(red: 167/255, green: 139/255, blue: 250/255), label: L10n.t("pref.prompts")) {
         path.append(Route.prompts)
       }
@@ -191,6 +187,10 @@ private struct PrefMainList: View {
           modifiers: PromptStore.shared.screenshotModifiers
         )
       ) { path.append(Route.screenshotShortcut) }
+      Divider().opacity(0.10).padding(.horizontal, 16)
+      PrefRow(icon: "api_key", iconColor: prefAccent, label: L10n.t("pref.advanced")) {
+        path.append(Route.apiKey)
+      }
       Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(
         icon: "translate",
@@ -419,6 +419,7 @@ private struct PrefTabBar: View {
 
 private struct PromptsView: View {
   @ObservedObject private var store = PromptStore.shared
+  @ObservedObject private var loc = LocaleStore.shared
   @State private var category = 0
   @State private var editingConfig: PromptConfig? = nil
   @State private var showAdd = false
@@ -439,7 +440,7 @@ private struct PromptsView: View {
         .padding(.top, 12)
         .padding(.bottom, 6)
 
-      Text(L10n.t("pref.promptsIntro"))
+      Text(L10n.t(["pref.intro.screenshot", "pref.intro.editable", "pref.intro.readonly"][category]))
         .font(.system(size: 12))
         .foregroundColor(prefMuted)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -503,10 +504,9 @@ private struct AddPromptRow: View {
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 10) {
-        Spacer().frame(width: 14)  // align with rearrange column
-        SVGIcon(name: "add", color: prefAccent, size: 24)
-          .frame(width: 32, height: 32)
+      HStack(spacing: 8) {
+        Spacer()
+        SVGIcon(name: "add", color: prefAccent, size: 20)
         Text(L10n.t("pref.addPrompt"))
           .font(.system(size: 13))
           .foregroundColor(prefAccent)
@@ -526,6 +526,7 @@ private struct AddPromptRow: View {
 
 private struct PromptRow: View {
   @Binding var config: PromptConfig
+  @ObservedObject private var loc = LocaleStore.shared
   let onEdit: () -> Void
   let onDelete: () -> Void
   @State private var hovered = false
@@ -543,7 +544,7 @@ private struct PromptRow: View {
           size: 24
         )
       }
-      Text(config.title)
+      Text(config.titleKey.map { L10n.t($0) } ?? config.title)
         .font(.system(size: 13))
         .foregroundColor(.white.opacity(0.85))
         .frame(maxWidth: .infinity, alignment: .leading)
