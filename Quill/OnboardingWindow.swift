@@ -283,15 +283,17 @@ struct OnboardingView: View {
       .frame(width: 26)
 
       VStack(alignment: .leading, spacing: 4) {
-        Text(title)
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundColor(.white.opacity(0.9))
-        Text(keys)
-          .font(.system(size: 11, weight: .medium))
-          .foregroundColor(.white.opacity(0.75))
-          .padding(.horizontal, 7)
-          .padding(.vertical, 2)
-          .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1)))
+        HStack(spacing: 8) {
+          Text(title)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.white.opacity(0.9))
+          Text(keys)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(.white.opacity(0.75))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1)))
+        }
         Text(desc)
           .font(.system(size: 12))
           .foregroundColor(.white.opacity(0.5))

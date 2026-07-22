@@ -70,6 +70,19 @@ enum L10n {
     "pref.shotShortcut.desc": ("設定在任何 App 啟動截圖框選的快捷鍵。",
                                "Set the shortcut to start an interactive screenshot capture."),
 
+    "pref.providerLabel": ("服務商", "Provider"),
+    "pref.endpoint": ("端點網址", "Endpoint"),
+    "pref.model": ("模型", "Model"),
+    "pref.apiKey": ("API Key", "API Key"),
+    "pref.keyNote": ("儲存在本機 Keychain。使用 Ollama 時不需填。",
+                     "Stored locally in Keychain. Not required for Ollama."),
+    "pref.saved": ("已儲存", "Saved"),
+    "pref.title": ("名稱", "Title"),
+    "pref.instruction": ("指令", "Instruction"),
+    "tab.screenshot": ("截圖", "Screenshot"),
+    "tab.editable": ("可編輯文字", "Editable"),
+    "tab.readonly": ("唯讀文字", "Read-only"),
+
     // 選單列
     "menu.preferences": ("偏好設定…", "Preferences…"),
     "menu.onboarding": ("設定引導…", "Setup Guide…"),

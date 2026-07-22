@@ -183,7 +183,7 @@ private struct PrefMainList: View {
         icon: "custom-text",
         iconColor: Color(red: 251/255, green: 146/255, blue: 60/255),
         label: L10n.t("pref.textShortcut"),
-        detail: shortcutLabel(
+        detail: OnboardingView.shortcutWords(
           keyCode:   PromptStore.shared.textKeyCode,
           modifiers: PromptStore.shared.textModifiers
         )
@@ -193,7 +193,7 @@ private struct PrefMainList: View {
         icon: "keyboard",
         iconColor: Color(red: 52/255, green: 211/255, blue: 153/255),
         label: L10n.t("pref.shotShortcut"),
-        detail: shortcutLabel(
+        detail: OnboardingView.shortcutWords(
           keyCode:   PromptStore.shared.screenshotKeyCode,
           modifiers: PromptStore.shared.screenshotModifiers
         )
@@ -346,7 +346,7 @@ private struct APIKeyView: View {
 
       HStack {
         if saved {
-          Text("Saved")
+          Text(L10n.t("pref.saved"))
             .font(.system(size: 12))
             .foregroundColor(prefMuted)
             .transition(.opacity)
@@ -423,17 +423,18 @@ private struct PromptsView: View {
   @State private var editingConfig: PromptConfig? = nil
   @State private var showAdd = false
 
+  // 分頁順序:截圖(主打)→ 可編輯文字 → 唯讀文字
   private var binding: Binding<[PromptConfig]> {
     switch category {
-    case 0: return $store.editablePrompts
-    case 1: return $store.nonEditablePrompts
-    default: return $store.screenshotPrompts
+    case 0: return $store.screenshotPrompts
+    case 1: return $store.editablePrompts
+    default: return $store.nonEditablePrompts
     }
   }
 
   var body: some View {
     VStack(spacing: 0) {
-      PrefTabBar(selection: $category, tabs: ["Editable", "Read-only", "Screenshot"])
+      PrefTabBar(selection: $category, tabs: [L10n.t("tab.screenshot"), L10n.t("tab.editable"), L10n.t("tab.readonly")])
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 6)
@@ -555,9 +556,10 @@ private struct PromptRow: View {
         }.buttonStyle(.plain)
       }
     }
-    .padding(.vertical, 6)
+    .padding(.vertical, 8)
+    .padding(.horizontal, 10)
     .contentShape(Rectangle())
-    .background(hovered ? prefHover : Color.clear)
+    .background(RoundedRectangle(cornerRadius: 8).fill(hovered ? prefHover : Color.clear))
     .onHover { hovered = $0 }
   }
 }
@@ -577,13 +579,13 @@ private struct EditSheet: View {
         .foregroundColor(.white.opacity(0.88))
         .padding(.top, 4)
 
-      fieldBlock(label: "Title") {
+      fieldBlock(label: L10n.t("pref.title")) {
         TextField("e.g. Shorten this", text: $config.title)
           .textFieldStyle(.plain).font(.system(size: 13))
           .foregroundColor(.white.opacity(0.85))
       }
 
-      fieldBlock(label: "Instruction") {
+      fieldBlock(label: L10n.t("pref.instruction")) {
         TextEditor(text: $config.systemPrompt)
           .font(.system(size: 12))
           .foregroundColor(.white.opacity(0.78))
@@ -682,7 +684,7 @@ private struct ShortcutView: View {
 
       HStack {
         if saved {
-          Text("Saved")
+          Text(L10n.t("pref.saved"))
             .font(.system(size: 12))
             .foregroundColor(prefMuted)
             .transition(.opacity)
