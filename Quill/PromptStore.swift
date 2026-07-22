@@ -5,12 +5,12 @@ import SwiftUI
 // MARK: - Quill Cloud 設定
 
 enum CloudConfig {
-  /// 部署 cloud/ Worker 後,把網址填在這裡(結尾 /v1,不含 /chat/completions)。
-  /// 本機測試可用 `defaults write com.morpheus.quill quill_cloud_endpoint http://localhost:8787/v1` 覆寫。
-  static let endpoint = "https://quill-cloud.example.workers.dev/v1"
+  /// Quill Cloud(Railway)端點。可用 UserDefaults 覆寫做本機測試:
+  /// `defaults write com.morpheus.quill quill_cloud_endpoint http://localhost:8787/v1`
+  static let endpoint = "https://quill-production-ba4a.up.railway.app/v1"
 
-  /// 與 Worker 的 QUILL_APP_SECRET 相同的共享密鑰。發佈前務必改成你設定的值。
-  static let appSecret = "REPLACE_WITH_APP_SECRET"
+  /// 與後端 QUILL_APP_SECRET 相同的共享密鑰。
+  static let appSecret = "ed1dcdf3dc9d239eafe943de17ba8bd5883da29aad3cda473cf32ec027cf0baf"
 
   /// 匿名裝置 ID,只用於每日額度計數,不含任何個資。
   static var deviceID: String {
