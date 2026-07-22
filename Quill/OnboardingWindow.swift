@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Carbon.HIToolbox
 import Combine
 import SwiftUI
 
@@ -314,7 +315,7 @@ struct OnboardingView: View {
   /// macOS 規定:螢幕錄製權限變更後 App 必須重啟才生效。
   /// 重啟前記住要回到哪一步,啟動時自動重開引導,使用者不需自己找選單列。
   static func relaunchApp(resumeStep: Int) {
-    UserDefaults.standard.set(resumeStep, forKey: resumeKey)
+    UserDefaults.standard.set(resumeStep, forKey: OnboardingWindow.resumeKey)
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
     task.arguments = ["-n", Bundle.main.bundlePath]

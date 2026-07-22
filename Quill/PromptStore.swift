@@ -226,7 +226,7 @@ class PromptStore: ObservableObject {
 extension PromptStore {
   static let defaultEditable: [PromptConfig] = [
     PromptConfig(
-      title: "Fix the text" titleKey: "action.fixText",
+      title: "Fix the text", titleKey: "action.fixText",
       systemPrompt: """
         You are a meticulous copy editor. Rewrite the user's text following ALL of these rules:
         - Correct EVERY spelling mistake and grammar error — including words inside quotes 「」"", brackets, or after arrows. Example: 「Fixinng the text」 must become 「Fixing the text」.
@@ -240,7 +240,7 @@ extension PromptStore {
       maxTokens: 400, iconName: "fix_text", colorIndex: 1
     ),
     PromptConfig(
-      title: "Make it formal" titleKey: "action.makeFormal",
+      title: "Make it formal", titleKey: "action.makeFormal",
       systemPrompt: "Rewrite the following text in a more formal, professional tone. Return only the rewritten text, no explanation.",
       maxTokens: 300, iconName: "make_formal", colorIndex: 3
     ),
@@ -257,16 +257,16 @@ extension PromptStore {
   ]
 
   static let defaultNonEditable: [PromptConfig] = [
-    PromptConfig(title: "Summarize" titleKey: "action.summarize",       systemPrompt: "Summarize the key points of the following text in bullet points. Be concise.",                                                                                                                        maxTokens: 500, iconName: "summarize",    colorIndex: 0),
-    PromptConfig(title: "Explain this" titleKey: "action.explain",    systemPrompt: "Explain the following text in simple, plain language as if explaining to someone unfamiliar with the topic.",                                                                                         maxTokens: 500, iconName: "explain",      colorIndex: 4),
+    PromptConfig(title: "Summarize", titleKey: "action.summarize",       systemPrompt: "Summarize the key points of the following text in bullet points. Be concise.",                                                                                                                        maxTokens: 500, iconName: "summarize",    colorIndex: 0),
+    PromptConfig(title: "Explain this", titleKey: "action.explain",    systemPrompt: "Explain the following text in simple, plain language as if explaining to someone unfamiliar with the topic.",                                                                                         maxTokens: 500, iconName: "explain",      colorIndex: 4),
     PromptConfig(title: "Translate", titleKey: "action.translate",       systemPrompt: "Detect the language of the following text.\n- If it is Chinese (Traditional or Simplified), translate it to English.\n- If it is English or any other language, translate it to Traditional Chinese.\nReturn only the translation, no explanation.", maxTokens: 400, iconName: "translate",    colorIndex: 2),
-    PromptConfig(title: "List action items" titleKey: "action.listActions", systemPrompt: "Extract all action items, tasks, and to-dos from the following text. Format as a bullet list.",                                                                                                     maxTokens: 300, iconName: "list-actions", colorIndex: 5),
+    PromptConfig(title: "List action items", titleKey: "action.listActions", systemPrompt: "Extract all action items, tasks, and to-dos from the following text. Format as a bullet list.",                                                                                                     maxTokens: 300, iconName: "list-actions", colorIndex: 5),
   ]
 
   static let defaultScreenshot: [PromptConfig] = [
-    PromptConfig(title: "Extract text" titleKey: "action.extractText",  systemPrompt: "Extract all visible text from this screenshot exactly as it appears, preserving structure and line breaks. Output plain text ONLY — never wrap the result in markdown, code fences (```), or quotes.", maxTokens: 800, iconName: "fix_text",  colorIndex: 1, autoCopy: true),
-    PromptConfig(title: "Describe this" titleKey: "action.describe", systemPrompt: "Describe what you see in this screenshot concisely. Include layout, content, and any key information.",                                                                                                 maxTokens: 500, iconName: "explain",   colorIndex: 4),
-    PromptConfig(title: "Summarize" titleKey: "action.summarize",     systemPrompt: "Summarize the key information visible in this screenshot in bullet points.",                                                                                                                            maxTokens: 400, iconName: "summarize", colorIndex: 0),
+    PromptConfig(title: "Extract text", titleKey: "action.extractText",  systemPrompt: "Extract all visible text from this screenshot exactly as it appears, preserving structure and line breaks. Output plain text ONLY — never wrap the result in markdown, code fences (```), or quotes.", maxTokens: 800, iconName: "fix_text",  colorIndex: 1, autoCopy: true),
+    PromptConfig(title: "Describe this", titleKey: "action.describe", systemPrompt: "Describe what you see in this screenshot concisely. Include layout, content, and any key information.",                                                                                                 maxTokens: 500, iconName: "explain",   colorIndex: 4),
+    PromptConfig(title: "Summarize", titleKey: "action.summarize",     systemPrompt: "Summarize the key information visible in this screenshot in bullet points.",                                                                                                                            maxTokens: 400, iconName: "summarize", colorIndex: 0),
     PromptConfig(title: "Translate", titleKey: "action.translate",     systemPrompt: "Detect the language of the text in this screenshot. If Chinese, translate to English. If English or other, translate to Traditional Chinese. Return only the translation.",                             maxTokens: 600, iconName: "translate", colorIndex: 2),
   ]
 }
