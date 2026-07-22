@@ -32,6 +32,17 @@ final class OnboardingWindow: NSWindow {
     UserDefaults.standard.set(true, forKey: doneKey)
   }
 
+  /// macOS 規定:螢幕錄製權限變更後 App 必須重啟才生效。
+  /// 重啟前記住要回到哪一步,啟動時自動重開引導,使用者不需自己找選單列。
+  static func relaunchApp(resumeStep: Int) {
+    UserDefaults.standard.set(resumeStep, forKey: resumeKey)
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+    task.arguments = ["-n", Bundle.main.bundlePath]
+    try? task.run()
+    NSApp.terminate(nil)
+  }
+
   static func open() {
     if instance == nil { instance = OnboardingWindow(startStep: consumeResumeStep() ?? 0) }
     if #available(macOS 14, *) { NSApp.activate() }
@@ -310,17 +321,6 @@ struct OnboardingView: View {
       buttonTitle: L10n.t("ob.screen.button"),
       action: state.requestScreenRecording
     )
-  }
-
-  /// macOS 規定:螢幕錄製權限變更後 App 必須重啟才生效。
-  /// 重啟前記住要回到哪一步,啟動時自動重開引導,使用者不需自己找選單列。
-  static func relaunchApp(resumeStep: Int) {
-    UserDefaults.standard.set(resumeStep, forKey: OnboardingWindow.resumeKey)
-    let task = Process()
-    task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-    task.arguments = ["-n", Bundle.main.bundlePath]
-    try? task.run()
-    NSApp.terminate(nil)
   }
 
   private func permissionStep(
