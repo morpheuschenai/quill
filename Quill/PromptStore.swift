@@ -39,12 +39,12 @@ struct PromptConfig: Codable, Identifiable {
   init(
     id: UUID = UUID(),
     title: String,
+    titleKey: String? = nil,
     systemPrompt: String,
     maxTokens: Int = 400,
     iconName: String = "custom-text",
     colorIndex: Int = 0,
-    autoCopy: Bool? = nil,
-    titleKey: String? = nil
+    autoCopy: Bool? = nil
   ) {
     self.id = id
     self.title = title
