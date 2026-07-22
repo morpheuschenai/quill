@@ -22,14 +22,22 @@ enum AppLanguage: String, CaseIterable {
   }
 }
 
-/// 記錄使用者是否已成功用過一次截圖(引導的「試試看」頁用來判斷成功)。
+/// 記錄引導「試試看」頁的進度。
+/// 只有「AI 真的回覆完成」才算成功——光是框選還沒體驗到價值。
 final class UsageTracker: ObservableObject {
   static let shared = UsageTracker()
+  /// 已框選截圖(進行中)
   @Published var didCaptureOnce = false
+  /// 已收到 AI 的完整回覆(真正的成功)
+  @Published var didCompleteOnce = false
   private init() {}
 
   func markCaptured() {
     DispatchQueue.main.async { self.didCaptureOnce = true }
+  }
+
+  func markCompleted() {
+    DispatchQueue.main.async { self.didCompleteOnce = true }
   }
 }
 
@@ -146,6 +154,8 @@ enum L10n {
     "ob.try.sample": ("The quarterly report shows a 23% increase in recurring revenue.",
                       "The quarterly report shows a 23% increase in recurring revenue."),
     "ob.try.hint": ("→ 拖曳框選上面那句話", "→ then drag to frame the sentence above"),
+    "ob.try.pickAction": ("已框選!在彈出的選單挑一個動作,例如「翻譯」",
+                          "Framed! Now pick an action from the menu — try Translate"),
     "ob.try.done": ("成功了!", "Nice — it works!"),
     "ob.try.doneSub": ("這就是 Quill:看到什麼都能框起來問。在任何 App 都能這樣用。",
                        "That's Quill: frame anything you see and ask. Works in every app."),

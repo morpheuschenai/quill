@@ -198,7 +198,7 @@ struct OnboardingView: View {
     case 1: return state.accessibilityGranted ? L10n.t("ob.next") : L10n.t("ob.skip")
     // 螢幕錄製:勾選後一定要重啟才生效,所以直接把主按鈕變成重新啟動
     case 2: return state.screenGranted ? L10n.t("ob.next") : L10n.t("ob.relaunch")
-    case 3: return usage.didCaptureOnce ? L10n.t("ob.next") : L10n.t("ob.skip")
+    case 3: return usage.didCompleteOnce ? L10n.t("ob.next") : L10n.t("ob.skip")
     default: return L10n.t("ob.next")
     }
   }
@@ -384,10 +384,10 @@ struct OnboardingView: View {
     VStack(spacing: 16) {
       ZStack {
         Circle()
-          .fill((usage.didCaptureOnce ? green : accent).opacity(0.15))
+          .fill((usage.didCompleteOnce ? green : accent).opacity(0.15))
           .frame(width: 76, height: 76)
         Group {
-          if usage.didCaptureOnce {
+          if usage.didCompleteOnce {
             Image(systemName: "checkmark").resizable().scaledToFit()
           } else if let img = Self.svgIcon("camera") {
             Image(nsImage: img).renderingMode(.template).resizable().scaledToFit()
@@ -396,14 +396,14 @@ struct OnboardingView: View {
           }
         }
         .frame(width: 30, height: 30)
-        .foregroundColor(usage.didCaptureOnce ? green : accent)
+        .foregroundColor(usage.didCompleteOnce ? green : accent)
       }
 
-      Text(usage.didCaptureOnce ? L10n.t("ob.try.done") : L10n.t("ob.try.title"))
+      Text(usage.didCompleteOnce ? L10n.t("ob.try.done") : L10n.t("ob.try.title"))
         .font(.system(size: 21, weight: .bold))
         .foregroundColor(.white)
 
-      Text(usage.didCaptureOnce ? L10n.t("ob.try.doneSub") : L10n.t("ob.try.sub"))
+      Text(usage.didCompleteOnce ? L10n.t("ob.try.doneSub") : L10n.t("ob.try.sub"))
         .font(.system(size: 13))
         .foregroundColor(.white.opacity(0.6))
         .multilineTextAlignment(.center)
@@ -411,7 +411,7 @@ struct OnboardingView: View {
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: 400)
 
-      if !usage.didCaptureOnce {
+      if !usage.didCompleteOnce {
         // 讓使用者框選的示範句(跟官網 demo 同一招:看不懂 → 框起來 → 秒懂)
         Text(L10n.t("ob.try.sample"))
           .font(.system(size: 14))
@@ -432,20 +432,30 @@ struct OnboardingView: View {
               )
           )
 
-        HStack(spacing: 8) {
-          Text(Self.shortcutWords(
-            keyCode: PromptStore.shared.screenshotKeyCode,
-            modifiers: PromptStore.shared.screenshotModifiers
-          ))
-          .font(.system(size: 12, weight: .semibold))
-          .foregroundColor(.white.opacity(0.9))
-          .padding(.horizontal, 9)
-          .padding(.vertical, 4)
-          .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.12)))
+        if usage.didCaptureOnce {
+          // 已框選但還沒看到 AI 回覆:提示選一個動作
+          HStack(spacing: 7) {
+            ProgressView().scaleEffect(0.5).tint(accent)
+            Text(L10n.t("ob.try.pickAction"))
+              .font(.system(size: 12.5))
+              .foregroundColor(accent.opacity(0.9))
+          }
+        } else {
+          HStack(spacing: 8) {
+            Text(Self.shortcutWords(
+              keyCode: PromptStore.shared.screenshotKeyCode,
+              modifiers: PromptStore.shared.screenshotModifiers
+            ))
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundColor(.white.opacity(0.9))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.12)))
 
-          Text(L10n.t("ob.try.hint"))
-            .font(.system(size: 12))
-            .foregroundColor(.white.opacity(0.5))
+            Text(L10n.t("ob.try.hint"))
+              .font(.system(size: 12))
+              .foregroundColor(.white.opacity(0.5))
+          }
         }
       }
     }

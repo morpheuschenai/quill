@@ -132,6 +132,7 @@ final class ChatSession: ObservableObject {
             self.errorText = L10n.t("result.empty")
           } else {
             self.apiMessages.append(["role": "assistant", "content": full])
+            UsageTracker.shared.markCompleted()   // 引導「試試看」的成功判定
             if self.autoCopyResult && !self.hasAutoCopied {
               self.hasAutoCopied = true
               NSPasteboard.general.clearContents()
