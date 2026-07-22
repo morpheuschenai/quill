@@ -8,9 +8,23 @@ import SwiftUI
 final class OnboardingWindow: NSWindow {
   private static var instance: OnboardingWindow?
   private static let doneKey = "quill_onboarding_done_v1"
+  static let resumeKey = "quill_onboarding_resume_step"
 
   static var shouldShowOnLaunch: Bool {
-    !UserDefaults.standard.bool(forKey: doneKey)
+    // 尚未完成引導,或剛因權限重啟需要接續
+    !UserDefaults.standard.bool(forKey: doneKey) || resumeStep != nil
+  }
+
+  /// 因權限重啟而要接續的步驟(取出後即清除)
+  static var resumeStep: Int? {
+    guard let v = UserDefaults.standard.object(forKey: resumeKey) as? Int else { return nil }
+    return v
+  }
+
+  static func consumeResumeStep() -> Int? {
+    let v = resumeStep
+    UserDefaults.standard.removeObject(forKey: resumeKey)
+    return v
   }
 
   static func markDone() {
@@ -18,14 +32,14 @@ final class OnboardingWindow: NSWindow {
   }
 
   static func open() {
-    if instance == nil { instance = OnboardingWindow() }
+    if instance == nil { instance = OnboardingWindow(startStep: consumeResumeStep() ?? 0) }
     if #available(macOS 14, *) { NSApp.activate() }
     else { NSApp.activate(ignoringOtherApps: true) }
     instance?.center()
     instance?.makeKeyAndOrderFront(nil)
   }
 
-  private init() {
+  private init(startStep: Int) {
     super.init(
       contentRect: NSRect(x: 0, y: 0, width: 560, height: 500),
       styleMask: [.titled, .closable, .fullSizeContentView],
@@ -37,7 +51,7 @@ final class OnboardingWindow: NSWindow {
     appearance = NSAppearance(named: .darkAqua)
     titlebarAppearsTransparent = true
     backgroundColor = NSColor(srgbRed: 20/255, green: 20/255, blue: 26/255, alpha: 1)
-    contentView = NSHostingView(rootView: OnboardingView { [weak self] in
+    contentView = NSHostingView(rootView: OnboardingView(startStep: startStep) { [weak self] in
       OnboardingWindow.markDone()
       self?.close()
     })
@@ -94,6 +108,7 @@ final class OnboardingState: ObservableObject {
 // MARK: - Main view
 
 struct OnboardingView: View {
+  var startStep: Int = 0
   let onFinish: () -> Void
 
   @StateObject private var state = OnboardingState()
@@ -139,6 +154,11 @@ struct OnboardingView: View {
         Spacer()
 
         Button(nextButtonTitle) {
+          // 螢幕錄製尚未生效時,主按鈕就是「重新啟動」(macOS 規定必須重啟)
+          if step == 2 && !state.screenGranted {
+            OnboardingWindow.relaunchApp(resumeStep: 2)
+            return
+          }
           if step < totalSteps - 1 { step += 1 } else { finish() }
         }
         .buttonStyle(OnboardingPrimaryStyle())
@@ -150,7 +170,10 @@ struct OnboardingView: View {
     }
     .frame(width: 560, height: 500)
     .background(bg)
-    .onAppear { state.startPolling() }
+    .onAppear {
+      step = startStep          // 因權限重啟時,直接回到原本那一步
+      state.startPolling()
+    }
     .onDisappear { state.stopPolling() }
   }
 
@@ -158,7 +181,8 @@ struct OnboardingView: View {
     if step == totalSteps - 1 { return "開始使用 Quill" }
     switch step {
     case 1: return state.accessibilityGranted ? "下一步" : "略過"
-    case 2: return state.screenGranted ? "下一步" : "略過"
+    // 螢幕錄製:勾選後一定要重啟才生效,所以直接把主按鈕變成重新啟動
+    case 2: return state.screenGranted ? "下一步" : "已勾選,重新啟動 Quill"
     default: return "下一步"
     }
   }
@@ -188,16 +212,16 @@ struct OnboardingView: View {
       VStack(alignment: .leading, spacing: 14) {
         // 顯示使用者實際設定的快捷鍵(可能已在 Preferences 改過)
         hotkeyRow(
-          icon: "camera.viewfinder",
-          keys: shortcutLabel(
+          svg: "camera",
+          keys: Self.shortcutWords(
             keyCode: PromptStore.shared.screenshotKeyCode,
             modifiers: PromptStore.shared.screenshotModifiers
           ),
           title: "截圖問 AI", desc: "框選畫面 → 萃取文字、翻譯、解釋,結果當場出現"
         )
         hotkeyRow(
-          icon: "text.cursor",
-          keys: shortcutLabel(
+          svg: "custom-text",
+          keys: Self.shortcutWords(
             keyCode: PromptStore.shared.textKeyCode,
             modifiers: PromptStore.shared.textModifiers
           ),
@@ -213,24 +237,48 @@ struct OnboardingView: View {
     }
   }
 
-  private func hotkeyRow(icon: String, keys: String, title: String, desc: String) -> some View {
+  /// 快捷鍵的「文字版」:一般用戶不見得看得懂 ⌃⌥ 符號,直接寫字。
+  static func shortcutWords(keyCode: UInt32, modifiers: UInt32) -> String {
+    var parts: [String] = []
+    if modifiers & UInt32(controlKey) != 0 { parts.append("Control") }
+    if modifiers & UInt32(optionKey)  != 0 { parts.append("Option") }
+    if modifiers & UInt32(shiftKey)   != 0 { parts.append("Shift") }
+    if modifiers & UInt32(cmdKey)     != 0 { parts.append("Command") }
+    parts.append(keyCodeMap[keyCode] ?? "?")
+    return parts.joined(separator: " + ")
+  }
+
+  /// 載入 bundle 內的 SVG 圖示(template 模式,可套色)
+  static func svgIcon(_ name: String) -> NSImage? {
+    guard let path = Bundle.main.path(forResource: name, ofType: "svg"),
+          let img = NSImage(contentsOfFile: path) else { return nil }
+    img.isTemplate = true
+    return img
+  }
+
+  private func hotkeyRow(svg: String, keys: String, title: String, desc: String) -> some View {
     HStack(spacing: 14) {
-      Image(systemName: icon)
-        .font(.system(size: 18))
-        .foregroundColor(accent)
-        .frame(width: 26)
-      VStack(alignment: .leading, spacing: 3) {
-        HStack(spacing: 8) {
-          Text(title)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundColor(.white.opacity(0.9))
-          Text(keys)
-            .font(.system(size: 11, weight: .medium, design: .monospaced))
-            .foregroundColor(.white.opacity(0.7))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1)))
+      Group {
+        if let img = Self.svgIcon(svg) {
+          Image(nsImage: img).renderingMode(.template).resizable().scaledToFit()
+        } else {
+          Image(systemName: "sparkles").resizable().scaledToFit()
         }
+      }
+      .frame(width: 20, height: 20)
+      .foregroundColor(accent)
+      .frame(width: 26)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Text(title)
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundColor(.white.opacity(0.9))
+        Text(keys)
+          .font(.system(size: 11, weight: .medium))
+          .foregroundColor(.white.opacity(0.75))
+          .padding(.horizontal, 7)
+          .padding(.vertical, 2)
+          .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1)))
         Text(desc)
           .font(.system(size: 12))
           .foregroundColor(.white.opacity(0.5))
@@ -251,25 +299,21 @@ struct OnboardingView: View {
   }
 
   private var screenStep: some View {
-    VStack(spacing: 12) {
-      permissionStep(
-        icon: "camera.viewfinder",
-        title: "允許「螢幕錄製」",
-        granted: state.screenGranted,
-        why: "截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往你設定的 AI 服務。",
-        how: "點下方按鈕 → 勾選 Quill → 回來點「重新啟動」讓權限生效。",
-        buttonTitle: "開啟螢幕錄製設定",
-        action: state.requestScreenRecording
-      )
-      // macOS 規定:螢幕錄製權限變更後,App 必須重啟才生效
-      Button("已勾選?重新啟動 Quill 讓權限生效") {
-        Self.relaunchApp()
-      }
-      .buttonStyle(OnboardingSecondaryStyle())
-    }
+    permissionStep(
+      icon: "camera.viewfinder",
+      title: "允許「螢幕錄製」",
+      granted: state.screenGranted,
+      why: "截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往 AI 服務取得回覆。",
+      how: "點下方按鈕 → 在系統設定勾選 Quill → 回到這裡按「重新啟動」。",
+      buttonTitle: "開啟螢幕錄製設定",
+      action: state.requestScreenRecording
+    )
   }
 
-  private static func relaunchApp() {
+  /// macOS 規定:螢幕錄製權限變更後 App 必須重啟才生效。
+  /// 重啟前記住要回到哪一步,啟動時自動重開引導,使用者不需自己找選單列。
+  static func relaunchApp(resumeStep: Int) {
+    UserDefaults.standard.set(resumeStep, forKey: resumeKey)
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
     task.arguments = ["-n", Bundle.main.bundlePath]
@@ -291,7 +335,7 @@ struct OnboardingView: View {
           .font(.system(size: 30, weight: granted ? .bold : .regular))
           .foregroundColor(granted ? green : accent)
       }
-      Text(granted ? "\(title) — 已完成" : title)
+      Text(title)
         .font(.system(size: 21, weight: .bold))
         .foregroundColor(.white)
       Text(why)
@@ -341,7 +385,7 @@ struct OnboardingView: View {
         .font(.system(size: 21, weight: .bold))
         .foregroundColor(.white)
 
-      Text("不用申請 API key、不用任何設定 —— Quill Cloud 已為你開通。每天有免費使用額度,直接開始截圖問 AI。")
+      Text("Quill Cloud 已為你開通,直接開始截圖問 AI。")
         .font(.system(size: 13))
         .foregroundColor(.white.opacity(0.6))
         .multilineTextAlignment(.center)
@@ -350,7 +394,7 @@ struct OnboardingView: View {
         .frame(maxWidth: 380)
 
       VStack(alignment: .leading, spacing: 8) {
-        readyRow(icon: "bolt.fill", text: "每天免費額度,超過再升級")
+        readyRow(icon: "bolt.fill", text: "每天 10 次免費額度,每日重置")
         readyRow(icon: "lock.fill", text: "內容不留存、不訓練")
       }
       .padding(16)
