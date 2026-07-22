@@ -82,7 +82,7 @@ private struct SVGIcon: View {
 
 // MARK: - Route
 
-private enum Route: Hashable { case apiKey, prompts, textShortcut, screenshotShortcut }
+private enum Route: Hashable { case apiKey, prompts, textShortcut, screenshotShortcut, language }
 
 // MARK: - Hotkey helpers
 
@@ -130,19 +130,20 @@ private struct PrefRootView: View {
       PrefMainList(path: $path)
         .navigationDestination(for: Route.self) { r in
           switch r {
+          case .language:          LanguageView()
           case .apiKey:            APIKeyView()
           case .prompts:           PromptsView()
           case .textShortcut:
             ShortcutView(
-              title: "Text Shortcut",
-              description: "Set the shortcut to trigger the text selection menu in any app.",
+              title: L10n.t("pref.textShortcut"),
+              description: L10n.t("pref.textShortcut.desc"),
               keyCode: PromptStore.shared.textKeyCode,
               modifiers: PromptStore.shared.textModifiers
             ) { kc, mods in TextCapture.shared.updateHotkey(keyCode: kc, modifiers: mods) }
           case .screenshotShortcut:
             ShortcutView(
-              title: "Screenshot Shortcut",
-              description: "Set the shortcut to start an interactive screenshot capture from any app.",
+              title: L10n.t("pref.shotShortcut"),
+              description: L10n.t("pref.shotShortcut.desc"),
               keyCode: PromptStore.shared.screenshotKeyCode,
               modifiers: PromptStore.shared.screenshotModifiers
             ) { kc, mods in ScreenshotCapture.shared.updateHotkey(keyCode: kc, modifiers: mods) }
@@ -159,21 +160,29 @@ private struct PrefRootView: View {
 
 private struct PrefMainList: View {
   @Binding var path: NavigationPath
+  @ObservedObject private var loc = LocaleStore.shared
 
   var body: some View {
     VStack(spacing: 0) {
-      PrefRow(icon: "api_key", iconColor: prefAccent, label: "Provider & API Key") {
+      PrefRow(
+        icon: "translate",
+        iconColor: Color(red: 96/255, green: 165/255, blue: 250/255),
+        label: L10n.t("lang.title"),
+        detail: LocaleStore.shared.language.displayName
+      ) { path.append(Route.language) }
+      Divider().opacity(0.10).padding(.horizontal, 16)
+      PrefRow(icon: "api_key", iconColor: prefAccent, label: L10n.t("pref.provider")) {
         path.append(Route.apiKey)
       }
       Divider().opacity(0.10).padding(.horizontal, 16)
-      PrefRow(icon: "prompt", iconColor: Color(red: 167/255, green: 139/255, blue: 250/255), label: "Prompts") {
+      PrefRow(icon: "prompt", iconColor: Color(red: 167/255, green: 139/255, blue: 250/255), label: L10n.t("pref.prompts")) {
         path.append(Route.prompts)
       }
       Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(
         icon: "custom-text",
         iconColor: Color(red: 251/255, green: 146/255, blue: 60/255),
-        label: "Text Shortcut",
+        label: L10n.t("pref.textShortcut"),
         detail: shortcutLabel(
           keyCode:   PromptStore.shared.textKeyCode,
           modifiers: PromptStore.shared.textModifiers
@@ -183,7 +192,7 @@ private struct PrefMainList: View {
       PrefRow(
         icon: "keyboard",
         iconColor: Color(red: 52/255, green: 211/255, blue: 153/255),
-        label: "Screenshot Shortcut",
+        label: L10n.t("pref.shotShortcut"),
         detail: shortcutLabel(
           keyCode:   PromptStore.shared.screenshotKeyCode,
           modifiers: PromptStore.shared.screenshotModifiers
@@ -195,7 +204,7 @@ private struct PrefMainList: View {
     .padding(20)
     .frame(maxHeight: .infinity, alignment: .top)
     .background(prefBg0)
-    .onAppear { resizeWindow(to: CGSize(width: 420, height: 340)) }
+    .onAppear { resizeWindow(to: CGSize(width: 420, height: 400)) }
   }
 }
 
@@ -736,5 +745,57 @@ private struct PrefSecondary: ButtonStyle {
       .foregroundColor(.white.opacity(0.5))
       .padding(.horizontal, 14).padding(.vertical, 6)
       .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(configuration.isPressed ? 0.11 : 0.07)))
+  }
+}
+
+
+// MARK: - Language
+
+private struct LanguageView: View {
+  @ObservedObject private var loc = LocaleStore.shared
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 6) {
+        Text(L10n.t("lang.title"))
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundColor(.white)
+        Text(L10n.t("lang.note"))
+          .font(.system(size: 12))
+          .foregroundColor(.white.opacity(0.45))
+      }
+      .padding(.horizontal, 4)
+      .padding(.bottom, 14)
+
+      VStack(spacing: 0) {
+        ForEach(Array(AppLanguage.allCases.enumerated()), id: \.element) { idx, lang in
+          if idx > 0 { Divider().opacity(0.10).padding(.horizontal, 12) }
+          Button {
+            loc.language = lang
+          } label: {
+            HStack {
+              Text(lang.displayName)
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.9))
+              Spacer()
+              if loc.language == lang {
+                Image(systemName: "checkmark")
+                  .font(.system(size: 12, weight: .bold))
+                  .foregroundColor(prefAccent)
+              }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      .background(RoundedRectangle(cornerRadius: 10).fill(prefBg1))
+    }
+    .padding(20)
+    .frame(maxHeight: .infinity, alignment: .top)
+    .background(prefBg0)
+    .onAppear { resizeWindow(to: CGSize(width: 420, height: 300)) }
   }
 }

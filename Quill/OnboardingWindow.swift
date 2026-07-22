@@ -112,6 +112,7 @@ struct OnboardingView: View {
   let onFinish: () -> Void
 
   @StateObject private var state = OnboardingState()
+  @ObservedObject private var loc = LocaleStore.shared
   @State private var step = 0
   @State private var pathCopied = false
 
@@ -137,7 +138,7 @@ struct OnboardingView: View {
 
       // 進度點 + 導覽列
       HStack {
-        Button("上一步") { step -= 1 }
+        Button(L10n.t("ob.back")) { step -= 1 }
           .buttonStyle(OnboardingSecondaryStyle())
           .opacity(step > 0 ? 1 : 0)
 
@@ -178,12 +179,12 @@ struct OnboardingView: View {
   }
 
   private var nextButtonTitle: String {
-    if step == totalSteps - 1 { return "開始使用 Quill" }
+    if step == totalSteps - 1 { return L10n.t("ob.start") }
     switch step {
-    case 1: return state.accessibilityGranted ? "下一步" : "略過"
+    case 1: return state.accessibilityGranted ? L10n.t("ob.next") : L10n.t("ob.skip")
     // 螢幕錄製:勾選後一定要重啟才生效,所以直接把主按鈕變成重新啟動
-    case 2: return state.screenGranted ? "下一步" : "已勾選,重新啟動 Quill"
-    default: return "下一步"
+    case 2: return state.screenGranted ? L10n.t("ob.next") : L10n.t("ob.relaunch")
+    default: return L10n.t("ob.next")
     }
   }
 
@@ -202,10 +203,10 @@ struct OnboardingView: View {
         .resizable()
         .scaledToFit()
         .frame(width: 76, height: 76)
-      Text("歡迎使用 Quill")
+      Text(L10n.t("ob.welcome.title"))
         .font(.system(size: 26, weight: .bold))
         .foregroundColor(.white)
-      Text("對你看到的任何東西,直接跟 AI 互動。")
+      Text(L10n.t("ob.welcome.sub"))
         .font(.system(size: 14))
         .foregroundColor(.white.opacity(0.6))
 
@@ -217,7 +218,7 @@ struct OnboardingView: View {
             keyCode: PromptStore.shared.screenshotKeyCode,
             modifiers: PromptStore.shared.screenshotModifiers
           ),
-          title: "截圖問 AI", desc: "框選畫面 → 萃取文字、翻譯、解釋,結果當場出現"
+          title: L10n.t("ob.welcome.shot.title"), desc: L10n.t("ob.welcome.shot.desc")
         )
         hotkeyRow(
           svg: "custom-text",
@@ -225,13 +226,13 @@ struct OnboardingView: View {
             keyCode: PromptStore.shared.textKeyCode,
             modifiers: PromptStore.shared.textModifiers
           ),
-          title: "選字改文字", desc: "選取文字 → 修正、改語氣、翻譯,直接取代原文"
+          title: L10n.t("ob.welcome.text.title"), desc: L10n.t("ob.welcome.text.desc")
         )
       }
       .padding(20)
       .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
 
-      Text("快捷鍵可隨時在 Preferences 修改")
+      Text(L10n.t("ob.welcome.hint"))
         .font(.system(size: 11))
         .foregroundColor(.white.opacity(0.35))
     }
@@ -289,11 +290,11 @@ struct OnboardingView: View {
   private var accessibilityStep: some View {
     permissionStep(
       icon: "hand.raised.fill",
-      title: "允許「輔助使用」",
+      title: L10n.t("ob.ax.title"),
       granted: state.accessibilityGranted,
-      why: "Quill 需要這個權限才能讀取你選取的文字,並在原位置替換結果。我們只讀取你主動選取的內容,其他一概不碰。",
-      how: "點下方按鈕 → 在系統設定找到 Quill → 打開開關",
-      buttonTitle: "開啟輔助使用設定",
+      why: L10n.t("ob.ax.why"),
+      how: L10n.t("ob.ax.how"),
+      buttonTitle: L10n.t("ob.ax.button"),
       action: state.requestAccessibility
     )
   }
@@ -301,11 +302,11 @@ struct OnboardingView: View {
   private var screenStep: some View {
     permissionStep(
       icon: "camera.viewfinder",
-      title: "允許「螢幕錄製」",
+      title: L10n.t("ob.screen.title"),
       granted: state.screenGranted,
-      why: "截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往 AI 服務取得回覆。",
-      how: "點下方按鈕 → 在系統設定勾選 Quill → 回到這裡按「重新啟動」。",
-      buttonTitle: "開啟螢幕錄製設定",
+      why: L10n.t("ob.screen.why"),
+      how: L10n.t("ob.screen.how"),
+      buttonTitle: L10n.t("ob.screen.button"),
       action: state.requestScreenRecording
     )
   }
@@ -354,7 +355,7 @@ struct OnboardingView: View {
         Button(buttonTitle, action: action)
           .buttonStyle(OnboardingPrimaryStyle())
         // 清單裡沒有 Quill 時的逃生口:點「+」手動加入,路徑先複製好
-        Button(pathCopied ? "已複製,到設定按「+」貼上路徑" : "清單裡沒有 Quill?複製 App 路徑") {
+        Button(pathCopied ? L10n.t("ob.perm.copied") : L10n.t("ob.perm.copyPath")) {
           NSPasteboard.general.clearContents()
           NSPasteboard.general.setString(Bundle.main.bundlePath, forType: .string)
           pathCopied = true
@@ -366,7 +367,7 @@ struct OnboardingView: View {
           ? Color(red: 52/255, green: 211/255, blue: 153/255)
           : .white.opacity(0.4))
       } else {
-        Text("設定完成,可以進入下一步。")
+        Text(L10n.t("ob.perm.done"))
           .font(.system(size: 12))
           .foregroundColor(green.opacity(0.8))
       }
@@ -381,11 +382,11 @@ struct OnboardingView: View {
           .font(.system(size: 30, weight: .bold))
           .foregroundColor(green)
       }
-      Text("一切就緒,免費開通")
+      Text(L10n.t("ob.ready.title"))
         .font(.system(size: 21, weight: .bold))
         .foregroundColor(.white)
 
-      Text("Quill Cloud 已為你開通,直接開始截圖問 AI。")
+      Text(L10n.t("ob.ready.sub"))
         .font(.system(size: 13))
         .foregroundColor(.white.opacity(0.6))
         .multilineTextAlignment(.center)
@@ -394,13 +395,13 @@ struct OnboardingView: View {
         .frame(maxWidth: 380)
 
       VStack(alignment: .leading, spacing: 10) {
-        readyRow(svg: "shopping-cart", text: "每天 10 次免費額度,每日重置")
-        readyRow(svg: "lock", text: "內容不留存、不訓練")
+        readyRow(svg: "shopping-cart", text: L10n.t("ob.ready.quota"))
+        readyRow(svg: "lock", text: L10n.t("ob.ready.privacy"))
       }
       .padding(16)
       .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
 
-      Text("進階:想改用自己的 OpenAI/Gemini API key?到選單列 → 偏好設定 切換即可。")
+      Text(L10n.t("ob.ready.advanced"))
         .font(.system(size: 11))
         .foregroundColor(.white.opacity(0.35))
         .multilineTextAlignment(.center)

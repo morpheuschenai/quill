@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Combine
 import Sparkle
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -10,9 +11,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
   )
 
+  private var localeObserver: AnyCancellable?
+
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
     setupStatusBar()
+    // 語言切換時重建選單列文字
+    localeObserver = LocaleStore.shared.$language
+      .dropFirst()
+      .sink { [weak self] _ in DispatchQueue.main.async { self?.setupStatusBar() } }
     if OnboardingWindow.shouldShowOnLaunch {
       OnboardingWindow.open()
     }
@@ -37,23 +44,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let menu = NSMenu()
     menu.addItem(NSMenuItem(
-      title: "Preferences…",
+      title: L10n.t("menu.preferences"),
       action: #selector(openPreferences),
       keyEquivalent: ","
     ))
     menu.addItem(NSMenuItem(
-      title: "設定引導…",
+      title: L10n.t("menu.onboarding"),
       action: #selector(openOnboarding),
       keyEquivalent: ""
     ))
     menu.addItem(NSMenuItem(
-      title: "檢查更新…",
+      title: L10n.t("menu.checkUpdates"),
       action: #selector(checkForUpdates),
       keyEquivalent: ""
     ))
     menu.addItem(.separator())
     menu.addItem(NSMenuItem(
-      title: "Quit Quill",
+      title: L10n.t("menu.quit"),
       action: #selector(NSApplication.terminate(_:)),
       keyEquivalent: "q"
     ))

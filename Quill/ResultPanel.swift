@@ -129,7 +129,7 @@ final class ChatSession: ObservableObject {
           if self.messages.indices.contains(index) { self.messages[index].text = full }
           if full.isEmpty {
             if self.messages.indices.contains(index) { self.messages.remove(at: index) }
-            self.errorText = "沒有收到回應,請再試一次。"
+            self.errorText = L10n.t("result.empty")
           } else {
             self.apiMessages.append(["role": "assistant", "content": full])
             if self.autoCopyResult && !self.hasAutoCopied {
@@ -218,6 +218,7 @@ final class ChatWindow: NSPanel, NSWindowDelegate {
 
 struct ChatView: View {
   @ObservedObject var session: ChatSession
+  @ObservedObject private var loc = LocaleStore.shared
   @State private var followUp = ""
   @State private var justCopied = false
 
@@ -235,7 +236,7 @@ struct ChatView: View {
             if session.isStreaming && session.messages.last?.text.isEmpty == true {
               HStack(spacing: 6) {
                 ProgressView().scaleEffect(0.5).tint(accent)
-                Text("思考中…")
+                Text(L10n.t("result.thinking"))
                   .font(.system(size: 12))
                   .foregroundColor(.white.opacity(0.4))
               }
@@ -260,7 +261,7 @@ struct ChatView: View {
 
       // 追問輸入列 + 複製
       HStack(spacing: 8) {
-        TextField("追問…", text: $followUp, axis: .vertical)
+        TextField(L10n.t("result.followUp"), text: $followUp, axis: .vertical)
           .lineLimit(1...4)  // 超過一行自動長高,最多 4 行
           .textFieldStyle(.plain)
           .font(.system(size: 12.5))
@@ -292,7 +293,7 @@ struct ChatView: View {
           HStack(spacing: 4) {
             Image(systemName: justCopied ? "checkmark" : "doc.on.doc")
               .font(.system(size: 11))
-            Text(justCopied ? "已複製" : "複製")
+            Text(justCopied ? L10n.t("result.copied") : L10n.t("result.copy"))
               .font(.system(size: 12, weight: .medium))
           }
           .foregroundColor(justCopied
@@ -351,7 +352,7 @@ struct ChatView: View {
         .font(.system(size: 12))
         .foregroundColor(.white.opacity(0.7))
         .frame(maxWidth: .infinity, alignment: .leading)
-      Button("重試") { session.retry() }
+      Button(L10n.t("result.retry")) { session.retry() }
         .buttonStyle(.plain)
         .font(.system(size: 12, weight: .medium))
         .foregroundColor(accent)

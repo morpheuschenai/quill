@@ -122,7 +122,7 @@ class ScreenshotCapture {
         guard FileManager.default.fileExists(atPath: tempPath) else { return }
         guard let data = try? Data(contentsOf: URL(fileURLWithPath: tempPath)), !data.isEmpty else {
           try? FileManager.default.removeItem(atPath: tempPath)
-          Self.showErrorAlert("截圖讀取失敗,請再試一次。")
+          Self.showErrorAlert(L10n.t("err.screenshotRead"))
           return
         }
         try? FileManager.default.removeItem(atPath: tempPath)
@@ -133,7 +133,7 @@ class ScreenshotCapture {
     do {
       try process.run()
     } catch {
-      Self.showErrorAlert("無法啟動截圖工具:\(error.localizedDescription)")
+      Self.showErrorAlert(L10n.t("err.screenshotLaunch") + error.localizedDescription)
     }
   }
 

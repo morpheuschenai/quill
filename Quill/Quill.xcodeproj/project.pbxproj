@@ -21,6 +21,7 @@
 		E30E0EE52FC6FF000002B61B /* TextCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE42FC6FF000002B61B /* TextCapture.swift */; };
 		E30E0EE72FC6FF000002B61B /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE62FC6FF000002B61B /* KeychainStore.swift */; };
 		E30E0EE92FC6FF000002B61B /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */; };
+		E30E0FB22FC6FF000002B61B /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0FB12FC6FF000002B61B /* Localization.swift */; };
 		E30E0FA32FC6FF000002B61B /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = E30E0FA22FC6FF000002B61B /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +53,7 @@
 		E30E0EE42FC6FF000002B61B /* TextCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCapture.swift; sourceTree = "<group>"; };
 		E30E0EE62FC6FF000002B61B /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
+		E30E0FB12FC6FF000002B61B /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -104,6 +106,7 @@
 				E30E03182FC688990002B61B /* Info.plist */,
 				E30E0EE62FC6FF000002B61B /* KeychainStore.swift */,
 				E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */,
+				E30E0FB12FC6FF000002B61B /* Localization.swift */,
 				E30E03192FC688990002B61B /* OpenAIService.swift */,
 				E30E031A2FC688990002B61B /* Prompt.swift */,
 				E30E031B2FC688990002B61B /* PromptListView.swift */,
@@ -251,6 +254,7 @@
 				E30E03252FC688990002B61B /* Prompt.swift in Sources */,
 				E30E0EE72FC6FF000002B61B /* KeychainStore.swift in Sources */,
 				E30E0EE92FC6FF000002B61B /* OnboardingWindow.swift in Sources */,
+				E30E0FB22FC6FF000002B61B /* Localization.swift in Sources */,
 				E30E03262FC688990002B61B /* OpenAIService.swift in Sources */,
 				E30E03272FC688990002B61B /* QuillApp.swift in Sources */,
 				E30E03DD2FC6FF000002B61B /* ScreenshotCapture.swift in Sources */,

@@ -64,6 +64,7 @@ private struct SecondaryButtonStyle: ButtonStyle {
 // MARK: - Main view
 
 struct PromptListView: View {
+  @ObservedObject private var loc = LocaleStore.shared
   let prompts: [Prompt]
   let selectedText: String
   let isEditable: Bool
@@ -146,7 +147,7 @@ struct PromptListView: View {
           }
         }
 
-        TextField("Custom instruction…", text: $customPrompt)
+        TextField(L10n.t("menu.custom"), text: $customPrompt)
           .textFieldStyle(.plain)
           .font(.system(size: 12))
           .foregroundColor(.white.opacity(0.6))

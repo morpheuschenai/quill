@@ -33,6 +33,8 @@ struct PromptConfig: Codable, Identifiable {
   var colorIndex: Int
   /// 完成後自動把結果複製到剪貼簿(OCR 情境用);optional 以相容舊資料
   var autoCopy: Bool?
+  /// 預設動作的本地化 key(使用者自訂的動作為 nil,顯示 title 原文)
+  var titleKey: String?
 
   init(
     id: UUID = UUID(),
@@ -41,7 +43,8 @@ struct PromptConfig: Codable, Identifiable {
     maxTokens: Int = 400,
     iconName: String = "custom-text",
     colorIndex: Int = 0,
-    autoCopy: Bool? = nil
+    autoCopy: Bool? = nil,
+    titleKey: String? = nil
   ) {
     self.id = id
     self.title = title
@@ -50,6 +53,7 @@ struct PromptConfig: Codable, Identifiable {
     self.iconName = iconName
     self.colorIndex = colorIndex
     self.autoCopy = autoCopy
+    self.titleKey = titleKey
   }
 }
 
@@ -169,7 +173,7 @@ class PromptStore: ObservableObject {
 
   // v3:Fix the text 補繁體保護與引號內修正規則(v2: OCR 禁 markdown、autoCopy)
   // 換 key 讓既有安裝拿到新預設;舊自訂 prompt 不遷移(此階段可接受)
-  private static let storageVersion = "v3"
+  private static let storageVersion = "v4"
   private static var editableKey:    String { "quill_prompts_editable_\(storageVersion)" }
   private static var nonEditableKey: String { "quill_prompts_noneditable_\(storageVersion)" }
   private static var screenshotKey:  String { "quill_prompts_screenshot_\(storageVersion)" }
@@ -202,7 +206,7 @@ class PromptStore: ObservableObject {
   func toPrompt(_ c: PromptConfig) -> Prompt {
     let pair = Self.palette[c.colorIndex % Self.palette.count]
     return Prompt(
-      title: c.title,
+      title: c.titleKey.map { L10n.t($0) } ?? c.title,
       systemPrompt: c.systemPrompt,
       iconName: c.iconName,
       maxTokens: c.maxTokens,
@@ -222,7 +226,7 @@ class PromptStore: ObservableObject {
 extension PromptStore {
   static let defaultEditable: [PromptConfig] = [
     PromptConfig(
-      title: "Fix the text",
+      title: "Fix the text" titleKey: "action.fixText",
       systemPrompt: """
         You are a meticulous copy editor. Rewrite the user's text following ALL of these rules:
         - Correct EVERY spelling mistake and grammar error — including words inside quotes 「」"", brackets, or after arrows. Example: 「Fixinng the text」 must become 「Fixing the text」.
@@ -236,12 +240,12 @@ extension PromptStore {
       maxTokens: 400, iconName: "fix_text", colorIndex: 1
     ),
     PromptConfig(
-      title: "Make it formal",
+      title: "Make it formal" titleKey: "action.makeFormal",
       systemPrompt: "Rewrite the following text in a more formal, professional tone. Return only the rewritten text, no explanation.",
       maxTokens: 300, iconName: "make_formal", colorIndex: 3
     ),
     PromptConfig(
-      title: "Translate",
+      title: "Translate", titleKey: "action.translate",
       systemPrompt: """
         Detect the language of the following text.
         - If it is Chinese (Traditional or Simplified), translate it to English.
@@ -253,16 +257,16 @@ extension PromptStore {
   ]
 
   static let defaultNonEditable: [PromptConfig] = [
-    PromptConfig(title: "Summarize",       systemPrompt: "Summarize the key points of the following text in bullet points. Be concise.",                                                                                                                        maxTokens: 500, iconName: "summarize",    colorIndex: 0),
-    PromptConfig(title: "Explain this",    systemPrompt: "Explain the following text in simple, plain language as if explaining to someone unfamiliar with the topic.",                                                                                         maxTokens: 500, iconName: "explain",      colorIndex: 4),
-    PromptConfig(title: "Translate",       systemPrompt: "Detect the language of the following text.\n- If it is Chinese (Traditional or Simplified), translate it to English.\n- If it is English or any other language, translate it to Traditional Chinese.\nReturn only the translation, no explanation.", maxTokens: 400, iconName: "translate",    colorIndex: 2),
-    PromptConfig(title: "List action items", systemPrompt: "Extract all action items, tasks, and to-dos from the following text. Format as a bullet list.",                                                                                                     maxTokens: 300, iconName: "list-actions", colorIndex: 5),
+    PromptConfig(title: "Summarize" titleKey: "action.summarize",       systemPrompt: "Summarize the key points of the following text in bullet points. Be concise.",                                                                                                                        maxTokens: 500, iconName: "summarize",    colorIndex: 0),
+    PromptConfig(title: "Explain this" titleKey: "action.explain",    systemPrompt: "Explain the following text in simple, plain language as if explaining to someone unfamiliar with the topic.",                                                                                         maxTokens: 500, iconName: "explain",      colorIndex: 4),
+    PromptConfig(title: "Translate", titleKey: "action.translate",       systemPrompt: "Detect the language of the following text.\n- If it is Chinese (Traditional or Simplified), translate it to English.\n- If it is English or any other language, translate it to Traditional Chinese.\nReturn only the translation, no explanation.", maxTokens: 400, iconName: "translate",    colorIndex: 2),
+    PromptConfig(title: "List action items" titleKey: "action.listActions", systemPrompt: "Extract all action items, tasks, and to-dos from the following text. Format as a bullet list.",                                                                                                     maxTokens: 300, iconName: "list-actions", colorIndex: 5),
   ]
 
   static let defaultScreenshot: [PromptConfig] = [
-    PromptConfig(title: "Extract text",  systemPrompt: "Extract all visible text from this screenshot exactly as it appears, preserving structure and line breaks. Output plain text ONLY — never wrap the result in markdown, code fences (```), or quotes.", maxTokens: 800, iconName: "fix_text",  colorIndex: 1, autoCopy: true),
-    PromptConfig(title: "Describe this", systemPrompt: "Describe what you see in this screenshot concisely. Include layout, content, and any key information.",                                                                                                 maxTokens: 500, iconName: "explain",   colorIndex: 4),
-    PromptConfig(title: "Summarize",     systemPrompt: "Summarize the key information visible in this screenshot in bullet points.",                                                                                                                            maxTokens: 400, iconName: "summarize", colorIndex: 0),
-    PromptConfig(title: "Translate",     systemPrompt: "Detect the language of the text in this screenshot. If Chinese, translate to English. If English or other, translate to Traditional Chinese. Return only the translation.",                             maxTokens: 600, iconName: "translate", colorIndex: 2),
+    PromptConfig(title: "Extract text" titleKey: "action.extractText",  systemPrompt: "Extract all visible text from this screenshot exactly as it appears, preserving structure and line breaks. Output plain text ONLY — never wrap the result in markdown, code fences (```), or quotes.", maxTokens: 800, iconName: "fix_text",  colorIndex: 1, autoCopy: true),
+    PromptConfig(title: "Describe this" titleKey: "action.describe", systemPrompt: "Describe what you see in this screenshot concisely. Include layout, content, and any key information.",                                                                                                 maxTokens: 500, iconName: "explain",   colorIndex: 4),
+    PromptConfig(title: "Summarize" titleKey: "action.summarize",     systemPrompt: "Summarize the key information visible in this screenshot in bullet points.",                                                                                                                            maxTokens: 400, iconName: "summarize", colorIndex: 0),
+    PromptConfig(title: "Translate", titleKey: "action.translate",     systemPrompt: "Detect the language of the text in this screenshot. If Chinese, translate to English. If English or other, translate to Traditional Chinese. Return only the translation.",                             maxTokens: 600, iconName: "translate", colorIndex: 2),
   ]
 }

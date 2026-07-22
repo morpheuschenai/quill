@@ -44,7 +44,7 @@ class OpenAIService {
     // 輸出被截斷（max_tokens 不足）
     if let finishReason = first["finish_reason"] as? String, finishReason == "length" {
       throw NSError(domain: "QuillError", code: -2,
-                    userInfo: [NSLocalizedDescriptionKey: "Selected text is too long to process. Try selecting a shorter passage."])
+                    userInfo: [NSLocalizedDescriptionKey: L10n.t("err.tooLong")])
     }
 
     return content.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -57,11 +57,11 @@ class OpenAIService {
     var message: String
     switch statusCode {
     case 401:
-      message = "Invalid API key. Check it in Preferences (⌘,)."
+      message = L10n.t("err.invalidKey")
     case 429:
-      message = "Rate limited by OpenAI. Try again in a moment."
+      message = L10n.t("err.rateLimited")
     case 500...599:
-      message = "OpenAI service error (HTTP \(statusCode)). Try again later."
+      message = L10n.t("err.service")
     default:
       message = "Request failed (HTTP \(statusCode))"
     }
@@ -102,7 +102,7 @@ class OpenAIService {
   private func missingKeyError() -> NSError {
     NSError(
       domain: "QuillError", code: -3,
-      userInfo: [NSLocalizedDescriptionKey: "API key not set. Open Preferences (⌘,) to add your key."]
+      userInfo: [NSLocalizedDescriptionKey: L10n.t("err.noKey")]
     )
   }
 
