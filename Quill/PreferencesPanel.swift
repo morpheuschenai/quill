@@ -164,13 +164,6 @@ private struct PrefMainList: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      PrefRow(
-        icon: "translate",
-        iconColor: Color(red: 96/255, green: 165/255, blue: 250/255),
-        label: L10n.t("lang.title"),
-        detail: LocaleStore.shared.language.displayName
-      ) { path.append(Route.language) }
-      Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(icon: "api_key", iconColor: prefAccent, label: L10n.t("pref.provider")) {
         path.append(Route.apiKey)
       }
@@ -198,6 +191,13 @@ private struct PrefMainList: View {
           modifiers: PromptStore.shared.screenshotModifiers
         )
       ) { path.append(Route.screenshotShortcut) }
+      Divider().opacity(0.10).padding(.horizontal, 16)
+      PrefRow(
+        icon: "translate",
+        iconColor: Color(red: 96/255, green: 165/255, blue: 250/255),
+        label: L10n.t("lang.title"),
+        detail: LocaleStore.shared.language.displayName
+      ) { path.append(Route.language) }
     }
     .padding(12)
     .background(RoundedRectangle(cornerRadius: 12).fill(prefBg1))
@@ -268,7 +268,7 @@ private struct APIKeyView: View {
     VStack(alignment: .leading, spacing: 0) {
       // Provider quick-select
       VStack(alignment: .leading, spacing: 6) {
-        Text("Provider")
+        Text(L10n.t("pref.providerLabel"))
           .font(.system(size: 11, weight: .medium))
           .foregroundColor(prefMuted)
         HStack(spacing: 6) {
@@ -296,7 +296,7 @@ private struct APIKeyView: View {
       .padding(.top, 20)
 
       // Endpoint field
-      fieldRow(label: "Endpoint") {
+      fieldRow(label: L10n.t("pref.endpoint")) {
         TextField("https://api.openai.com/v1", text: $endpoint)
           .font(.system(size: 12))
           .foregroundColor(.white.opacity(0.78))
@@ -306,7 +306,7 @@ private struct APIKeyView: View {
       .padding(.top, 14)
 
       // Model field
-      fieldRow(label: "Model") {
+      fieldRow(label: L10n.t("pref.model")) {
         TextField("gpt-4o-mini", text: $model)
           .font(.system(size: 12))
           .foregroundColor(.white.opacity(0.78))
@@ -316,7 +316,7 @@ private struct APIKeyView: View {
       .padding(.top, 10)
 
       // API Key field
-      fieldRow(label: "API Key") {
+      fieldRow(label: L10n.t("pref.apiKey")) {
         Group {
           if isVisible {
             TextField("sk-…", text: $apiKey)
@@ -336,7 +336,7 @@ private struct APIKeyView: View {
       .padding(.horizontal, 20)
       .padding(.top, 10)
 
-      Text("Stored locally. Not required for Ollama.")
+      Text(L10n.t("pref.keyNote"))
         .font(.system(size: 11))
         .foregroundColor(prefMuted)
         .padding(.horizontal, 20)
@@ -368,7 +368,7 @@ private struct APIKeyView: View {
     }
     .frame(width: 420, height: 380)
     .background(prefBg0)
-    .navigationTitle("Provider & API Key")
+    .navigationTitle("")
     .onAppear { resizeWindow(to: CGSize(width: 420, height: 380)) }
   }
 
@@ -439,7 +439,7 @@ private struct PromptsView: View {
         .padding(.top, 12)
         .padding(.bottom, 6)
 
-      Text("Customise the AI actions shown when you select text or capture a screenshot.")
+      Text(L10n.t("pref.promptsIntro"))
         .font(.system(size: 12))
         .foregroundColor(prefMuted)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -471,7 +471,7 @@ private struct PromptsView: View {
     }
     .frame(width: 420, height: 480)
     .background(prefBg0)
-    .navigationTitle("Prompts")
+    .navigationTitle("")
     .onAppear { resizeWindow(to: CGSize(width: 420, height: 480)) }
     .sheet(item: $editingConfig) { config in
       EditSheet(config: config, isNew: false) { updated in
@@ -507,7 +507,7 @@ private struct AddPromptRow: View {
         Spacer().frame(width: 14)  // align with rearrange column
         SVGIcon(name: "add", color: prefAccent, size: 24)
           .frame(width: 32, height: 32)
-        Text("Add Prompt")
+        Text(L10n.t("pref.addPrompt"))
           .font(.system(size: 13))
           .foregroundColor(prefAccent)
         Spacer()
@@ -574,7 +574,7 @@ private struct EditSheet: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text(isNew ? "Add Prompt" : "Edit Prompt")
+      Text(isNew ? L10n.t("pref.addPrompt") : L10n.t("pref.editPrompt"))
         .font(.system(size: 15, weight: .semibold))
         .foregroundColor(.white.opacity(0.88))
         .padding(.top, 4)
@@ -594,7 +594,7 @@ private struct EditSheet: View {
       }
 
       VStack(alignment: .leading, spacing: 8) {
-        Text("Color").font(.system(size: 11, weight: .medium)).foregroundColor(prefMuted)
+        Text(L10n.t("pref.color")).font(.system(size: 11, weight: .medium)).foregroundColor(prefMuted)
         HStack(spacing: 8) {
           ForEach(0..<PromptStore.palette.count, id: \.self) { i in
             Circle()
@@ -704,7 +704,7 @@ private struct ShortcutView: View {
     }
     .frame(width: 420, height: 260)
     .background(prefBg0)
-    .navigationTitle(title)
+    .navigationTitle("")
     .onAppear { resizeWindow(to: CGSize(width: 420, height: 260)) }
     .onDisappear { stopRecording() }
   }
