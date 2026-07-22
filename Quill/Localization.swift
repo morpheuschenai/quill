@@ -73,13 +73,22 @@ enum L10n {
   }
 
   // key: (繁體中文, English)
-  private static let table: [String: (String, String)] = [
-    // 語言
+  /// 拆成多個小字典再合併——單一大型字典字面值會讓 Swift 型別檢查逾時。
+  private static let table: [String: (String, String)] = {
+    var t: [String: (String, String)] = [:]
+    for d in [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14] { t.merge(d) { a, _ in a } }
+    return t
+  }()
+
+  // 語言
+  private static let g1: [String: (String, String)] = [
     "lang.system": ("跟隨系統", "Follow system"),
     "lang.title": ("語言", "Language"),
     "lang.note": ("切換後介面立即更新", "Interface updates immediately"),
+  ]
 
-    // 偏好設定
+  // 偏好設定
+  private static let g2: [String: (String, String)] = [
     "pref.provider": ("AI 服務與 API Key", "Provider & API Key"),
     "pref.prompts": ("動作與提示", "Prompts"),
     "pref.textShortcut": ("選字快捷鍵", "Text Shortcut"),
@@ -88,7 +97,6 @@ enum L10n {
     "pref.shotShortcut": ("截圖快捷鍵", "Screenshot Shortcut"),
     "pref.shotShortcut.desc": ("設定在任何 App 啟動截圖框選的快捷鍵。",
                                "Set the shortcut to start an interactive screenshot capture."),
-
     "pref.providerLabel": ("服務商", "Provider"),
     "pref.endpoint": ("端點網址", "Endpoint"),
     "pref.model": ("模型", "Model"),
@@ -106,21 +114,27 @@ enum L10n {
     "tab.screenshot": ("截圖", "Screenshot"),
     "tab.editable": ("可編輯文字", "Editable"),
     "tab.readonly": ("唯讀文字", "Read-only"),
+  ]
 
-    // 選單列
+  // 選單列
+  private static let g3: [String: (String, String)] = [
     "menu.preferences": ("偏好設定…", "Preferences…"),
     "menu.onboarding": ("設定引導…", "Setup Guide…"),
     "menu.checkUpdates": ("檢查更新…", "Check for Updates…"),
     "menu.quit": ("結束 Quill", "Quit Quill"),
+  ]
 
-    // Onboarding — 共用
+  // Onboarding — 共用
+  private static let g4: [String: (String, String)] = [
     "ob.back": ("上一步", "Back"),
     "ob.next": ("下一步", "Next"),
     "ob.skip": ("略過", "Skip"),
     "ob.start": ("開始使用 Quill", "Start using Quill"),
     "ob.relaunch": ("已勾選,重新啟動 Quill", "Granted — restart Quill"),
+  ]
 
-    // Onboarding — 歡迎
+  // Onboarding — 歡迎
+  private static let g5: [String: (String, String)] = [
     "ob.welcome.title": ("歡迎使用 Quill", "Welcome to Quill"),
     "ob.welcome.sub": ("對你看到的任何東西,直接跟 AI 互動。", "Ask AI about anything you can see."),
     "ob.welcome.shot.title": ("截圖問 AI", "Ask AI about your screen"),
@@ -130,29 +144,37 @@ enum L10n {
     "ob.welcome.text.desc": ("選取文字 → 修正、改語氣、翻譯,直接取代原文",
                              "Select text → fix, change tone, translate — replaced in place"),
     "ob.welcome.hint": ("快捷鍵可隨時在偏好設定修改", "Shortcuts can be changed in Preferences"),
+  ]
 
-    // Onboarding — 輔助使用
+  // Onboarding — 輔助使用
+  private static let g6: [String: (String, String)] = [
     "ob.ax.title": ("允許「輔助使用」", "Allow Accessibility"),
     "ob.ax.why": ("Quill 需要這個權限才能讀取你選取的文字,並在原位置替換結果。我們只讀取你主動選取的內容,其他一概不碰。",
                   "Quill needs this to read your selected text and replace it in place. It only ever reads what you actively select."),
     "ob.ax.how": ("點下方按鈕 → 在系統設定找到 Quill → 打開開關",
                   "Click below → find Quill in System Settings → turn the switch on"),
     "ob.ax.button": ("開啟輔助使用設定", "Open Accessibility settings"),
+  ]
 
-    // Onboarding — 螢幕錄製
+  // Onboarding — 螢幕錄製
+  private static let g7: [String: (String, String)] = [
     "ob.screen.title": ("允許「螢幕錄製」", "Allow Screen Recording"),
     "ob.screen.why": ("截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往 AI 服務取得回覆。",
                       "Screenshots need this, otherwise captures won't include window contents. Capture only happens when you press the hotkey."),
     "ob.screen.how": ("點下方按鈕 → 在系統設定勾選 Quill → 回到這裡按「重新啟動」。",
                       "Click below → check Quill in System Settings → come back and click Restart."),
     "ob.screen.button": ("開啟螢幕錄製設定", "Open Screen Recording settings"),
+  ]
 
-    // Onboarding — 權限共用
+  // Onboarding — 權限共用
+  private static let g8: [String: (String, String)] = [
     "ob.perm.done": ("設定完成,可以進入下一步。", "All set — you can continue."),
     "ob.perm.copyPath": ("清單裡沒有 Quill?複製 App 路徑", "Quill not in the list? Copy app path"),
     "ob.perm.copied": ("已複製,到設定按「+」貼上路徑", "Copied — click + in Settings and paste"),
+  ]
 
-    // Onboarding — 試試看
+  // Onboarding — 試試看
+  private static let g9: [String: (String, String)] = [
     "ob.try.title": ("現在試一次", "Try it now"),
     "ob.try.sub": ("按下快捷鍵,把下面這句英文框起來,看 AI 怎麼回你。",
                    "Press the hotkey and frame the sentence below to see what AI does."),
@@ -164,8 +186,10 @@ enum L10n {
     "ob.try.done": ("成功了!", "Nice — it works!"),
     "ob.try.doneSub": ("這就是 Quill:看到什麼都能框起來問。在任何 App 都能這樣用。",
                        "That's Quill: frame anything you see and ask. Works in every app."),
+  ]
 
-    // Onboarding — 完成
+  // Onboarding — 完成
+  private static let g10: [String: (String, String)] = [
     "ob.ready.title": ("一切就緒,免費開通", "You're all set — free to use"),
     "ob.ready.sub": ("Quill Cloud 已為你開通,直接開始截圖問 AI。",
                      "Quill Cloud is activated. Start asking AI about your screen."),
@@ -173,19 +197,25 @@ enum L10n {
     "ob.ready.privacy": ("內容不留存、不訓練", "Your content is never stored or used for training"),
     "ob.ready.advanced": ("進階:想改用自己的 API key?到選單列 → 偏好設定 切換即可。",
                           "Advanced: prefer your own API key? Switch it in Preferences."),
+  ]
 
-    // 結果視窗
+  // 結果視窗
+  private static let g11: [String: (String, String)] = [
     "result.followUp": ("追問…", "Ask a follow-up…"),
     "result.copy": ("複製", "Copy"),
     "result.copied": ("已複製", "Copied"),
     "result.thinking": ("思考中…", "Thinking…"),
     "result.retry": ("重試", "Retry"),
     "result.empty": ("沒有收到回應,請再試一次。", "No response received. Please try again."),
+  ]
 
-    // 動作選單
+  // 動作選單
+  private static let g12: [String: (String, String)] = [
     "menu.custom": ("自訂指令…", "Custom instruction…"),
+  ]
 
-    // 預設動作名稱
+  // 預設動作名稱
+  private static let g13: [String: (String, String)] = [
     "action.fixText": ("修正文字", "Fix the text"),
     "action.makeFormal": ("改成正式語氣", "Make it formal"),
     "action.translate": ("翻譯", "Translate"),
@@ -194,8 +224,10 @@ enum L10n {
     "action.listActions": ("列出待辦事項", "List action items"),
     "action.extractText": ("擷取文字", "Extract text"),
     "action.describe": ("描述畫面", "Describe this"),
+  ]
 
-    // 錯誤
+  // 錯誤
+  private static let g14: [String: (String, String)] = [
     "err.screenshotRead": ("截圖讀取失敗,請再試一次。", "Failed to read the screenshot. Please try again."),
     "err.screenshotLaunch": ("無法啟動截圖工具:", "Couldn't start the screenshot tool: "),
     "err.noKey": ("尚未設定 API key。到偏好設定加入,或改用 Quill Cloud。",
