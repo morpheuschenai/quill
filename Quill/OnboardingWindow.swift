@@ -393,9 +393,9 @@ struct OnboardingView: View {
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: 380)
 
-      VStack(alignment: .leading, spacing: 8) {
-        readyRow(icon: "bolt.fill", text: "每天 10 次免費額度,每日重置")
-        readyRow(icon: "lock.fill", text: "內容不留存、不訓練")
+      VStack(alignment: .leading, spacing: 10) {
+        readyRow(svg: "shopping-cart", text: "每天 10 次免費額度,每日重置")
+        readyRow(svg: "lock", text: "內容不留存、不訓練")
       }
       .padding(16)
       .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
@@ -408,12 +408,18 @@ struct OnboardingView: View {
     }
   }
 
-  private func readyRow(icon: String, text: String) -> some View {
+  private func readyRow(svg: String, text: String) -> some View {
     HStack(spacing: 10) {
-      Image(systemName: icon)
-        .font(.system(size: 12))
-        .foregroundColor(green)
-        .frame(width: 18)
+      Group {
+        if let img = Self.svgIcon(svg) {
+          Image(nsImage: img).renderingMode(.template).resizable().scaledToFit()
+        } else {
+          Image(systemName: "checkmark").resizable().scaledToFit()
+        }
+      }
+      .frame(width: 16, height: 16)
+      .foregroundColor(green)
+      .frame(width: 18)
       Text(text)
         .font(.system(size: 13))
         .foregroundColor(.white.opacity(0.8))
