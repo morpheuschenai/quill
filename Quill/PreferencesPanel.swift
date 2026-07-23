@@ -169,16 +169,6 @@ private struct PrefMainList: View {
       }
       Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(
-        icon: "custom-text",
-        iconColor: Color(red: 251/255, green: 146/255, blue: 60/255),
-        label: L10n.t("pref.textShortcut"),
-        detail: OnboardingView.shortcutWords(
-          keyCode:   PromptStore.shared.textKeyCode,
-          modifiers: PromptStore.shared.textModifiers
-        )
-      ) { path.append(Route.textShortcut) }
-      Divider().opacity(0.10).padding(.horizontal, 16)
-      PrefRow(
         icon: "keyboard",
         iconColor: Color(red: 52/255, green: 211/255, blue: 153/255),
         label: L10n.t("pref.shotShortcut"),
@@ -187,6 +177,16 @@ private struct PrefMainList: View {
           modifiers: PromptStore.shared.screenshotModifiers
         )
       ) { path.append(Route.screenshotShortcut) }
+      Divider().opacity(0.10).padding(.horizontal, 16)
+      PrefRow(
+        icon: "custom-text",
+        iconColor: Color(red: 251/255, green: 146/255, blue: 60/255),
+        label: L10n.t("pref.textShortcut"),
+        detail: OnboardingView.shortcutWords(
+          keyCode:   PromptStore.shared.textKeyCode,
+          modifiers: PromptStore.shared.textModifiers
+        )
+      ) { path.append(Route.textShortcut) }
       Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(icon: "api_key", iconColor: prefAccent, label: L10n.t("pref.advanced")) {
         path.append(Route.apiKey)

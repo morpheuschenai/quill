@@ -110,6 +110,17 @@ final class QuillTests: XCTestCase {
     XCTAssertEqual(PromptStore.shared.visionModel, PromptStore.defaultVisionModel)
   }
 
+  // MARK: - Onboarding
+
+  func testScreenPermissionSetupCanResumeAfterSystemRelaunch() {
+    OnboardingWindow.clearScreenPermissionPending()
+    defer { OnboardingWindow.clearScreenPermissionPending() }
+
+    XCTAssertFalse(OnboardingWindow.screenPermissionPending)
+    OnboardingWindow.markScreenPermissionPending()
+    XCTAssertTrue(OnboardingWindow.screenPermissionPending)
+  }
+
   // MARK: - TextCapture editable detection
 
   func testDetectEditableRecognizesEditableRoles() {

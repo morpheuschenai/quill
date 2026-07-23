@@ -10,10 +10,11 @@ final class OnboardingWindow: NSWindow {
   private static var instance: OnboardingWindow?
   private static let doneKey = "quill_onboarding_done_v1"
   static let resumeKey = "quill_onboarding_resume_step"
+  private static let screenPermissionPendingKey = "quill_screen_permission_setup_pending"
 
   static var shouldShowOnLaunch: Bool {
-    // 尚未完成引導,或剛因權限重啟需要接續
-    !UserDefaults.standard.bool(forKey: doneKey) || resumeStep != nil
+    // 尚未完成引導、因權限重啟接續，或系統在螢幕錄製設定中重啟了 App。
+    !UserDefaults.standard.bool(forKey: doneKey) || resumeStep != nil || screenPermissionPending
   }
 
   /// 因權限重啟而要接續的步驟(取出後即清除)
@@ -28,8 +29,22 @@ final class OnboardingWindow: NSWindow {
     return v
   }
 
+  static var screenPermissionPending: Bool {
+    UserDefaults.standard.bool(forKey: screenPermissionPendingKey)
+  }
+
+  static func markScreenPermissionPending() {
+    UserDefaults.standard.set(true, forKey: screenPermissionPendingKey)
+  }
+
+  static func clearScreenPermissionPending() {
+    UserDefaults.standard.removeObject(forKey: screenPermissionPendingKey)
+  }
+
   static func markDone() {
     UserDefaults.standard.set(true, forKey: doneKey)
+    UserDefaults.standard.removeObject(forKey: resumeKey)
+    clearScreenPermissionPending()
   }
 
   /// macOS 規定:螢幕錄製權限變更後 App 必須重啟才生效。
@@ -44,7 +59,10 @@ final class OnboardingWindow: NSWindow {
   }
 
   static func open() {
-    if instance == nil { instance = OnboardingWindow(startStep: consumeResumeStep() ?? 0) }
+    if instance == nil {
+      let startStep = consumeResumeStep() ?? (screenPermissionPending ? 2 : 0)
+      instance = OnboardingWindow(startStep: startStep)
+    }
     if #available(macOS 14, *) { NSApp.activate() }
     else { NSApp.activate(ignoringOtherApps: true) }
     instance?.center()
@@ -103,6 +121,8 @@ final class OnboardingState: ObservableObject {
   }
 
   func requestScreenRecording() {
+    // macOS 可能直接顯示「結束並重新開啟」並重啟 App；先記住目前步驟。
+    OnboardingWindow.markScreenPermissionPending()
     _ = CGRequestScreenCaptureAccess()
     NSWorkspace.shared.open(
       URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
@@ -188,6 +208,9 @@ struct OnboardingView: View {
     .onAppear {
       step = startStep          // 因權限重啟時,直接回到原本那一步
       state.startPolling()
+    }
+    .onChange(of: step) { newStep in
+      if newStep > 2 { OnboardingWindow.clearScreenPermissionPending() }
     }
     .onDisappear { state.stopPolling() }
   }
