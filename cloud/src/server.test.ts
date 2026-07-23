@@ -31,6 +31,11 @@ function mockRedis(): MockRedis {
     async scard(key: string) {
       return sets.get(key)?.size || 0;
     },
+    async sunion(...keys: string[]) {
+      const result = new Set<string>();
+      keys.forEach((key) => sets.get(key)?.forEach((member) => result.add(member)));
+      return [...result];
+    },
     async eval(_script, _numberOfKeys, deviceKey, globalKey, dailyLimit, globalLimit) {
       const deviceUsed = counters.get(String(deviceKey)) || 0;
       const globalUsed = counters.get(String(globalKey)) || 0;

@@ -28,6 +28,7 @@ export interface RedisLike {
   expire(key: string, seconds: number): Promise<unknown>;
   sadd(key: string, ...members: string[]): Promise<number>;
   scard(key: string): Promise<number>;
+  sunion(...keys: string[]): Promise<string[]>;
   eval(script: string, numberOfKeys: number, ...args: Array<string | number>): Promise<unknown>;
 }
 
@@ -416,10 +417,10 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       ));
       return { date, ...Object.fromEntries(entries) };
     }));
-    const totals = Object.fromEntries(events.map((event) => [
+    const totals = Object.fromEntries(await Promise.all(events.map(async (event) => [
       event,
-      days.reduce((sum, day) => sum + Number(day[event]), 0),
-    ]));
+      (await redis.sunion(...dates.map((date) => `metrics:${event}:${date}`))).length,
+    ])));
     return json({ timeZone, days, totals });
   });
 
