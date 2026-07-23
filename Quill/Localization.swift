@@ -211,6 +211,7 @@ enum L10n {
     "result.copied": ("已複製", "Copied"),
     "result.thinking": ("思考中…", "Thinking…"),
     "result.retry": ("重試", "Retry"),
+    "result.upgrade": ("查看升級方案", "View upgrade options"),
     "result.empty": ("沒有收到回應,請再試一次。", "No response received. Please try again."),
   ]
 
@@ -241,5 +242,7 @@ enum L10n {
     "err.rateLimited": ("請求太頻繁,稍後再試。", "Rate limited. Try again in a moment."),
     "err.service": ("AI 服務暫時無法回應,請稍後再試。", "AI service is unavailable. Please try again later."),
     "err.tooLong": ("選取的內容太長,試試選短一點。", "Selection is too long. Try a shorter passage."),
+    "err.cloudActivation": ("Quill Cloud 啟用失敗，請確認網路後再試一次。",
+                            "Quill Cloud activation failed. Check your connection and try again."),
   ]
 }

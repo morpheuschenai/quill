@@ -65,9 +65,10 @@ Quill works with any OpenAI-compatible endpoint — OpenAI, Groq, OpenRouter, or
 
 ## Privacy
 
-Quill has no servers of its own. Your selected text goes directly to the AI model you configure — nothing passes through us in between.
+By default, Quill Cloud proxies requests through Railway to OpenAI. If you switch to your own API key, requests go directly to the compatible endpoint you configure.
 
-- **No telemetry.** No usage data, no analytics, no logs of any kind.
+- **Content is not stored.** Quill Cloud does not retain screenshots, selected text, prompts, or AI replies.
+- **Minimal anonymous metrics.** Daily active use, quota reached, and upgrade intent are deduplicated using a server-HMACed installation identifier. Raw events expire after 90 days.
 - **API key stored in macOS Keychain.** Never logged or transmitted.
 - **Clipboard-safe.** If Quill reads your selection via clipboard fallback, it restores whatever was there before.
 

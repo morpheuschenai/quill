@@ -106,48 +106,91 @@ class OpenAIService {
     )
   }
 
-  private func makeRequest(body: [String: Any]) -> URLRequest {
+  private func makeRequest(
+    body: [String: Any],
+    completion: @escaping (Result<URLRequest, Error>) -> Void
+  ) {
     var request = URLRequest(url: endpoint)
     request.httpMethod = "POST"
     request.timeoutInterval = Self.requestTimeout
-    if useCloud {
-      // Cloud 模式:共享密鑰 + 匿名裝置 ID(供每日額度)
-      request.setValue("Bearer \(CloudConfig.appSecret)", forHTTPHeaderField: "Authorization")
-      request.setValue(CloudConfig.deviceID, forHTTPHeaderField: "X-Quill-Device")
-    } else if !apiKey.isEmpty {
+    if !useCloud, !apiKey.isEmpty {
       request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
     }
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-    return request
+    guard useCloud else {
+      completion(.success(request))
+      return
+    }
+    CloudAuthentication.shared.authorizationToken { result in
+      switch result {
+      case .success(let token):
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        completion(.success(request))
+      case .failure(let error):
+        completion(.failure(error))
+      }
+    }
   }
 
   private func send(body: [String: Any], completion: @escaping (Result<String, Error>) -> Void) {
-    URLSession.shared.dataTask(with: makeRequest(body: body)) { data, response, error in
-      if let error {
+    makeRequest(body: body) { result in
+      switch result {
+      case .failure(let error):
         completion(.failure(error))
+      case .success(let request):
+        URLSession.shared.dataTask(with: request) { data, response, error in
+          if let error {
+            completion(.failure(error))
+            return
+          }
+
+          if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            if http.statusCode == 401 { CloudAuthentication.shared.invalidateToken() }
+            completion(.failure(Self.parseAPIError(from: data, statusCode: http.statusCode)))
+            return
+          }
+
+          guard let data else {
+            completion(.failure(
+              NSError(domain: "QuillError", code: -1,
+                      userInfo: [NSLocalizedDescriptionKey: "Invalid API response"])
+            ))
+            return
+          }
+
+          do {
+            completion(.success(try Self.parseCompletionContent(from: data)))
+          } catch {
+            completion(.failure(error))
+          }
+        }.resume()
+      }
+    }
+  }
+
+  // MARK: - Cloud product events
+
+  func trackUpgradeClicked(completion: @escaping () -> Void) {
+    guard useCloud else {
+      completion()
+      return
+    }
+    CloudAuthentication.shared.authorizationToken { result in
+      guard case .success(let token) = result else {
+        DispatchQueue.main.async(execute: completion)
         return
       }
-
-      if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-        completion(.failure(Self.parseAPIError(from: data, statusCode: http.statusCode)))
-        return
-      }
-
-      guard let data else {
-        completion(.failure(
-          NSError(domain: "QuillError", code: -1,
-                  userInfo: [NSLocalizedDescriptionKey: "Invalid API response"])
-        ))
-        return
-      }
-
-      do {
-        completion(.success(try Self.parseCompletionContent(from: data)))
-      } catch {
-        completion(.failure(error))
-      }
-    }.resume()
+      var request = URLRequest(url: CloudAuthentication.eventsEndpoint)
+      request.httpMethod = "POST"
+      request.timeoutInterval = 5
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+      request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+      request.httpBody = try? JSONSerialization.data(withJSONObject: ["event": "upgrade_clicked"])
+      URLSession.shared.dataTask(with: request) { _, _, _ in
+        DispatchQueue.main.async(execute: completion)
+      }.resume()
+    }
   }
 
   // MARK: - Text completion
@@ -203,11 +246,19 @@ class OpenAIService {
       "temperature": 0.3,
       "stream": true
     ]
-    return StreamingChatTask(
-      request: makeRequest(body: body),
+    let task = StreamingChatTask(
       onDelta: onDelta,
       onComplete: onComplete
     )
+    makeRequest(body: body) { result in
+      switch result {
+      case .success(let request):
+        task.start(request: request)
+      case .failure(let error):
+        task.fail(error)
+      }
+    }
+    return task
   }
 
   // MARK: - Vision
@@ -240,12 +291,90 @@ class OpenAIService {
   }
 }
 
+// MARK: - Per-installation Cloud authentication
+
+final class CloudAuthentication {
+  static let shared = CloudAuthentication()
+
+  private var pending: [(Result<String, Error>) -> Void] = []
+  private var isRegistering = false
+
+  private static var cloudBaseURL: URL {
+    let configured = PromptStore.shared.cloudEndpoint.trimmingCharacters(in: .init(charactersIn: "/"))
+    return URL(string: configured) ?? URL(string: CloudConfig.endpoint)!
+  }
+
+  static var eventsEndpoint: URL {
+    cloudBaseURL.appendingPathComponent("events")
+  }
+
+  private static var installationsEndpoint: URL {
+    cloudBaseURL.appendingPathComponent("installations")
+  }
+
+  private init() {}
+
+  func authorizationToken(completion: @escaping (Result<String, Error>) -> Void) {
+    let existing = KeychainStore.cloudInstallationToken
+    if !existing.isEmpty {
+      completion(.success(existing))
+      return
+    }
+
+    pending.append(completion)
+    guard !isRegistering else { return }
+    isRegistering = true
+
+    var request = URLRequest(url: Self.installationsEndpoint)
+    request.httpMethod = "POST"
+    request.timeoutInterval = 15
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.httpBody = try? JSONSerialization.data(withJSONObject: [
+      "installation_id": CloudConfig.installationID
+    ])
+
+    URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+      let result: Result<String, Error>
+      if let error {
+        result = .failure(error)
+      } else if
+        let http = response as? HTTPURLResponse,
+        (200...299).contains(http.statusCode),
+        let data,
+        let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        let token = payload["token"] as? String,
+        !token.isEmpty
+      {
+        KeychainStore.cloudInstallationToken = token
+        result = .success(token)
+      } else {
+        result = .failure(NSError(
+          domain: "QuillError",
+          code: -4,
+          userInfo: [NSLocalizedDescriptionKey: L10n.t("err.cloudActivation")]
+        ))
+      }
+      DispatchQueue.main.async {
+        guard let self else { return }
+        self.isRegistering = false
+        let callbacks = self.pending
+        self.pending.removeAll()
+        callbacks.forEach { $0(result) }
+      }
+    }.resume()
+  }
+
+  func invalidateToken() {
+    KeychainStore.cloudInstallationToken = ""
+  }
+}
+
 // MARK: - SSE streaming task
 
 /// 解析 OpenAI `stream: true` 的 Server-Sent Events 回應。
 /// Delegate callback 跑在 main queue,onDelta/onComplete 可直接更新 UI。
 final class StreamingChatTask: NSObject, URLSessionDataDelegate {
-  private var urlSession: URLSession!
+  private var urlSession: URLSession?
   private var lineBuffer = ""
   private var fullText = ""
   private var statusCode = 200
@@ -255,22 +384,30 @@ final class StreamingChatTask: NSObject, URLSessionDataDelegate {
   private let onComplete: (Result<String, Error>) -> Void
 
   init(
-    request: URLRequest,
     onDelta: @escaping (String) -> Void,
     onComplete: @escaping (Result<String, Error>) -> Void
   ) {
     self.onDelta = onDelta
     self.onComplete = onComplete
     super.init()
+  }
+
+  func start(request: URLRequest) {
+    guard !finished else { return }
     let config = URLSessionConfiguration.default
     config.timeoutIntervalForRequest = 60
-    urlSession = URLSession(configuration: config, delegate: self, delegateQueue: .main)
-    urlSession.dataTask(with: request).resume()
+    let session = URLSession(configuration: config, delegate: self, delegateQueue: .main)
+    urlSession = session
+    session.dataTask(with: request).resume()
+  }
+
+  func fail(_ error: Error) {
+    finish(.failure(error))
   }
 
   func cancel() {
     finished = true
-    urlSession.invalidateAndCancel()
+    urlSession?.invalidateAndCancel()
   }
 
   // MARK: URLSessionDataDelegate
@@ -341,6 +478,6 @@ final class StreamingChatTask: NSObject, URLSessionDataDelegate {
     guard !finished else { return }
     finished = true
     onComplete(result)
-    urlSession.finishTasksAndInvalidate()
+    urlSession?.finishTasksAndInvalidate()
   }
 }

@@ -6,6 +6,21 @@ on:
   pull_request:
 
 jobs:
+  cloud-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cloud/package-lock.json
+      - working-directory: cloud
+        run: npm ci
+      - working-directory: cloud
+        run: npm test
+
   build-and-test:
     runs-on: macos-latest
 
@@ -27,3 +42,19 @@ jobs:
             -scheme Quill \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Verify release compatibility
+        run: |
+          xcodebuild build \
+            -project Quill/Quill.xcodeproj \
+            -scheme Quill \
+            -configuration Release \
+            -derivedDataPath "$RUNNER_TEMP/QuillRelease" \
+            -destination 'generic/platform=macOS' \
+            ARCHS='arm64 x86_64' \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO
+          APP="$RUNNER_TEMP/QuillRelease/Build/Products/Release/Quill.app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")" = "13.0"
+          ARCHS_FOUND="$(lipo -archs "$APP/Contents/MacOS/Quill")"
+          [[ "$ARCHS_FOUND" == *arm64* && "$ARCHS_FOUND" == *x86_64* ]]

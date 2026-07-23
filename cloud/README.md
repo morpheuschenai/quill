@@ -1,56 +1,84 @@
 # Quill Cloud
 
-代理 AI 的後端(部署於 Railway)。App 免 API key,使用者開箱即用。
+部署於 Railway 的 AI proxy。App 會先取得每個安裝實例的短期簽章 token，再用 token 存取每天 10 次的免費額度。
 
 ```
-Quill App ──(共享密鑰 + 裝置ID)──▶ Railway 服務(Hono)
-                                        │
-                                        ├ 共享密鑰驗證(擋非本 App 請求)
-                                        ├ 裝置每日額度(Redis,預設 10 次/天)
-                                        ├ 全域每日上限(Redis,預設 5000 次/天,保護錢包)
-                                        │
-                                        └ 全部走 OpenAI gpt-4o-mini(vision + 文字)
-                                          OpenAI 原生相容格式,pass-through 即可
+Quill App ──(installation token)──▶ Railway / Hono
+                                           ├─ token + 每裝置每日額度
+                                           ├─ IP 註冊速率限制
+                                           ├─ 全域每日成本上限
+                                           ├─ 匿名使用／限額／升級指標
+                                           └─ OpenAI gpt-4o-mini
 ```
 
-真實金鑰只存在 Railway 環境變數,永不進 App、不進 git。
+## 隱私界線
 
-## 部署到 Railway(約 10 分鐘)
+- 不儲存截圖、選取文字、Prompt、AI 回覆或 API Key。
+- 安裝 ID 只在伺服器以 HMAC 後用於去重；Redis 不保存原始 ID。
+- 匿名事件最多保存 90 天。
+- 管理頁需 HTTP Basic Authentication，不把管理密碼放在前端。
 
-前置:[Railway 帳號](https://railway.app)、一把 [OpenAI key](https://platform.openai.com/api-keys)。
+## Railway 環境變數
 
-1. **建立專案**:Railway → New Project → Deploy from GitHub repo,選這個 repo,Root Directory 設 `cloud/`。
-2. **加 Redis**:專案內 → New → Database → Redis(Railway 會自動注入 `REDIS_URL`)。
-3. **設環境變數**(專案 → Variables):
-   ```
-   QUILL_APP_SECRET = <自訂一組長隨機字串,要和 App 內建值相同>
-   OPENAI_KEY       = <你的 OpenAI API key,platform.openai.com>
-   ```
-   選填(有預設值):`DAILY_LIMIT=10`、`GLOBAL_DAILY_CAP=5000`、`OPENAI_MODEL=gpt-4o-mini`
-4. Railway 用 `npm start`(= `tsx src/index.ts`)自動啟動,產生一個 `*.up.railway.app` 網址。
-5. 把網址 + `/v1` 填進 App 端 `CloudConfig.endpoint`,把 `QUILL_APP_SECRET` 填進 `CloudConfig.appSecret`。
+必要：
+
+```text
+OPENAI_KEY=<OpenAI API key>
+INSTALLATION_TOKEN_SECRET=<至少 32 bytes 的隨機字串>
+ANALYTICS_SALT=<另一組至少 32 bytes 的隨機字串>
+ADMIN_USERNAME=<管理頁帳號>
+ADMIN_PASSWORD=<管理頁長密碼>
+QUOTA_TIME_ZONE=Asia/Taipei
+```
+
+選填：
+
+```text
+DAILY_LIMIT=10
+GLOBAL_DAILY_CAP=5000
+REGISTRATION_DAILY_LIMIT=20
+OPENAI_MODEL=gpt-4o-mini
+PAYMENT_WEBHOOK_SECRET=<付款 webhook 專用密鑰>
+```
+
+可用以下方式各產生一組密鑰：
+
+```sh
+openssl rand -hex 32
+```
+
+部署後，指標頁位於：
+
+```text
+https://<Railway domain>/admin/metrics
+```
+
+瀏覽器會要求輸入 `ADMIN_USERNAME` 與 `ADMIN_PASSWORD`。
 
 ## 本機測試
 
 ```sh
 cd cloud
 npm install
-# 需要本機 Redis(brew install redis && redis-server),或跳過額度測試
-QUILL_APP_SECRET=test-secret-123 OPENAI_KEY=你的key npm start
-# 服務起在 http://localhost:8787
+OPENAI_KEY=test \
+INSTALLATION_TOKEN_SECRET=test-installation-secret \
+ANALYTICS_SALT=test-analytics-salt \
+ADMIN_USERNAME=owner \
+ADMIN_PASSWORD=local-password \
+QUOTA_TIME_ZONE=Asia/Taipei \
+npm start
 ```
 
-App 端把 `defaults write com.morpheus.quill quill_cloud_endpoint http://localhost:8787/v1`、
-`CloudConfig.appSecret` 設為 `test-secret-123`,即可測整條鏈路。
-
-## 單元測試(不需 Redis / 網路)
+本機需有 Redis，預設網址為 `redis://localhost:6379`。App 可用以下設定指向本機：
 
 ```sh
-npm test   # mock Redis + mock fetch,驗證密鑰/額度/格式轉換,共 11 項
+defaults write com.morpheus.quill quill_cloud_endpoint http://localhost:8787/v1
 ```
 
-## 調整額度 / 煞車
+## 單元測試
 
-- 改 Railway 的 `DAILY_LIMIT` / `GLOBAL_DAILY_CAP` 變數即可,服務會自動重啟。
-- 想立刻停止對外:Railway 暫停服務,或把 `GLOBAL_DAILY_CAP` 設 `0`。
-- `GLOBAL_DAILY_CAP` 是你 AI 花費的每日硬上限。
+```sh
+npm test
+```
+
+測試使用 mock Redis 與 mock OpenAI，不會連線外部服務。

@@ -9,12 +9,9 @@ enum CloudConfig {
   /// `defaults write com.morpheus.quill quill_cloud_endpoint http://localhost:8787/v1`
   static let endpoint = "https://quill-production-ba4a.up.railway.app/v1"
 
-  /// 與後端 QUILL_APP_SECRET 相同的共享密鑰。
-  static let appSecret = "ed1dcdf3dc9d239eafe943de17ba8bd5883da29aad3cda473cf32ec027cf0baf"
-
-  /// 匿名裝置 ID,只用於每日額度計數,不含任何個資。
-  static var deviceID: String {
-    let key = "quill_device_id"
+  /// 每次安裝產生一次的隨機 ID。後端只保存其 HMAC，不保存原始值。
+  static var installationID: String {
+    let key = "quill_installation_id"
     if let v = UserDefaults.standard.string(forKey: key) { return v }
     let v = UUID().uuidString
     UserDefaults.standard.set(v, forKey: key)

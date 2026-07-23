@@ -7,12 +7,12 @@
 <meta property="og:type"        content="website">
 <meta property="og:url"         content="https://quill.morpheuschen.com/">
 <meta property="og:title"       content="Quill — 截圖問 AI，答案當場出現">
-<meta property="og:description" content="框選畫面問 AI，或選取文字直接改寫 — 結果當場出現，不用切去聊天機器人。">
+<meta property="og:description" content="Quill 是 macOS 專用的 AI 工具：框選畫面問 AI，或選取文字直接改寫，結果當場出現。">
 <meta property="og:image"       content="https://quill.morpheuschen.com/og-image.png">
 <meta property="og:site_name"   content="Quill">
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="Quill — 截圖問 AI，答案當場出現">
-<meta name="twitter:description" content="框選畫面問 AI，或選取文字直接改寫 — 結果當場出現，不用切去聊天機器人。">
+<meta name="twitter:description" content="Quill 是 macOS 專用的 AI 工具：框選畫面問 AI，或選取文字直接改寫，結果當場出現。">
 <meta name="twitter:image"       content="https://quill.morpheuschen.com/og-image.png">
 <meta name="description" content="在 Mac 上框選任何畫面問 AI — 翻譯、擷取文字、解釋內容，結果當場浮現還能追問。也能選取文字直接改寫。">
 <style>
@@ -98,6 +98,8 @@
   kbd { font-family: 'SF Mono', ui-monospace, monospace; font-size: 12px; background: #fff; border: 1px solid rgba(20,20,40,0.16); border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; color: var(--text-dim); }
   #hintBubble kbd { background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border-color: rgba(255,255,255,0.14); color: #f0f0f6; }
   .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .mac-only-tag { display: inline-flex; align-items: center; gap: 5px; margin-left: 9px; padding: 3px 8px; border: 1px solid rgba(20,20,40,0.11); border-radius: 999px; color: var(--text-dim); background: rgba(255,255,255,0.54); font-size: 10.5px; font-weight: 650; letter-spacing: 0.02em; vertical-align: middle; }
+  .mac-only-note { width: 100%; margin-top: 2px; color: var(--text-dim); font-size: 12.5px; line-height: 1.55; }
   #resetChip { visibility: hidden; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 13px; }
   #resetChip:hover { color: var(--text); }
   #hintBubble { position: fixed; z-index: 80; display: none; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: #f0f0f6; box-shadow: 0 12px 32px rgba(20,20,40,0.35); cursor: pointer; user-select: none; -webkit-user-select: none; animation: pop 0.18s ease; }
@@ -336,14 +338,14 @@
 
 <div class="navbar"><div class="wrap">
   <nav>
-    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill</div>
+    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill <span class="mac-only-tag"><svg class="ic-svg" style="width:11px;height:11px"><use href="#i-apple"/></svg> macOS only</span></div>
     <div class="nav-links">
       <a href="#how">如何運作</a>
       <a href="#features">功能</a>
       <a href="#faq">常見問題</a>
       <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
       <a href="index.html" title="English version" style="font-size:13px;opacity:0.6">EN</a>
-      <a class="btn btn-primary" href="Quill.zip" download>免費下載</a>
+      <a class="btn btn-primary" href="Quill.zip" download>免費下載 Mac 版</a>
     </div>
   </nav>
 </div></div>
@@ -358,6 +360,7 @@
         <div class="hero-actions">
           <button class="btn btn-primary btn-try" id="heroShotBtn"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-camera"/></svg> 立即體驗</button>
           <a class="btn btn-ghost" href="Quill.zip" download>免費下載 Mac 版</a>
+          <p class="mac-only-note"><strong>Mac 專用 App</strong> · 需安裝於 macOS，不支援 iPhone、iPad、Windows 或 Android。</p>
         </div>
       </div>
       <div>
@@ -525,16 +528,12 @@
         <span class="badge soon">免費</span>
         <h3>Quill Cloud</h3>
         <div class="plan-platforms">
-          <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS</span>
-          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-windows"/></svg> Windows</span>
-          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-phone"/></svg> iPhone</span>
-          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-android"/></svg> Android</span>
+          <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS 專用</span>
         </div>
         <div class="price">免費下載 · 每天 10 次免費額度</div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>下載後雙擊即可安裝，不需任何技術設定</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>每天 10 次免費，覺得好用想大量使用再升級</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>自動更新</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>支援 Mail、備忘錄、Chrome、Slack 等所有 App</li>
         </ul>
         <p class="plan-note"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>免費開始使用 — 不需註冊、不需信用卡</p>
@@ -558,8 +557,8 @@
     <p class="sec-sub">內容只為取得 AI 回覆而傳輸 — 不留存、不訓練、不追蹤。</p>
     <div class="privacy-list">
       <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>不留存你的內容。</b> <span>開源版直連你設定的 AI 服務；Quill Cloud 也承諾不儲存你的截圖與文字、不用於訓練。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>不需要帳號。</b> <span>不需要註冊、沒有個人資料、我們這邊不儲存任何資料。</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>零追蹤。</b> <span>沒有使用數據、沒有分析，什麼紀錄都不收集。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>不需要帳號。</b> <span>Quill Cloud 透過 Railway 將請求送往 OpenAI；不儲存截圖、文字、Prompt 或 AI 回覆。</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>只收集匿名使用指標。</b> <span>僅記錄活躍、達到限額與升級意願等彙總事件，裝置識別經匿名化，原始事件最多保存 90 天。</span></span></div>
       <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>剪貼板安全。</b> <span>若 Quill 需要透過剪貼板讀取文字，完成後會自動還原你原本的內容。</span></span></div>
     </div>
   </section>
@@ -569,6 +568,7 @@
     <h2>常見問題，一次說清。</h2>
     <div class="faq-item"><h3>要花錢嗎？</h3><p>不用。下載就能用，每天有 10 次免費額度，適合日常隨手用。如果覺得好用、想大量使用，之後會有付費方案解除上限。</p></div>
     <div class="faq-item"><h3>需要註冊或 API Key 嗎？</h3><p>都不用。下載雙擊即可安裝，開啟就能用，不需要帳號、也不需要自己申請 API Key。（進階使用者仍可在偏好設定改用自己的 Key。）</p></div>
+    <div class="faq-item"><h3>可以安裝在手機或 Windows 嗎？</h3><p>不行。Quill 目前是 macOS 專用 App，必須在 Mac 上下載與安裝；不支援 iPhone、iPad、Windows 或 Android。</p></div>
     <div class="faq-item"><h3>Quill 支援哪些 Mac App？</h3><p>幾乎所有 App 都支援 — Mail、備忘錄、Pages、訊息、Slack、Safari、Chrome 等。Quill 讀取你選取的文字後直接在原位改寫，唯讀 App（如 PDF）則在浮動面板顯示結果。</p></div>
     <div class="faq-item"><h3>Quill 需要哪些權限？</h3><p>「螢幕錄製」（截圖用）與「輔助使用」（讀取選取文字用）。首次啟動的引導精靈會一步步帶你完成，各授權一次即可，不會存取其他任何資料。</p></div>
     <div class="faq-item"><h3>舊 Mac 能用嗎？</h3><p>macOS 13 以上都支援，Intel 與 Apple Silicon 皆可 — 不需要 Apple Intelligence。</p></div>

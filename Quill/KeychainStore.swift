@@ -5,17 +5,18 @@ import Security
 enum KeychainStore {
 
   private static let service = "com.morpheus.quill"
-  private static let account = "openai_api_key"
+  private static let apiKeyAccount = "openai_api_key"
+  private static let cloudTokenAccount = "cloud_installation_token"
 
   /// 舊版明文儲存的 UserDefaults key，首次讀取時自動搬移
   private static let legacyDefaultsKey = "quill_api_key"
 
   static var apiKey: String {
     get {
-      if let key = read(), !key.isEmpty { return key }
+      if let key = read(account: apiKeyAccount), !key.isEmpty { return key }
       // 一次性搬移：舊版存在 UserDefaults 的 key
       if let legacy = UserDefaults.standard.string(forKey: legacyDefaultsKey), !legacy.isEmpty {
-        write(legacy)
+        write(legacy, account: apiKeyAccount)
         UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
         return legacy
       }
@@ -23,18 +24,29 @@ enum KeychainStore {
     }
     set {
       if newValue.isEmpty {
-        delete()
+        delete(account: apiKeyAccount)
       } else {
-        write(newValue)
+        write(newValue, account: apiKeyAccount)
       }
       // 確保舊的明文副本被清掉
       UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
     }
   }
 
+  static var cloudInstallationToken: String {
+    get { read(account: cloudTokenAccount) ?? "" }
+    set {
+      if newValue.isEmpty {
+        delete(account: cloudTokenAccount)
+      } else {
+        write(newValue, account: cloudTokenAccount)
+      }
+    }
+  }
+
   // MARK: - Keychain primitives
 
-  private static var baseQuery: [String: Any] {
+  private static func baseQuery(account: String) -> [String: Any] {
     [
       kSecClass as String:       kSecClassGenericPassword,
       kSecAttrService as String: service,
@@ -42,8 +54,8 @@ enum KeychainStore {
     ]
   }
 
-  private static func read() -> String? {
-    var query = baseQuery
+  private static func read(account: String) -> String? {
+    var query = baseQuery(account: account)
     query[kSecReturnData as String] = true
     query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -55,24 +67,25 @@ enum KeychainStore {
   }
 
   @discardableResult
-  private static func write(_ value: String) -> Bool {
+  private static func write(_ value: String, account: String) -> Bool {
     let data = Data(value.utf8)
+    let query = baseQuery(account: account)
 
     // 先嘗試更新既有項目
     let updateStatus = SecItemUpdate(
-      baseQuery as CFDictionary,
+      query as CFDictionary,
       [kSecValueData as String: data] as CFDictionary
     )
     if updateStatus == errSecSuccess { return true }
 
     // 不存在則新增
-    var query = baseQuery
-    query[kSecValueData as String] = data
-    query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-    return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
+    var addQuery = query
+    addQuery[kSecValueData as String] = data
+    addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+    return SecItemAdd(addQuery as CFDictionary, nil) == errSecSuccess
   }
 
-  private static func delete() {
-    SecItemDelete(baseQuery as CFDictionary)
+  private static func delete(account: String) {
+    SecItemDelete(baseQuery(account: account) as CFDictionary)
   }
 }

@@ -15,6 +15,7 @@ final class ChatSession: ObservableObject {
   @Published var messages: [Message] = []
   @Published var isStreaming = false
   @Published var errorText: String?
+  @Published var errorCode: Int?
 
   let title: String
   /// 首輪完成後自動複製結果(OCR 情境)
@@ -109,6 +110,7 @@ final class ChatSession: ObservableObject {
 
   private func stream() {
     errorText = nil
+    errorCode = nil
     isStreaming = true
     messages.append(Message(role: .assistant, text: ""))
     let index = messages.count - 1
@@ -144,6 +146,7 @@ final class ChatSession: ObservableObject {
             self.messages.remove(at: index)
           }
           self.errorText = error.localizedDescription
+          self.errorCode = (error as NSError).code
         }
       }
     )
@@ -357,6 +360,12 @@ struct ChatView: View {
         .buttonStyle(.plain)
         .font(.system(size: 12, weight: .medium))
         .foregroundColor(accent)
+      if session.errorCode == 429 {
+        Button(L10n.t("result.upgrade")) { openUpgradeOptions() }
+          .buttonStyle(.plain)
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundColor(Color(red: 103/255, green: 215/255, blue: 170/255))
+      }
     }
     .padding(10)
     .background(
@@ -380,5 +389,12 @@ struct ChatView: View {
     NSPasteboard.general.setString(text, forType: .string)
     justCopied = true
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { justCopied = false }
+  }
+
+  private func openUpgradeOptions() {
+    OpenAIService.shared.trackUpgradeClicked {
+      guard let url = URL(string: "https://quill.morpheuschen.com/#pricing") else { return }
+      NSWorkspace.shared.open(url)
+    }
   }
 }

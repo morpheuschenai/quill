@@ -1,15 +1,9 @@
 import AppKit
 import ApplicationServices
 import Combine
-import Sparkle
 
 class AppDelegate: NSObject, NSApplicationDelegate {
   var statusItem: NSStatusItem?
-
-  // Sparkle 自動更新(feed 見 Info.plist SUFeedURL;發佈流程見 docs/RELEASE.md)
-  private let updaterController = SPUStandardUpdaterController(
-    startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
-  )
 
   private var localeObserver: AnyCancellable?
 
@@ -53,11 +47,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       action: #selector(openOnboarding),
       keyEquivalent: ""
     ))
-    menu.addItem(NSMenuItem(
-      title: L10n.t("menu.checkUpdates"),
-      action: #selector(checkForUpdates),
-      keyEquivalent: ""
-    ))
     menu.addItem(.separator())
     menu.addItem(NSMenuItem(
       title: L10n.t("menu.quit"),
@@ -75,10 +64,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func openOnboarding() {
     OnboardingWindow.open()
-  }
-
-  @objc private func checkForUpdates() {
-    updaterController.checkForUpdates(nil)
   }
 
   // MARK: - Accessibility(權限引導交給 OnboardingWindow;這裡靜默輪詢,授權後啟動監聽)

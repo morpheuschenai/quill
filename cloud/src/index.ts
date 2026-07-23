@@ -7,15 +7,21 @@ import Redis from "ioredis";
 import { createApp, type QuillEnv } from "./server.ts";
 
 const env: QuillEnv = {
-  QUILL_APP_SECRET: process.env.QUILL_APP_SECRET || "",
   OPENAI_KEY: process.env.OPENAI_KEY || "",
+  INSTALLATION_TOKEN_SECRET: process.env.INSTALLATION_TOKEN_SECRET || "",
+  ANALYTICS_SALT: process.env.ANALYTICS_SALT || "",
   OPENAI_MODEL: process.env.OPENAI_MODEL,
   DAILY_LIMIT: process.env.DAILY_LIMIT,
   GLOBAL_DAILY_CAP: process.env.GLOBAL_DAILY_CAP,
+  QUOTA_TIME_ZONE: process.env.QUOTA_TIME_ZONE,
+  REGISTRATION_DAILY_LIMIT: process.env.REGISTRATION_DAILY_LIMIT,
+  ADMIN_USERNAME: process.env.ADMIN_USERNAME,
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+  PAYMENT_WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET,
 };
 
-if (!env.QUILL_APP_SECRET || !env.OPENAI_KEY) {
-  console.error("[quill-cloud] 缺少必要環境變數:QUILL_APP_SECRET / OPENAI_KEY");
+if (!env.OPENAI_KEY || !env.INSTALLATION_TOKEN_SECRET || !env.ANALYTICS_SALT) {
+  console.error("[quill-cloud] 缺少必要環境變數: OPENAI_KEY / INSTALLATION_TOKEN_SECRET / ANALYTICS_SALT");
   process.exit(1);
 }
 

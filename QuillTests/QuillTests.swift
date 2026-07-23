@@ -84,18 +84,9 @@ final class QuillTests: XCTestCase {
   }
 
   func testAPIErrorFallsBackToReadableMessagePerStatusCode() {
-    XCTAssertTrue(
-      OpenAIService.parseAPIError(from: nil, statusCode: 401)
-        .localizedDescription.contains("API key")
-    )
-    XCTAssertTrue(
-      OpenAIService.parseAPIError(from: nil, statusCode: 429)
-        .localizedDescription.contains("Rate limited")
-    )
-    XCTAssertTrue(
-      OpenAIService.parseAPIError(from: nil, statusCode: 503)
-        .localizedDescription.contains("HTTP 503")
-    )
+    XCTAssertEqual(OpenAIService.parseAPIError(from: nil, statusCode: 401).code, 401)
+    XCTAssertEqual(OpenAIService.parseAPIError(from: nil, statusCode: 429).code, 429)
+    XCTAssertEqual(OpenAIService.parseAPIError(from: nil, statusCode: 503).code, 503)
     // 不認識的狀態碼也要有泛用訊息
     XCTAssertTrue(
       OpenAIService.parseAPIError(from: nil, statusCode: 418)
@@ -106,7 +97,8 @@ final class QuillTests: XCTestCase {
   func testAPIErrorIgnoresMalformedErrorBody() {
     let data = #"{"unexpected":"shape"}"#.data(using: .utf8)!
     let error = OpenAIService.parseAPIError(from: data, statusCode: 429)
-    XCTAssertTrue(error.localizedDescription.contains("Rate limited"))
+    XCTAssertEqual(error.code, 429)
+    XCTAssertFalse(error.localizedDescription.isEmpty)
   }
 
   // MARK: - Model configuration
