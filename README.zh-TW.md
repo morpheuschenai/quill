@@ -22,7 +22,7 @@
 
 - **就地改寫** — 修文法、改語氣、翻譯，直接取代選取的文字。
 - **分析任何內容** — 對網頁、PDF、唯讀文字做摘要、解釋或擷取待辦事項。
-- **截圖 AI** — 按 Control+Option+I，框選畫面區域，擷取文字或描述內容。
+- **截圖 AI** — 按 Control+Option+Q，框選畫面區域，擷取文字或描述內容。
 - **自訂 Prompt** — 在偏好設定加入任意數量的自訂動作與 system prompt。
 
 ## 兩種使用方式
@@ -57,7 +57,7 @@ open quill/Quill/Quill.xcodeproj
 | 項目 | 預設 | 位置 |
 |---|---|---|
 | 文字動作快捷鍵 | Control+Option+A | 偏好設定 |
-| 截圖快捷鍵 | Control+Option+I | 偏好設定 |
+| 截圖快捷鍵 | Control+Option+Q | 偏好設定 |
 | 文字模型 | `gpt-4o-mini` | `defaults write com.morpheus.quill quill_text_model <model>` |
 | Vision 模型 | `gpt-4o` | `defaults write com.morpheus.quill quill_vision_model <model>` |
 

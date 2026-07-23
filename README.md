@@ -22,7 +22,7 @@ Select text or take a screenshot in any Mac app. Press a hotkey. Fix, translate,
 
 - **Rewrite in place** — Fix grammar, change tone, translate; the selected text is replaced directly.
 - **Analyze anything** — Summarize, explain, or extract action items from web pages, PDFs, and read-only text.
-- **Screenshot AI** — Press Control+Option+I, capture a region, and extract text or describe what's on screen.
+- **Screenshot AI** — Press Control+Option+Q, capture a region, and extract text or describe what's on screen.
 - **Custom prompts** — Add any action with a custom system prompt in Preferences. As many as you need.
 
 ## Two ways to use Quill
@@ -57,7 +57,7 @@ open quill/Quill/Quill.xcodeproj
 | Setting | Default | Where |
 |---|---|---|
 | Text action hotkey | Control+Option+A | Preferences |
-| Screenshot hotkey | Control+Option+I | Preferences |
+| Screenshot hotkey | Control+Option+Q | Preferences |
 | Text model | `gpt-4o-mini` | `defaults write com.morpheus.quill quill_text_model <model>` |
 | Vision model | `gpt-4o` | `defaults write com.morpheus.quill quill_vision_model <model>` |
 

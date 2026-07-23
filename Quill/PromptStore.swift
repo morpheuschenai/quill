@@ -142,11 +142,11 @@ class PromptStore: ObservableObject {
     set { UserDefaults.standard.set(Int(newValue), forKey: "quill_text_hotkey_modifiers") }
   }
 
-  // Screenshot hotkey — Ctrl(4096) + Option(2048) = 6144, kVK_ANSI_I = 34
+  // Screenshot hotkey — Ctrl(4096) + Option(2048) = 6144, kVK_ANSI_Q = 12
   var screenshotKeyCode: UInt32 {
     get {
       guard let v = UserDefaults.standard.object(forKey: "quill_hotkey_keycode") as? Int
-      else { return 34 }
+      else { return 12 }
       return UInt32(v)
     }
     set { UserDefaults.standard.set(Int(newValue), forKey: "quill_hotkey_keycode") }
