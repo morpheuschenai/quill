@@ -247,7 +247,11 @@
   #features { padding-bottom: 56px; }
   #pricing  { padding-top: 56px; }
   #how { border-top: none; }
-  @media (max-width: 600px) { .nav-links a:not(.btn) { display: none; } header { padding: 60px 0 68px; } }
+  @media (max-width: 600px) {
+    .nav-links a { display: none !important; }
+    .navbar nav { gap: 10px; }
+    header { padding: 60px 0 68px; }
+  }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .reveal { opacity: 1; transform: none; } }
 
   /* ---------- Screenshot showcase ---------- */
