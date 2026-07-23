@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quill for Mac — Platform clarity prototype</title>
+<style>
+  :root {
+    --paper:#f4f1ea; --ink:#17171d; --muted:#6f7078; --line:rgba(23,23,29,.12);
+    --blue:#2c6bed; --panel:#1c1d25; --orange:#ee7a45;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Avenir Next","PingFang TC",sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  a { color:inherit; text-decoration:none; }
+  .notice {
+    min-height:38px; padding:9px 20px; display:flex; justify-content:center; gap:10px; align-items:center;
+    background:var(--ink); color:#f8f4ec; font-size:12px; letter-spacing:.01em;
+  }
+  .notice b { color:#ffb07b; }
+  .wrap { width:min(1120px,calc(100% - 40px)); margin:auto; }
+  nav { height:72px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { font:700 19px "Iowan Old Style",serif; display:flex; gap:9px; align-items:center; }
+  .logo-mark {
+    width:30px;height:30px;border:1px solid var(--ink);border-radius:9px;display:grid;place-items:center;
+    font-style:italic;font-size:18px;
+  }
+  .nav-right { display:flex;gap:24px;align-items:center;font-size:13px;color:var(--muted); }
+  .nav-download { color:var(--ink);font-weight:700; }
+  header { padding:72px 0 88px; display:grid;grid-template-columns:1.03fr .97fr;gap:76px;align-items:center; }
+  .platform {
+    display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:99px;
+    padding:7px 11px;background:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:.04em;
+  }
+  .apple { font-size:16px;line-height:1; }
+  h1 {
+    margin:22px 0 18px;font:56px/1.04 "Iowan Old Style","Songti TC",serif;
+    letter-spacing:-.045em;max-width:620px;
+  }
+  h1 em { font-style:normal;color:var(--blue); }
+  .lead { color:var(--muted);font-size:18px;line-height:1.7;max-width:550px;margin:0; }
+  .actions { margin-top:28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap; }
+  .download {
+    border:0;border-radius:10px;background:var(--ink);color:white;padding:13px 19px;
+    display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:14px;
+    box-shadow:0 9px 30px rgba(23,23,29,.16);cursor:pointer;
+  }
+  .download:hover { transform:translateY(-1px); }
+  .watch { border:1px solid var(--line);border-radius:10px;padding:12px 18px;font-weight:600;font-size:14px;background:transparent; }
+  .requirements { margin-top:14px;color:var(--muted);font-size:11px;display:flex;gap:7px;align-items:center; }
+  .requirements strong { color:var(--ink); }
+  .mobile-message {
+    display:none;margin-top:18px;padding:14px;border-radius:10px;background:#fff;border:1px solid var(--line);
+    color:var(--muted);font-size:12px;line-height:1.55;
+  }
+  .mobile-message b { color:var(--ink); }
+  .stage { min-height:480px;position:relative;display:grid;place-items:center; }
+  .halo {
+    position:absolute;width:450px;height:450px;border-radius:50%;
+    background:radial-gradient(circle,rgba(44,107,237,.19),rgba(238,122,69,.08) 43%,transparent 70%);
+    filter:blur(10px);
+  }
+  .mac {
+    width:min(530px,100%);aspect-ratio:1.42;position:relative;border:1px solid rgba(255,255,255,.15);
+    background:#111218;border-radius:22px 22px 13px 13px;padding:11px;box-shadow:0 34px 70px rgba(23,23,29,.25);
+    transform:rotate(1.2deg);
+  }
+  .screen {
+    height:100%;border-radius:13px;overflow:hidden;position:relative;
+    background:linear-gradient(145deg,#20212a,#12131a);
+  }
+  .menubar { height:27px;background:rgba(240,240,246,.92);display:flex;justify-content:space-between;align-items:center;padding:0 10px;color:#26262d;font-size:8px; }
+  .desktop { height:calc(100% - 27px);background:radial-gradient(circle at 75% 20%,#325597,#202538 45%,#16171e 80%);position:relative; }
+  .selection { position:absolute;left:13%;top:18%;width:55%;height:42%;border:1.5px solid #75a2ff;background:rgba(60,113,237,.09); }
+  .quill-window {
+    position:absolute;right:7%;bottom:10%;width:58%;background:#171820;border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;color:#ececf2;box-shadow:0 16px 38px rgba(0,0,0,.45);overflow:hidden;
+  }
+  .window-title { padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);font-size:8px;color:#a7a8b0; }
+  .window-copy { padding:12px;font-size:10px;line-height:1.6; }
+  .window-copy b { color:#8cb0ff; }
+  .base { width:110%;height:12px;background:linear-gradient(#d5d5d5,#999);position:absolute;left:-5%;bottom:-17px;border-radius:2px 2px 12px 12px; }
+  .phone-mode {
+    position:fixed;right:18px;bottom:18px;display:flex;align-items:center;gap:9px;padding:8px 11px;
+    border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.82);backdrop-filter:blur(12px);
+    font-size:11px;color:var(--muted);box-shadow:0 8px 28px rgba(23,23,29,.1);
+  }
+  .phone-mode button { border:0;background:var(--ink);color:white;border-radius:99px;padding:6px 10px;cursor:pointer;font-size:10px; }
+  .proof { border-top:1px solid var(--line);padding:23px 0 38px;display:flex;justify-content:center;gap:38px;color:var(--muted);font-size:11px; }
+  .proof span { display:flex;gap:7px;align-items:center; }
+  body.simulate-mobile .download { background:#d7d3ca;color:#777;box-shadow:none;pointer-events:none; }
+  body.simulate-mobile .download .cta-copy { font-size:0; }
+  body.simulate-mobile .download .cta-copy::after { content:"僅能在 Mac 上安裝";font-size:14px; }
+  body.simulate-mobile .mobile-message { display:block; }
+  @media(max-width:850px) {
+    .nav-right a:not(.nav-download){display:none;}
+    header{grid-template-columns:1fr;gap:35px;padding-top:48px;}
+    h1{font-size:44px;}
+    .stage{min-height:390px;}
+    .proof{flex-wrap:wrap;gap:13px 25px;}
+  }
+</style>
+</head>
+<body>
+  <div class="notice"><span class="apple"></span><b>Mac 專用 App</b><span>Quill 目前不支援 iPhone、iPad、Windows 或 Android</span></div>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="#"><span class="logo-mark">Q</span>Quill for Mac</a>
+      <div class="nav-right"><a href="#">功能</a><a href="#">使用方式</a><a href="#">常見問題</a><a class="nav-download" href="#">下載 Mac 版 ↓</a></div>
+    </nav>
+    <header>
+      <div>
+        <div class="platform"><span class="apple"></span>專為 macOS 打造</div>
+        <h1>在你的 <em>Mac</em> 上，框選任何畫面問 AI。</h1>
+        <p class="lead">Quill 是常駐在 Mac 選單列的原生工具。翻譯、擷取文字、解釋畫面，不用切換到其他 App。</p>
+        <div class="actions">
+          <a class="download" href="#"><span class="apple"></span><span class="cta-copy">免費下載 Quill for Mac</span></a>
+          <a class="watch" href="#">觀看 45 秒示範</a>
+        </div>
+        <div class="requirements"><strong>僅支援 macOS</strong><span>·</span><span>macOS 13 或更新版本</span><span>·</span><span>Apple Silicon + Intel</span></div>
+        <div class="mobile-message"><b>你現在似乎正在手機上瀏覽。</b><br>Quill 需要安裝在 Mac 上。可以複製網址，回到 Mac 後再下載。</div>
+      </div>
+      <div class="stage" aria-label="Quill 在 Mac 桌面上的示意圖">
+        <div class="halo"></div>
+        <div class="mac">
+          <div class="screen">
+            <div class="menubar"><span>　Quill　　檔案　編輯</span><span>Thu 10:09　⌁</span></div>
+            <div class="desktop">
+              <div class="selection"></div>
+              <div class="quill-window">
+                <div class="window-title">Quill · 描述畫面</div>
+                <div class="window-copy"><b>這是一份專案進度摘要。</b><br>本週完成了登入流程與三項介面改善，下一步是驗證首次使用體驗。</div>
+              </div>
+            </div>
+          </div>
+          <div class="base"></div>
+        </div>
+      </div>
+    </header>
+    <div class="proof"><span>✓ 原生 macOS App</span><span>✓ 常駐選單列</span><span>✓ 支援系統快捷鍵</span><span>✓ 不需手機 App</span></div>
+  </div>
+  <div class="phone-mode"><span>Prototype 檢視</span><button id="deviceToggle">模擬手機訪客</button></div>
+<script>
+  const toggle = document.querySelector('#deviceToggle');
+  toggle.addEventListener('click', () => {
+    document.body.classList.toggle('simulate-mobile');
+    toggle.textContent = document.body.classList.contains('simulate-mobile') ? '切回 Mac 訪客' : '模擬手機訪客';
+  });
+</script>
+</body>
+</html>
