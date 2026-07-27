@@ -126,6 +126,7 @@ enum L10n {
     "menu.preferences": ("偏好設定…", "Preferences…"),
     "menu.onboarding": ("設定引導…", "Setup Guide…"),
     "menu.checkUpdates": ("檢查更新…", "Check for Updates…"),
+    "menu.updateAvailable": ("有可用更新…", "Update Available…"),
     "menu.quit": ("結束 Quill", "Quit Quill"),
   ]
 

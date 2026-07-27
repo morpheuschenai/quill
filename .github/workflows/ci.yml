@@ -56,5 +56,17 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
           APP="$RUNNER_TEMP/QuillRelease/Build/Products/Release/Quill.app"
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")" = "13.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$APP/Contents/Info.plist")" = "https://quill.morpheuschen.com/appcast.xml"
+          test -n "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist")"
+          test ! -e "$APP/Contents/Resources/Info.plist"
           ARCHS_FOUND="$(lipo -archs "$APP/Contents/MacOS/Quill")"
           [[ "$ARCHS_FOUND" == *arm64* && "$ARCHS_FOUND" == *x86_64* ]]
+
+      - name: Validate release tooling and website metadata
+        run: |
+          bash -n scripts/build-beta.sh scripts/verify-app.sh scripts/build-release.sh scripts/prepare-update.sh
+          xmllint --noout landing/appcast.xml
+          test -f landing/privacy.html
+          test -f landing/terms.html
+          test -f landing/refund.html
+          test -f landing/checkout.html

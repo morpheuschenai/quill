@@ -38,7 +38,18 @@ DAILY_LIMIT=10
 GLOBAL_DAILY_CAP=5000
 REGISTRATION_DAILY_LIMIT=20
 OPENAI_MODEL=gpt-4o-mini
+CHECKOUT_URL=<Stripe／Lemon Squeezy／Paddle 的 HTTPS checkout 連結>
 PAYMENT_WEBHOOK_SECRET=<付款 webhook 專用密鑰>
+```
+
+`GET /checkout` 會先匿名記錄 `checkout_started`，再導向 `CHECKOUT_URL`。尚未設定
+金流時，會回到官網的「尚未開放」頁面，不會顯示假的付款成功狀態。
+
+付款服務完成交易後，應由其 webhook（或一個小型轉接器）以 Bearer
+`PAYMENT_WEBHOOK_SECRET` 呼叫 `POST /v1/webhooks/purchase`，body 為：
+
+```json
+{ "order_id": "provider-order-id" }
 ```
 
 可用以下方式各產生一組密鑰：

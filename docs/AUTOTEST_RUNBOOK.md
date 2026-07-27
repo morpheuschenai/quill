@@ -23,7 +23,7 @@
 每步都:執行 → 截圖 → 對照「預期」→ 記錄 PASS/FAIL + 一句話證據。
 
 ### T1 截圖 → 串流結果視窗
-1. 按 `ctrl+alt+i`,畫面出現框選游標後,用 left_click_drag 框選螢幕上任一段有文字的區域(例如 Finder 視窗標題附近,約 400×200)。
+1. 按 `ctrl+alt+q`,畫面出現框選游標後,用 left_click_drag 框選螢幕上任一段有文字的區域(例如 Finder 視窗標題附近,約 400×200)。
 2. 預期:滑鼠附近彈出動作選單(Extract text / Describe this / Summarize / Translate + 輸入框)。
 3. 點 **Extract text**。
 4. 預期:標題為 Extract text 的深色浮動視窗打開,文字**逐字增加**(連拍兩張截圖間隔 1 秒,內容應變多)→ 這就是串流。
@@ -58,7 +58,7 @@
 3. 回 TextEdit `cmd+v`;預期:貼出的是 `MARKER123`,沒被結果覆蓋。
 
 ### T8 取消截圖
-1. 按 `ctrl+alt+i` → 按 `escape`。
+1. 按 `ctrl+alt+q` → 按 `escape`。
 2. 預期:安靜取消,無錯誤視窗。
 
 ### 錯誤處理測試(需使用者配合,子代理跳過)

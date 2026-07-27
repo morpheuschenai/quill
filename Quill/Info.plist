@@ -14,16 +14,26 @@
   <key>CFBundleName</key>
   <string>Quill</string>
   <key>CFBundleIdentifier</key>
-  <string>com.morpheus.quill</string>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$(CURRENT_PROJECT_VERSION)</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>$(MARKETING_VERSION)</string>
   <key>CFBundleExecutable</key>
-  <string>Quill</string>
+  <string>$(EXECUTABLE_NAME)</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>LSMinimumSystemVersion</key>
-  <string>13.0</string>
+  <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+
+  <!-- Sparkle 2：私鑰只存在發佈者的 macOS Keychain。 -->
+  <key>SUFeedURL</key>
+  <string>https://quill.morpheuschen.com/appcast.xml</string>
+  <key>SUPublicEDKey</key>
+  <string>d4LzeaRYa2phoA0vlcJndvg9qmbS+QjMmGkWURT1j90=</string>
+  <key>SUEnableAutomaticChecks</key>
+  <true/>
+  <key>SUScheduledCheckInterval</key>
+  <integer>86400</integer>
 </dict>
 </plist>

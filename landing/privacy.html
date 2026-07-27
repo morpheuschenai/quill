@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>隱私政策 — Quill</title>
+  <meta name="description" content="Quill 如何處理截圖、文字、匿名使用指標與付款資料。">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="legal.css">
+</head>
+<body>
+  <div class="shell">
+    <nav><a class="brand" href="/">✦ Quill</a><a class="back" href="/">返回官網 →</a></nav>
+    <main>
+      <div class="eyebrow">Privacy</div>
+      <h1>只處理完成功能所需的資料。</h1>
+      <p class="lead">Quill 不建立使用者帳號，也不把你的截圖、選取文字、Prompt 或 AI 回覆保存成資料庫。</p>
+      <p class="meta">生效日期：2026 年 7 月 27 日</p>
+      <article class="document">
+        <h2>1. Quill 處理哪些資料</h2>
+        <ul>
+          <li><strong>你要求 AI 處理的內容：</strong>截圖、選取文字與指令會經 Quill Cloud 傳送至 AI 服務，只用來產生當次回覆，不寫入 Quill 的內容資料庫。</li>
+          <li><strong>匿名使用指標：</strong>活躍使用、達到每日限額、查看升級與開始結帳等事件。安裝識別碼只在伺服器以 HMAC 匿名化後去重。</li>
+          <li><strong>安全與濫用防護：</strong>網路位址可能短暫用於速率限制，或經 HMAC 後用於結帳意願去重；不以原始形式加入分析資料。</li>
+          <li><strong>自行設定的 API Key：</strong>只保存在 macOS Keychain，Quill Cloud 不會收到它。</li>
+        </ul>
+
+        <h2>2. 使用目的</h2>
+        <p>提供 AI 回覆、執行每日免費額度、維持服務安全、了解多少匿名使用者遇到限額或希望升級，以及處理未來的付款與售後服務。</p>
+
+        <h2>3. 保存期限</h2>
+        <p>匿名原始事件與額度紀錄最多保存 90 天；彙總後的統計可能保留更久，但不包含可直接識別個人的內容。AI 請求內容不由 Quill 保存。</p>
+
+        <h2>4. 服務供應商</h2>
+        <p>Quill 目前使用 Railway 提供雲端執行環境、OpenAI 產生 AI 回覆、GitHub Pages 提供官網。正式開放付費後，結帳頁會另外揭露所使用的付款服務商；其付款資料依該服務商的政策處理，Quill 不保存完整信用卡資料。</p>
+
+        <h2>5. 你的選擇</h2>
+        <p>你可以停用 Quill Cloud 並改用自己的 API Key、停止使用 App，或移除 App。因 Quill 不要求帳號且指標已匿名化，我們通常無法把匿名事件重新連結到特定個人。</p>
+
+        <h2>6. 問題與更新</h2>
+        <p>一般問題可透過 <a href="https://github.com/morpheuschenai/quill/issues">GitHub Issues</a> 聯絡；請勿在公開 Issue 貼出敏感內容。涉及安全或私人資料時，請使用 GitHub repository 的私人安全回報功能。政策有重大變更時，會更新本頁日期與內容。</p>
+
+        <div class="notice">這份政策描述目前實際運作方式；Quill 不出售個人資料，也不使用你的內容訓練模型。</div>
+      </article>
+    </main>
+    <footer><span>Quill · macOS only</span><span><a href="terms.html">服務條款</a> · <a href="refund.html">退款政策</a></span></footer>
+  </div>
+</body>
+</html>

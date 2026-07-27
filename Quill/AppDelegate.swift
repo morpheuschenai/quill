@@ -1,14 +1,23 @@
 import AppKit
 import ApplicationServices
 import Combine
+import Sparkle
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegate {
   var statusItem: NSStatusItem?
 
   private var localeObserver: AnyCancellable?
+  private var updateMenuItem: NSMenuItem?
+  private var hasScheduledUpdate = false
+  private lazy var updaterController = SPUStandardUpdaterController(
+    startingUpdater: true,
+    updaterDelegate: nil,
+    userDriverDelegate: self
+  )
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
+    _ = updaterController
     setupStatusBar()
     // 語言切換時重建選單列文字
     localeObserver = LocaleStore.shared.$language
@@ -47,6 +56,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       action: #selector(openOnboarding),
       keyEquivalent: ""
     ))
+    let updateItem = NSMenuItem(
+      title: hasScheduledUpdate ? L10n.t("menu.updateAvailable") : L10n.t("menu.checkUpdates"),
+      action: #selector(checkForUpdates),
+      keyEquivalent: ""
+    )
+    updateItem.target = self
+    updateMenuItem = updateItem
+    menu.addItem(updateItem)
     menu.addItem(.separator())
     menu.addItem(NSMenuItem(
       title: L10n.t("menu.quit"),
@@ -64,6 +81,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func openOnboarding() {
     OnboardingWindow.open()
+  }
+
+  @objc private func checkForUpdates() {
+    hasScheduledUpdate = false
+    updateMenuItem?.title = L10n.t("menu.checkUpdates")
+    updaterController.checkForUpdates(nil)
+  }
+
+  // MARK: - Sparkle gentle reminders
+
+  var supportsGentleScheduledUpdateReminders: Bool { true }
+
+  func standardUserDriverShouldHandleShowingScheduledUpdate(
+    _ update: SUAppcastItem,
+    andInImmediateFocus immediateFocus: Bool
+  ) -> Bool {
+    immediateFocus
+  }
+
+  func standardUserDriverWillHandleShowingUpdate(
+    _ handleShowingUpdate: Bool,
+    forUpdate update: SUAppcastItem,
+    state: SPUUserUpdateState
+  ) {
+    guard !state.userInitiated, !handleShowingUpdate else { return }
+    hasScheduledUpdate = true
+    updateMenuItem?.title = L10n.t("menu.updateAvailable")
+  }
+
+  func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
+    hasScheduledUpdate = false
+    updateMenuItem?.title = L10n.t("menu.checkUpdates")
   }
 
   // MARK: - Accessibility(權限引導交給 OnboardingWindow;這裡靜默輪詢,授權後啟動監聽)

@@ -216,6 +216,33 @@ test("upgrade intent is unique per installation/day", async () => {
   assert.equal(redis.sets.get("metrics:upgrade_clicked:2026-07-23")?.size, 1);
 });
 
+test("checkout records intent and redirects to configured payment provider", async () => {
+  const redis = mockRedis();
+  const app = createApp({
+    redis,
+    env: env({ CHECKOUT_URL: "https://payments.example.com/quill-pro" }),
+    now: () => NOW,
+  });
+  const request = () => new Request("http://x/checkout", {
+    headers: { "x-forwarded-for": "203.0.113.8" },
+  });
+  const response = await app.fetch(request());
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "https://payments.example.com/quill-pro");
+  await app.fetch(request());
+  assert.equal(redis.sets.get("metrics:checkout_started:2026-07-23")?.size, 1);
+});
+
+test("checkout uses honest coming-soon page until a payment URL is configured", async () => {
+  const app = createApp({ redis: mockRedis(), env: env(), now: () => NOW });
+  const response = await app.fetch(new Request("http://x/checkout"));
+  assert.equal(response.status, 302);
+  assert.equal(
+    response.headers.get("location"),
+    "https://quill.morpheuschen.com/checkout.html?status=coming-soon"
+  );
+});
+
 test("metrics dashboard and data require admin authentication", async () => {
   const redis = mockRedis();
   const app = createApp({ redis, env: env(), now: () => NOW });

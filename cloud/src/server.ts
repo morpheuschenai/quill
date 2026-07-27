@@ -20,6 +20,7 @@ export interface QuillEnv {
   REGISTRATION_DAILY_LIMIT?: string;
   ADMIN_USERNAME?: string;
   ADMIN_PASSWORD?: string;
+  CHECKOUT_URL?: string;
   PAYMENT_WEBHOOK_SECRET?: string;
 }
 
@@ -181,6 +182,17 @@ function clientIP(request: Request): string {
   );
 }
 
+function checkoutURL(env: QuillEnv): string {
+  const fallback = "https://quill.morpheuschen.com/checkout.html?status=coming-soon";
+  if (!env.CHECKOUT_URL) return fallback;
+  try {
+    const url = new URL(env.CHECKOUT_URL);
+    return url.protocol === "https:" ? url.toString() : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function adminAuthorized(request: Request, env: QuillEnv): boolean {
   if (!env.ADMIN_USERNAME || !env.ADMIN_PASSWORD) return false;
   const auth = request.headers.get("authorization") || "";
@@ -294,6 +306,20 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     }
     await recordUnique(event, dayInTimeZone(now(), timeZone), hashIdentity(installationID));
     return new Response(null, { status: 204 });
+  });
+
+  app.get("/checkout", async (c) => {
+    const identity = createHmac("sha256", env.ANALYTICS_SALT)
+      .update(`checkout:${clientIP(c.req.raw)}`)
+      .digest("hex");
+    await recordUnique("checkout_started", dayInTimeZone(now(), timeZone), identity);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: checkoutURL(env),
+        "Cache-Control": "no-store",
+      },
+    });
   });
 
   app.post("/v1/webhooks/purchase", async (c) => {
