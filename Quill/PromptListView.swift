@@ -97,9 +97,7 @@ struct PromptListView: View {
                 .fill(loadingId == prompt.id ? accent.opacity(0.2) : prompt.iconBackground)
                 .frame(width: 28, height: 28)
               if loadingId == prompt.id {
-                ProgressView()
-                  .scaleEffect(0.55)
-                  .tint(accent)
+                ThinkingOrb(size: 17, speed: 1.1)
               } else {
                 PromptIcon(name: prompt.iconName)
                   .foregroundColor(prompt.iconTint)
@@ -140,7 +138,7 @@ struct PromptListView: View {
             .fill(Color.white.opacity(0.06))
             .frame(width: 22, height: 22)
           if isLoading && loadingId == nil {
-            ProgressView().scaleEffect(0.5).tint(.white.opacity(0.4))
+            ThinkingOrb(size: 14, speed: 1.1)
           } else {
             PromptIcon(name: "custom-text", size: 11)
               .foregroundColor(.white.opacity(0.4))

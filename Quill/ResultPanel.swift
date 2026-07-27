@@ -238,11 +238,11 @@ struct ChatView: View {
               bubble(message)
             }
             if session.isStreaming && session.messages.last?.text.isEmpty == true {
-              HStack(spacing: 6) {
-                ProgressView().scaleEffect(0.5).tint(accent)
+              HStack(spacing: 8) {
+                ThinkingOrb(size: 20)
                 Text(L10n.t("result.thinking"))
                   .font(.system(size: 12))
-                  .foregroundColor(.white.opacity(0.4))
+                  .foregroundColor(.white.opacity(0.52))
               }
               .padding(.horizontal, 4)
             }
