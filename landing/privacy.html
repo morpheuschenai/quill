@@ -15,7 +15,7 @@
       <div class="eyebrow">Privacy</div>
       <h1>只處理完成功能所需的資料。</h1>
       <p class="lead">Quill 不建立使用者帳號，也不把你的截圖、選取文字、Prompt 或 AI 回覆保存成資料庫。</p>
-      <p class="meta">生效日期：2026 年 7 月 27 日</p>
+      <p class="meta">生效日期：2026 年 7 月 28 日</p>
       <article class="document">
         <h2>1. Quill 處理哪些資料</h2>
         <ul>
@@ -23,6 +23,7 @@
           <li><strong>匿名使用指標：</strong>活躍使用、達到每日限額、查看升級與開始結帳等事件。安裝識別碼只在伺服器以 HMAC 匿名化後去重。</li>
           <li><strong>安全與濫用防護：</strong>網路位址可能短暫用於速率限制，或經 HMAC 後用於結帳意願去重；不以原始形式加入分析資料。</li>
           <li><strong>自行設定的 API Key：</strong>只保存在 macOS Keychain，Quill Cloud 不會收到它。</li>
+          <li><strong>付款與訂閱資料：</strong>升級 Pro 時，Portaly 會處理付款方式、電子郵件、交易與訂閱狀態。Quill 只保存啟用額度所需的訂閱識別與狀態，不保存完整卡號。</li>
         </ul>
 
         <h2>2. 使用目的</h2>
@@ -32,7 +33,7 @@
         <p>匿名原始事件與額度紀錄最多保存 90 天；彙總後的統計可能保留更久，但不包含可直接識別個人的內容。AI 請求內容不由 Quill 保存。</p>
 
         <h2>4. 服務供應商</h2>
-        <p>Quill 目前使用 Railway 提供雲端執行環境、OpenAI 產生 AI 回覆、GitHub Pages 提供官網。正式開放付費後，結帳頁會另外揭露所使用的付款服務商；其付款資料依該服務商的政策處理，Quill 不保存完整信用卡資料。</p>
+        <p>Quill 使用 Railway 提供雲端執行環境、OpenAI 產生 AI 回覆、GitHub Pages 提供官網，並由 Portaly 提供付款、訂閱管理與交易通知。付款資料依 Portaly 的政策處理，Quill 不保存完整信用卡資料。</p>
 
         <h2>5. 你的選擇</h2>
         <p>你可以停用 Quill Cloud 並改用自己的 API Key、停止使用 App，或移除 App。因 Quill 不要求帳號且指標已匿名化，我們通常無法把匿名事件重新連結到特定個人。</p>

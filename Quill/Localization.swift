@@ -76,7 +76,7 @@ enum L10n {
   /// 拆成多個小字典再合併——單一大型字典字面值會讓 Swift 型別檢查逾時。
   private static let table: [String: (String, String)] = {
     var t: [String: (String, String)] = [:]
-    for d in [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14] { t.merge(d) { a, _ in a } }
+    for d in [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g15] { t.merge(d) { a, _ in a } }
     return t
   }()
 
@@ -107,6 +107,25 @@ enum L10n {
     "pref.title": ("名稱", "Title"),
     "pref.instruction": ("指令", "Instruction"),
     "pref.advanced": ("進階設定", "Advanced"),
+    "billing.title": ("方案與用量", "Plan & Usage"),
+    "billing.free": ("免費", "Free"),
+    "billing.freePlan": ("免費方案", "Free plan"),
+    "billing.remaining": ("次可用", "uses left"),
+    "billing.dailyReset": ("每日自動重置", "Resets daily"),
+    "billing.resetsIn": ("重置於", "Resets in"),
+    "billing.offerBadge": ("8/31 前限定", "ENDS AUG 31"),
+    "billing.offerTitle": ("首月 NT$149", "First month NT$149"),
+    "billing.offerDetail": ("第 2 個月起 NT$199／月，可隨時取消。優惠只適用第一個計費週期。",
+                            "Then NT$199/month. Cancel anytime. The offer applies to your first billing cycle only."),
+    "billing.regularTitle": ("NT$199／月", "NT$199/month"),
+    "billing.regularDetail": ("每月自動續訂，可隨時取消。", "Renews monthly. Cancel anytime."),
+    "billing.proQuota": ("每個計費週期 600 次", "600 uses per billing cycle"),
+    "billing.upgrade": ("安全升級至 Pro", "Upgrade securely to Pro"),
+    "billing.secure": ("由 Portaly 安全處理付款 · Quill 不保存卡號", "Secure payment by Portaly · Quill never stores card details"),
+    "billing.renews": ("訂閱將以 NT$199／月自動續訂，可從付款收據管理。", "Renews at NT$199/month. Manage it from your payment receipt."),
+    "billing.cancelPending": ("已取消自動續訂；Pro 可使用到目前計費週期結束。", "Renewal canceled. Pro stays active until the current period ends."),
+    "billing.manage": ("管理訂閱與付款紀錄", "Manage subscription & payments"),
+    "billing.error": ("暫時無法讀取方案，請稍後再試。", "Unable to load your plan. Please try again."),
     "pref.intro.screenshot": ("按下截圖快捷鍵、框選畫面後,會出現這些動作。",
                               "Actions shown after you capture a screen area."),
     "pref.intro.editable": ("在可輸入的地方(信件、備忘錄、輸入框)選取文字時,會出現這些動作。結果直接取代原文。",
@@ -123,6 +142,7 @@ enum L10n {
 
   // 選單列
   private static let g3: [String: (String, String)] = [
+    "menu.open": ("開啟 Quill", "Open Quill"),
     "menu.preferences": ("偏好設定…", "Preferences…"),
     "menu.onboarding": ("設定引導…", "Setup Guide…"),
     "menu.checkUpdates": ("檢查更新…", "Check for Updates…"),
@@ -245,5 +265,18 @@ enum L10n {
     "err.tooLong": ("選取的內容太長,試試選短一點。", "Selection is too long. Try a shorter passage."),
     "err.cloudActivation": ("Quill Cloud 啟用失敗，請確認網路後再試一次。",
                             "Quill Cloud activation failed. Check your connection and try again."),
+  ]
+
+  // Dock 首頁
+  private static let g15: [String: (String, String)] = [
+    "home.capture": ("開始截圖", "Start capture"),
+    "home.textSelection": ("選取文字", "Select text"),
+    "home.freeUsage": ("今日免費用量", "Free usage today"),
+    "home.proUsage": ("本期 Pro 用量", "Pro usage this period"),
+    "home.remaining": ("剩餘 %d 次", "%d remaining"),
+    "home.resetsDays": ("%d 天 %d 小時後重置", "Resets in %dd %dh"),
+    "home.resetsHours": ("%d 小時 %d 分後重置", "Resets in %dh %dm"),
+    "home.resetsMinutes": ("%d 分後重置", "Resets in %dm"),
+    "home.ready": ("已在背景待命", "Ready in the background"),
   ]
 }

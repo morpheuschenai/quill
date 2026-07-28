@@ -4,7 +4,7 @@ Select text or take a screenshot in any Mac app. Press a hotkey. Fix, translate,
 
 <!-- Add a screenshot or GIF here once available: ![Quill popup menu](docs/screenshot.png) -->
 
-**Quill Cloud** (coming soon) — no setup, no API key needed. [Join the waitlist →](https://tally.so/r/68VMRP)
+**Quill Cloud** — no setup and no API key needed. Start with 10 free uses per day.
 
 **Open Source** — bring your own API key. Build from source below.
 
@@ -27,11 +27,12 @@ Select text or take a screenshot in any Mac app. Press a hotkey. Fix, translate,
 
 ## Two ways to use Quill
 
-### Quill Cloud · coming soon
+### Quill Cloud
 
-Download and double-click. No API key, no Xcode, no technical setup.
-
-[Join the waitlist →](https://tally.so/r/68VMRP) — first 50 members get one month free.
+Download and double-click. No API key, no Xcode, no technical setup. The Free plan
+includes 10 uses per day. Quill Pro includes 600 uses per billing cycle for
+NT$199/month; subscriptions completed by Aug 31, 2026, 23:59 (UTC+8) get the
+first billing cycle for NT$149.
 
 ### Open Source · available now
 

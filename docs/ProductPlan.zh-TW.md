@@ -41,19 +41,21 @@
 
 ## 商業設計
 
-- **定價**:免費版每日 10 次;Pro US$5/月(或 NT$150),不限次數(內部設公平使用上限防濫用)
+> 2026-07 更新：以下舊版規劃已由目前實作取代；不再提供「前 50 名首月免費」。
+
+- **定價**:免費版每日 10 次；Pro 每期 600 次，NT$199／月
+- **上市優惠**:2026/8/31 23:59（UTC+8）前完成訂閱，第一個計費週期 NT$149，之後 NT$199／月
 - **成本估算**:便宜模型下,活躍免費用戶約 US$0.1–0.3/月、付費用戶約 US$0.5–1/月,毛利健康
-- **金流**:Lemon Squeezy(約 5% + 50¢ 手續費,含稅務發票處理)
-- **Waitlist 承諾**:前 50 名一個月免費(已在官網承諾,需兌現)
+- **金流**:Portaly Payment；測試環境已接通，KYC 通過後切換 live key
 
 ## 技術架構(Quill Cloud)
 
 ```
 Mac App ──(auth token)──> Quill 後端 proxy ──> LLM API(便宜快模型)
                           │
-                          ├─ 帳號:email magic link(免密碼,對非技術用戶最順)
+                          ├─ 身分:每個安裝實例的短期簽章 token
                           ├─ 額度:每日次數計數 + 訂閱狀態檢查
-                          └─ 金流:Lemon Squeezy webhook 更新訂閱狀態
+                          └─ 金流:Portaly callback 更新訂閱狀態
 ```
 
 - 後端:單一輕量服務(如 Hono/FastAPI)部署在免費/低價平台(Fly.io、Railway、Cloudflare Workers),月費 US$0–10
@@ -75,7 +77,7 @@ Mac App ──(auth token)──> Quill 後端 proxy ──> LLM API(便宜快�
 2. 免費額度/升級提示的 App 內流程
 3. 官網改版:主打截圖、繁中、定價頁
 4. Sparkle 自動更新
-5. 對 waitlist 兌現「首月免費」→ 轉換為首批付費用戶
+5. 驗證 NT$149 首期上市優惠 → NT$199／月的付費轉換
 
 ### Phase 3 — 看數據決定(3 個月後)
 - 付費轉換好 → 加碼行銷(Threads/Dcard/FB 社團)、考慮 Windows 或 Android(`ACTION_PROCESS_TEXT` 天生適合本產品)

@@ -82,7 +82,7 @@ private struct SVGIcon: View {
 
 // MARK: - Route
 
-private enum Route: Hashable { case apiKey, prompts, textShortcut, screenshotShortcut, language }
+private enum Route: Hashable { case billing, apiKey, prompts, textShortcut, screenshotShortcut, language }
 
 // MARK: - Hotkey helpers
 
@@ -130,6 +130,7 @@ private struct PrefRootView: View {
       PrefMainList(path: $path)
         .navigationDestination(for: Route.self) { r in
           switch r {
+          case .billing:           BillingView()
           case .language:          LanguageView()
           case .apiKey:            APIKeyView()
           case .prompts:           PromptsView()
@@ -161,9 +162,17 @@ private struct PrefRootView: View {
 private struct PrefMainList: View {
   @Binding var path: NavigationPath
   @ObservedObject private var loc = LocaleStore.shared
+  @ObservedObject private var billing = BillingService.shared
 
   var body: some View {
     VStack(spacing: 0) {
+      PrefRow(
+        icon: "crown",
+        iconColor: Color(red: 250/255, green: 184/255, blue: 70/255),
+        label: L10n.t("billing.title"),
+        detail: billingDetail
+      ) { path.append(Route.billing) }
+      Divider().opacity(0.10).padding(.horizontal, 16)
       PrefRow(icon: "prompt", iconColor: Color(red: 167/255, green: 139/255, blue: 250/255), label: L10n.t("pref.prompts")) {
         path.append(Route.prompts)
       }
@@ -204,7 +213,17 @@ private struct PrefMainList: View {
     .padding(20)
     .frame(maxHeight: .infinity, alignment: .top)
     .background(prefBg0)
-    .onAppear { resizeWindow(to: CGSize(width: 420, height: 400)) }
+    .onAppear {
+      resizeWindow(to: CGSize(width: 420, height: 460))
+      billing.refresh()
+    }
+  }
+
+  private var billingDetail: String {
+    guard let status = billing.status else { return L10n.t("billing.free") }
+    return status.plan == "pro"
+      ? "Pro · \(status.remaining) \(L10n.t("billing.remaining"))"
+      : "\(L10n.t("billing.free")) · \(status.remaining) \(L10n.t("billing.remaining"))"
   }
 }
 
@@ -245,6 +264,154 @@ private struct PrefRow: View {
     }
     .buttonStyle(.plain)
     .onHover { hovered = $0 }
+  }
+}
+
+// MARK: - Plan & usage
+
+private struct BillingView: View {
+  @ObservedObject private var billing = BillingService.shared
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        usageCard
+        if billing.status?.plan != "pro" {
+          offerCard
+        } else if let subscription = billing.status?.subscription {
+          Text(subscription.cancelAtPeriodEnd
+               ? L10n.t("billing.cancelPending")
+               : L10n.t("billing.renews"))
+            .font(.system(size: 12))
+            .foregroundColor(prefMuted)
+          Button {
+            billing.openSubscriptionPortal()
+          } label: {
+            HStack {
+              if billing.isOpeningPortal { ProgressView().controlSize(.small) }
+              Text(L10n.t("billing.manage"))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.08)))
+            .foregroundColor(.white.opacity(0.78))
+          }
+          .buttonStyle(.plain)
+          .disabled(billing.isOpeningPortal)
+        }
+        if let message = billing.errorMessage {
+          Text(message)
+            .font(.system(size: 12))
+            .foregroundColor(Color(red: 251/255, green: 146/255, blue: 60/255))
+        }
+      }
+      .padding(20)
+    }
+    .background(prefBg0)
+    .navigationTitle(L10n.t("billing.title"))
+    .onAppear {
+      resizeWindow(to: CGSize(width: 420, height: 500))
+      billing.refresh()
+    }
+  }
+
+  private var usageCard: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Text(billing.status?.plan == "pro" ? "Quill Pro" : L10n.t("billing.freePlan"))
+          .font(.system(size: 15, weight: .semibold))
+        Spacer()
+        if billing.isLoading {
+          ProgressView().controlSize(.small)
+        } else {
+          Text("\(billing.status?.used ?? 0) / \(billing.status?.limit ?? 10)")
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .foregroundColor(prefMuted)
+        }
+      }
+      GeometryReader { geometry in
+        ZStack(alignment: .leading) {
+          Capsule().fill(Color.white.opacity(0.08))
+          Capsule()
+            .fill(prefAccent)
+            .frame(width: geometry.size.width * usageFraction)
+        }
+      }
+      .frame(height: 7)
+      HStack {
+        Text("\(billing.status?.remaining ?? 10) \(L10n.t("billing.remaining"))")
+        Spacer()
+        TimelineView(.periodic(from: .now, by: 60)) { _ in
+          Text(resetText)
+        }
+      }
+      .font(.system(size: 11))
+      .foregroundColor(prefMuted)
+    }
+    .padding(16)
+    .background(RoundedRectangle(cornerRadius: 12).fill(prefBg1))
+    .overlay(RoundedRectangle(cornerRadius: 12).stroke(prefBorder))
+  }
+
+  private var offerCard: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      if promotionActive {
+        Text(L10n.t("billing.offerBadge"))
+          .font(.system(size: 10, weight: .bold))
+          .foregroundColor(prefAccent)
+      }
+      Text(L10n.t(promotionActive ? "billing.offerTitle" : "billing.regularTitle"))
+        .font(.system(size: 18, weight: .bold))
+      Text(L10n.t(promotionActive ? "billing.offerDetail" : "billing.regularDetail"))
+        .font(.system(size: 12))
+        .foregroundColor(.white.opacity(0.62))
+        .fixedSize(horizontal: false, vertical: true)
+      Label(L10n.t("billing.proQuota"), systemImage: "checkmark.circle.fill")
+        .font(.system(size: 12))
+        .foregroundColor(.white.opacity(0.78))
+      Button {
+        billing.startCheckout()
+      } label: {
+        HStack {
+          if billing.isStartingCheckout { ProgressView().controlSize(.small) }
+          Text(L10n.t("billing.upgrade"))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 9)
+        .background(RoundedRectangle(cornerRadius: 8).fill(prefAccent))
+        .foregroundColor(Color(red: 10/255, green: 10/255, blue: 20/255))
+      }
+      .buttonStyle(.plain)
+      .disabled(billing.isStartingCheckout)
+      Text(L10n.t("billing.secure"))
+        .font(.system(size: 10))
+        .foregroundColor(prefMuted)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+    .padding(16)
+    .background(RoundedRectangle(cornerRadius: 12).fill(prefBg1))
+    .overlay(RoundedRectangle(cornerRadius: 12).stroke(prefAccent.opacity(0.28)))
+  }
+
+  private var usageFraction: CGFloat {
+    guard let status = billing.status, status.limit > 0 else { return 0 }
+    return min(1, max(0, CGFloat(status.used) / CGFloat(status.limit)))
+  }
+
+  private var promotionActive: Bool {
+    guard let promotion = billing.status?.promotion else { return true }
+    return promotion.active ?? (Date() <= promotion.endsAt)
+  }
+
+  private var resetText: String {
+    guard let target = billing.status?.resetsAt else { return L10n.t("billing.dailyReset") }
+    let seconds = max(0, Int(target.timeIntervalSinceNow))
+    let days = seconds / 86_400
+    let hours = (seconds % 86_400) / 3_600
+    let minutes = (seconds % 3_600) / 60
+    if days > 0 { return "\(L10n.t("billing.resetsIn")) \(days)d \(hours)h" }
+    if hours > 0 { return "\(L10n.t("billing.resetsIn")) \(hours)h \(minutes)m" }
+    return "\(L10n.t("billing.resetsIn")) \(minutes)m"
   }
 }
 

@@ -6,8 +6,9 @@
  * - analytics only use a server-HMACed installation identifier;
  * - raw analytics expire after 90 days.
  */
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { Hono } from "hono";
+import { verifyPortalyCallback } from "./portalyCallback.mjs";
 
 export interface QuillEnv {
   OPENAI_KEY: string;
@@ -15,16 +16,30 @@ export interface QuillEnv {
   ANALYTICS_SALT: string;
   OPENAI_MODEL?: string;
   DAILY_LIMIT?: string;
+  PRO_MONTHLY_LIMIT?: string;
   GLOBAL_DAILY_CAP?: string;
+  PRO_GLOBAL_DAILY_CAP?: string;
   QUOTA_TIME_ZONE?: string;
   REGISTRATION_DAILY_LIMIT?: string;
   ADMIN_USERNAME?: string;
   ADMIN_PASSWORD?: string;
   CHECKOUT_URL?: string;
   PAYMENT_WEBHOOK_SECRET?: string;
+  PORTALY_API_KEY?: string;
+  PORTALY_API_HOST?: string;
+  PORTALY_PLAN_ID?: string;
+  PORTALY_CALLBACK_SECRET?: string;
+  PORTALY_CALLBACK_URL?: string;
+  PORTALY_DISCOUNT_CODE?: string;
+  PORTALY_PROMO_END?: string;
+  PORTALY_SUCCESS_URL?: string;
+  PORTALY_CANCEL_URL?: string;
+  PORTALY_PORTAL_RETURN_URL?: string;
 }
 
 export interface RedisLike {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, ...args: Array<string | number>): Promise<unknown>;
   incr(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<unknown>;
   sadd(key: string, ...members: string[]): Promise<number>;
@@ -50,6 +65,20 @@ type MetricEvent =
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const RAW_RETENTION_SECONDS = 60 * 60 * 24 * 91;
 const INSTALLATION_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 180;
+const CHECKOUT_SESSION_TTL_SECONDS = 60 * 60 * 24;
+
+interface SubscriptionRecord {
+  subscriptionId: string;
+  sessionId: string;
+  planId: string;
+  mode: "live" | "test";
+  status: string;
+  periodStart: string;
+  periodEnd: string;
+  currentAmount: number | null;
+  cancelAtPeriodEnd: boolean;
+  cancelEffectiveAt: string | null;
+}
 
 const QUOTA_SCRIPT = `
 local deviceUsed = tonumber(redis.call("GET", KEYS[1]) or "0")
@@ -166,6 +195,57 @@ function nextResetISO(day: string, timeZone: string): string {
   return candidate.toISOString();
 }
 
+function validISO(value: unknown): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function addOneMonthISO(value: string): string {
+  const date = new Date(value);
+  const originalDay = date.getUTCDate();
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth() + 1);
+  const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+  date.setUTCDate(Math.min(originalDay, lastDay));
+  return date.toISOString();
+}
+
+function parseSubscription(raw: string | null): SubscriptionRecord | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<SubscriptionRecord>;
+    if (
+      typeof parsed.subscriptionId !== "string" ||
+      typeof parsed.sessionId !== "string" ||
+      typeof parsed.planId !== "string" ||
+      (parsed.mode !== "live" && parsed.mode !== "test") ||
+      typeof parsed.status !== "string" ||
+      !validISO(parsed.periodStart) ||
+      !validISO(parsed.periodEnd)
+    ) {
+      return null;
+    }
+    return {
+      subscriptionId: parsed.subscriptionId,
+      sessionId: parsed.sessionId,
+      planId: parsed.planId,
+      mode: parsed.mode,
+      status: parsed.status,
+      periodStart: parsed.periodStart,
+      periodEnd: parsed.periodEnd,
+      currentAmount: typeof parsed.currentAmount === "number" ? parsed.currentAmount : null,
+      cancelAtPeriodEnd: parsed.cancelAtPeriodEnd === true,
+      cancelEffectiveAt: validISO(parsed.cancelEffectiveAt) ? parsed.cancelEffectiveAt : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function subscriptionHasAccess(record: SubscriptionRecord | null, date: Date): record is SubscriptionRecord {
+  if (!record || Date.parse(record.periodEnd) <= date.getTime()) return false;
+  return ["active", "cancel_requested", "past_due"].includes(record.status);
+}
+
 function previousDays(now: Date, timeZone: string, count: number): string[] {
   const result: string[] = [];
   for (let offset = count - 1; offset >= 0; offset--) {
@@ -221,23 +301,23 @@ function metricsPage(): string {
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 75% 0,#1c2940 0,transparent 32%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 main{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:48px 0 72px}header{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:28px}
 .eyebrow{font:600 12px ui-monospace,SFMono-Regular,monospace;letter-spacing:.14em;color:var(--blue);text-transform:uppercase}h1{font-size:clamp(28px,5vw,48px);margin:8px 0 0;letter-spacing:-.04em}select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card,.panel{background:rgba(21,26,34,.88);border:1px solid var(--line);border-radius:14px;padding:18px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card,.panel{background:rgba(21,26,34,.88);border:1px solid var(--line);border-radius:14px;padding:18px}
 .label{color:var(--muted);font-size:13px}.value{font:650 34px ui-monospace,SFMono-Regular,monospace;margin-top:10px}.value.orange{color:var(--orange)}.value.green{color:var(--green)}
 .grid{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-top:12px}.panel h2{font-size:15px;margin:0 0 18px}.bars{height:260px;display:flex;align-items:end;gap:5px;border-bottom:1px solid var(--line)}
 .bar{flex:1;min-width:3px;background:linear-gradient(var(--blue),#315ea9);border-radius:4px 4px 0 0;position:relative}.bar:hover:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#05070a;padding:5px 7px;border-radius:6px;font-size:11px;white-space:nowrap}
-.funnel{display:grid;gap:12px}.step{border-left:3px solid var(--blue);padding:9px 12px;background:#10151d}.step:nth-child(2){width:78%;border-color:var(--orange)}.step:nth-child(3){width:55%;border-color:var(--green)}
+.funnel{display:grid;gap:12px}.step{border-left:3px solid var(--blue);padding:9px 12px;background:#10151d}.step:nth-child(2){width:86%;border-color:var(--orange)}.step:nth-child(3){width:70%;border-color:#b68cff}.step:nth-child(4){width:55%;border-color:var(--green)}
 .step b{display:block;font:650 24px ui-monospace,SFMono-Regular,monospace}.step span{font-size:12px;color:var(--muted)}.privacy{margin-top:12px;color:var(--muted);font-size:12px;line-height:1.6}
 @media(max-width:760px){header{align-items:start;flex-direction:column}.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}@media(max-width:430px){.cards{grid-template-columns:1fr}}
 </style></head><body><main>
 <header><div><div class="eyebrow">Private · Anonymous</div><h1>Quill 使用指標</h1></div><select id="range"><option value="7">最近 7 天</option><option value="30" selected>最近 30 天</option><option value="90">最近 90 天</option></select></header>
-<section class="cards"><div class="card"><div class="label">活躍裝置</div><div class="value" id="active">—</div></div><div class="card"><div class="label">達到每日限額</div><div class="value orange" id="quota">—</div></div><div class="card"><div class="label">查看升級方案</div><div class="value" id="upgrade">—</div></div><div class="card"><div class="label">完成購買</div><div class="value green" id="purchase">—</div></div></section>
-<section class="grid"><div class="panel"><h2>每日活躍趨勢</h2><div class="bars" id="bars"></div></div><div class="panel"><h2>限額 → 意願 → 購買</h2><div class="funnel"><div class="step"><b id="fQuota">—</b><span>達到限額</span></div><div class="step"><b id="fUpgrade">—</b><span>查看升級</span></div><div class="step"><b id="fPurchase">—</b><span>完成購買</span></div></div></div></section>
+<section class="cards"><div class="card"><div class="label">活躍裝置</div><div class="value" id="active">—</div></div><div class="card"><div class="label">達到使用限額</div><div class="value orange" id="quota">—</div></div><div class="card"><div class="label">查看升級方案</div><div class="value" id="upgrade">—</div></div><div class="card"><div class="label">開始結帳</div><div class="value" id="checkout">—</div></div><div class="card"><div class="label">完成購買</div><div class="value green" id="purchase">—</div></div></section>
+<section class="grid"><div class="panel"><h2>每日活躍趨勢</h2><div class="bars" id="bars"></div></div><div class="panel"><h2>限額 → 意願 → 購買</h2><div class="funnel"><div class="step"><b id="fQuota">—</b><span>達到限額</span></div><div class="step"><b id="fUpgrade">—</b><span>查看升級</span></div><div class="step"><b id="fCheckout">—</b><span>開始結帳</span></div><div class="step"><b id="fPurchase">—</b><span>完成購買</span></div></div></div></section>
 <p class="privacy">不收集截圖、選取文字、Prompt、AI 回覆或 API Key。裝置識別只以伺服器 HMAC 後的匿名值進行每日去重；原始事件最多保存 90 天。</p>
 </main><script>
-const ids={app_active:"active",quota_reached:"quota",upgrade_clicked:"upgrade",purchase_completed:"purchase"};
+const ids={app_active:"active",quota_reached:"quota",upgrade_clicked:"upgrade",checkout_started:"checkout",purchase_completed:"purchase"};
 async function load(){const days=document.querySelector("#range").value;const r=await fetch("/admin/metrics/data?days="+days);if(!r.ok)throw new Error("讀取失敗");const d=await r.json();
 Object.entries(ids).forEach(([event,id])=>document.querySelector("#"+id).textContent=d.totals[event].toLocaleString());
-document.querySelector("#fQuota").textContent=d.totals.quota_reached.toLocaleString();document.querySelector("#fUpgrade").textContent=d.totals.upgrade_clicked.toLocaleString();document.querySelector("#fPurchase").textContent=d.totals.purchase_completed.toLocaleString();
+document.querySelector("#fQuota").textContent=d.totals.quota_reached.toLocaleString();document.querySelector("#fUpgrade").textContent=d.totals.upgrade_clicked.toLocaleString();document.querySelector("#fCheckout").textContent=d.totals.checkout_started.toLocaleString();document.querySelector("#fPurchase").textContent=d.totals.purchase_completed.toLocaleString();
 const max=Math.max(1,...d.days.map(x=>x.app_active));document.querySelector("#bars").innerHTML=d.days.map(x=>'<div class="bar" style="height:'+Math.max(2,x.app_active/max*100)+'%" data-tip="'+x.date+' · '+x.app_active+'"></div>').join("")}
 document.querySelector("#range").addEventListener("change",()=>load().catch(alert));load().catch(alert);
 </script></body></html>`;
@@ -247,10 +327,17 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
   const app = new Hono();
   const doFetch = fetchImpl ?? fetch;
   const dailyLimit = Number.parseInt(env.DAILY_LIMIT || "10", 10);
+  const proMonthlyLimit = Number.parseInt(env.PRO_MONTHLY_LIMIT || "600", 10);
   const globalCap = Number.parseInt(env.GLOBAL_DAILY_CAP || "5000", 10);
+  const proGlobalCap = Number.parseInt(env.PRO_GLOBAL_DAILY_CAP || "5000", 10);
   const registrationLimit = Number.parseInt(env.REGISTRATION_DAILY_LIMIT || "20", 10);
   const model = env.OPENAI_MODEL || "gpt-4o-mini";
   const timeZone = env.QUOTA_TIME_ZONE || "Asia/Taipei";
+  const promotionEnd = env.PORTALY_PROMO_END || "2026-08-31T15:59:59.000Z";
+  const promotionIsActive = (): boolean =>
+    Boolean(env.PORTALY_DISCOUNT_CODE) &&
+    Number.isFinite(Date.parse(promotionEnd)) &&
+    now().getTime() <= Date.parse(promotionEnd);
 
   const hashIdentity = (installationID: string): string =>
     createHmac("sha256", env.ANALYTICS_SALT).update(installationID).digest("hex");
@@ -264,6 +351,44 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
   const authenticateInstallation = (request: Request): string | null => {
     const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
     return verifyInstallationToken(token, env.INSTALLATION_TOKEN_SECRET, now());
+  };
+
+  const subscriptionKey = (anonymousID: string): string => `subscription:installation:${anonymousID}`;
+  const subscriptionIndexKey = (subscriptionID: string): string =>
+    `subscription:portaly:${subscriptionID}`;
+
+  const loadSubscription = async (anonymousID: string): Promise<SubscriptionRecord | null> =>
+    parseSubscription(await redis.get(subscriptionKey(anonymousID)));
+
+  const saveSubscription = async (
+    anonymousID: string,
+    record: SubscriptionRecord
+  ): Promise<void> => {
+    await redis.set(subscriptionKey(anonymousID), JSON.stringify(record));
+    await redis.set(subscriptionIndexKey(record.subscriptionId), anonymousID);
+  };
+
+  const usageStatus = async (installationID: string) => {
+    const current = now();
+    const currentDay = dayInTimeZone(current, timeZone);
+    const anonymousID = hashIdentity(installationID);
+    const subscription = await loadSubscription(anonymousID);
+    const isPro = subscriptionHasAccess(subscription, current);
+    const usageKey = isPro
+      ? `usage:pro:${anonymousID}:${subscription.periodStart}`
+      : `usage:${anonymousID}:${currentDay}`;
+    const used = Number.parseInt((await redis.get(usageKey)) || "0", 10) || 0;
+    const limit = isPro ? proMonthlyLimit : dailyLimit;
+    return {
+      anonymousID,
+      subscription,
+      isPro,
+      usageKey,
+      used,
+      limit,
+      resetsAt: isPro ? subscription.periodEnd : nextResetISO(currentDay, timeZone),
+      currentDay,
+    };
   };
 
   app.get("/health", (c) => c.json({ ok: true, timeZone }));
@@ -308,6 +433,206 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     return new Response(null, { status: 204 });
   });
 
+  app.get("/v1/billing/status", async (c) => {
+    const installationID = authenticateInstallation(c.req.raw);
+    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    const status = await usageStatus(installationID);
+    return json({
+      plan: status.isPro ? "pro" : "free",
+      used: status.used,
+      limit: status.limit,
+      remaining: Math.max(0, status.limit - status.used),
+      resets_at: status.resetsAt,
+      subscription: status.isPro && status.subscription
+        ? {
+            status: status.subscription.status,
+            current_amount: status.subscription.currentAmount,
+            next_amount: 199,
+            cancel_at_period_end: status.subscription.cancelAtPeriodEnd,
+            cancel_effective_at: status.subscription.cancelEffectiveAt,
+          }
+        : null,
+      promotion: {
+        active: promotionIsActive(),
+        first_month_amount: promotionIsActive() ? 149 : 199,
+        recurring_amount: 199,
+        ends_at: promotionEnd,
+      },
+    });
+  });
+
+  app.post("/v1/billing/checkout", async (c) => {
+    const installationID = authenticateInstallation(c.req.raw);
+    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    if (
+      !env.PORTALY_API_KEY ||
+      !env.PORTALY_PLAN_ID ||
+      !env.PORTALY_CALLBACK_URL
+    ) {
+      return jsonError("Checkout is not configured.", 503);
+    }
+    let callbackURL: URL;
+    try {
+      callbackURL = new URL(env.PORTALY_CALLBACK_URL);
+    } catch {
+      return jsonError("Checkout callback is invalid.", 503);
+    }
+    if (callbackURL.protocol !== "https:") {
+      return jsonError("Checkout callback must use HTTPS.", 503);
+    }
+
+    const status = await usageStatus(installationID);
+    if (status.isPro) {
+      return jsonError("Quill Pro is already active.", 409, { code: "PRO_ALREADY_ACTIVE" });
+    }
+
+    const promoActive = promotionIsActive();
+    const requestBody: Record<string, unknown> = {
+      planId: env.PORTALY_PLAN_ID,
+      successRedirectUrl:
+        env.PORTALY_SUCCESS_URL ||
+        "https://quill.morpheuschen.com/checkout.html?status=success",
+      cancelRedirectUrl:
+        env.PORTALY_CANCEL_URL ||
+        "https://quill.morpheuschen.com/checkout.html?status=canceled",
+      callbackUrl: env.PORTALY_CALLBACK_URL,
+      subscriptionCallbackUrl: env.PORTALY_CALLBACK_URL,
+      merchantOrderNumber: `quill_${randomUUID()}`,
+      metadata: { installationHash: status.anonymousID },
+    };
+    if (promoActive) requestBody.discountCode = env.PORTALY_DISCOUNT_CODE;
+
+    let response: Response;
+    try {
+      response = await doFetch(
+        `${env.PORTALY_API_HOST || "https://portaly.ai"}/api/creator-subscription/checkout-sessions`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.PORTALY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+    } catch {
+      return jsonError("Checkout service is temporarily unavailable.", 502);
+    }
+
+    let result: any;
+    try {
+      result = await response.json();
+    } catch {
+      return jsonError("Checkout service returned an invalid response.", 502);
+    }
+    if (!response.ok) {
+      const code = typeof result?.code === "string" ? result.code : undefined;
+      if (code === "PLAN_INACTIVE") {
+        return jsonError("This plan is no longer available.", 422, { code });
+      }
+      return jsonError("Unable to start checkout.", 502, code ? { code } : {});
+    }
+
+    const session = result?.data;
+    if (
+      typeof session?.sessionId !== "string" ||
+      typeof session?.checkoutUrl !== "string" ||
+      typeof session?.checkoutToken !== "string" ||
+      !validISO(session?.expiresAt)
+    ) {
+      return jsonError("Checkout service returned an incomplete session.", 502);
+    }
+    await redis.set(
+      `checkout-session:${session.sessionId}`,
+      JSON.stringify({
+        sessionId: session.sessionId,
+        checkoutToken: session.checkoutToken,
+        checkoutUrl: session.checkoutUrl,
+        expiresAt: session.expiresAt,
+        installationHash: status.anonymousID,
+      }),
+      "EX",
+      CHECKOUT_SESSION_TTL_SECONDS
+    );
+    await recordUnique("checkout_started", status.currentDay, status.anonymousID);
+    return json({
+      checkout_url: session.checkoutUrl,
+      expires_at: session.expiresAt,
+      promotion_applied: promoActive,
+      first_month_amount: promoActive ? 149 : 199,
+      recurring_amount: 199,
+    }, 201);
+  });
+
+  app.post("/v1/billing/portal", async (c) => {
+    const installationID = authenticateInstallation(c.req.raw);
+    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    if (!env.PORTALY_API_KEY) {
+      return jsonError("Subscription management is not configured.", 503);
+    }
+
+    const status = await usageStatus(installationID);
+    if (!status.subscription) {
+      return jsonError("No subscription is linked to this installation.", 404, {
+        code: "SUBSCRIPTION_NOT_FOUND",
+      });
+    }
+
+    const returnURL =
+      env.PORTALY_PORTAL_RETURN_URL ||
+      "https://quill.morpheuschen.com/checkout.html?status=managed";
+    try {
+      if (new URL(returnURL).protocol !== "https:") {
+        return jsonError("Subscription return URL must use HTTPS.", 503);
+      }
+    } catch {
+      return jsonError("Subscription return URL is invalid.", 503);
+    }
+
+    let response: Response;
+    try {
+      response = await doFetch(
+        `${env.PORTALY_API_HOST || "https://portaly.ai"}/api/creator-subscription/portal-sessions`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.PORTALY_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscriptionId: status.subscription.subscriptionId,
+            returnUrl: returnURL,
+          }),
+        }
+      );
+    } catch {
+      return jsonError("Subscription service is temporarily unavailable.", 502);
+    }
+
+    let result: any;
+    try {
+      result = await response.json();
+    } catch {
+      return jsonError("Subscription service returned an invalid response.", 502);
+    }
+    if (!response.ok) {
+      return jsonError("Unable to open subscription management.", 502);
+    }
+
+    const portal = result?.data;
+    if (
+      typeof portal?.portalUrl !== "string" ||
+      !portal.portalUrl.startsWith("https://") ||
+      !validISO(portal?.expiresAt)
+    ) {
+      return jsonError("Subscription service returned an incomplete session.", 502);
+    }
+    return json({
+      portal_url: portal.portalUrl,
+      expires_at: portal.expiresAt,
+    }, 201);
+  });
+
   app.get("/checkout", async (c) => {
     const identity = createHmac("sha256", env.ANALYTICS_SALT)
       .update(`checkout:${clientIP(c.req.raw)}`)
@@ -345,6 +670,157 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     return new Response(null, { status: 204 });
   });
 
+  app.post("/v1/webhooks/portaly", async (c) => {
+    const event = c.req.header("x-portaly-event") || "";
+    const timestamp = c.req.header("x-portaly-timestamp") || "";
+    const suppliedSignature = c.req.header("x-portaly-signature") || "";
+    const timestampMs = Date.parse(timestamp);
+
+    if (!event || !timestamp || !suppliedSignature || !Number.isFinite(timestampMs)) {
+      return jsonError("Missing or invalid callback headers.", 400);
+    }
+    if (Math.abs(now().getTime() - timestampMs) > 5 * 60 * 1000) {
+      return jsonError("Stale callback.", 401);
+    }
+    if (!env.PORTALY_CALLBACK_SECRET) {
+      return jsonError("Callback verification is not configured.", 503);
+    }
+
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return jsonError("Invalid request body.", 400);
+    }
+
+    const verified = verifyPortalyCallback({
+      secret: env.PORTALY_CALLBACK_SECRET,
+      payload: body,
+      timestamp,
+      signature: suppliedSignature,
+    });
+    if (!verified) return jsonError("Invalid callback signature.", 401);
+
+    const payload = body as Record<string, unknown>;
+    if (payload.event !== event) return jsonError("Callback event mismatch.", 400);
+
+    let deliveryIdentity: string | null = null;
+    let callbackAnonymousID: string | null = null;
+    if (event === "creator_subscription.checkout.completed") {
+      if (payload.status !== "completed" || typeof payload.sessionId !== "string") {
+        return jsonError("Invalid completed checkout callback.", 400);
+      }
+      const metadata = payload.metadata as Record<string, unknown> | undefined;
+      const installationHash = metadata?.installationHash;
+      if (
+        typeof installationHash !== "string" ||
+        !/^[0-9a-f]{64}$/i.test(installationHash)
+      ) {
+        return jsonError("Missing checkout installation identity.", 400);
+      }
+      if (env.PORTALY_PLAN_ID && payload.planId !== env.PORTALY_PLAN_ID) {
+        return jsonError("Unexpected checkout plan.", 400);
+      }
+      deliveryIdentity = payload.sessionId;
+      callbackAnonymousID = installationHash;
+    } else if (
+      event === "creator_subscription.payment.succeeded" ||
+      event === "creator_subscription.payment.failed"
+    ) {
+      deliveryIdentity =
+        typeof payload.paymentId === "string"
+          ? payload.paymentId
+          : typeof payload.paymentReference === "string"
+            ? payload.paymentReference
+            : null;
+      if (!deliveryIdentity) return jsonError("Missing callback payment identity.", 400);
+    }
+
+    if (deliveryIdentity) {
+      const idempotencyKey = `portaly-callback:${event}`;
+      const anonymousIdentity = hashIdentity(`${event}:${deliveryIdentity}`);
+      const inserted = await redis.sadd(idempotencyKey, anonymousIdentity);
+      await redis.expire(idempotencyKey, RAW_RETENTION_SECONDS);
+      if (inserted === 0) return new Response(null, { status: 204 });
+
+      if (event === "creator_subscription.checkout.completed") {
+        const sessionID = payload.sessionId as string;
+        const subscriptionID =
+          typeof payload.subscriptionId === "string" ? payload.subscriptionId : sessionID;
+        const periodStart = validISO(payload.completedAt)
+          ? payload.completedAt
+          : now().toISOString();
+        const periodEnd = validISO(payload.nextBillingAt)
+          ? payload.nextBillingAt
+          : addOneMonthISO(periodStart);
+        await saveSubscription(callbackAnonymousID!, {
+          subscriptionId: subscriptionID,
+          sessionId: sessionID,
+          planId: typeof payload.planId === "string" ? payload.planId : env.PORTALY_PLAN_ID || "",
+          mode: payload.mode === "live" ? "live" : "test",
+          status: "active",
+          periodStart,
+          periodEnd,
+          currentAmount: typeof payload.amount === "number" ? payload.amount : null,
+          cancelAtPeriodEnd: false,
+          cancelEffectiveAt: null,
+        });
+        await recordUnique(
+          "purchase_completed",
+          dayInTimeZone(now(), timeZone),
+          hashIdentity(`portaly-purchase:${deliveryIdentity}`)
+        );
+      }
+    }
+
+    if (event !== "creator_subscription.checkout.completed") {
+      const subscriptionID =
+        typeof payload.subscriptionId === "string"
+          ? payload.subscriptionId
+          : typeof payload.sessionId === "string"
+            ? payload.sessionId
+            : null;
+      if (subscriptionID) {
+        const anonymousID = await redis.get(subscriptionIndexKey(subscriptionID));
+        const record = anonymousID ? await loadSubscription(anonymousID) : null;
+        if (anonymousID && record) {
+          if (event === "creator_subscription.payment.succeeded") {
+            record.status = "active";
+            record.periodStart = validISO(payload.chargedAt)
+              ? payload.chargedAt
+              : now().toISOString();
+            record.periodEnd = validISO(payload.nextBillingAt)
+              ? payload.nextBillingAt
+              : addOneMonthISO(record.periodStart);
+            record.currentAmount = typeof payload.amount === "number" ? payload.amount : 199;
+            record.cancelAtPeriodEnd = false;
+            record.cancelEffectiveAt = null;
+          } else if (event === "creator_subscription.payment.failed") {
+            record.status = typeof payload.status === "string" ? payload.status : "past_due";
+          } else if (event === "creator_subscription.active") {
+            record.status = "active";
+          } else if (event === "creator_subscription.cancel_requested") {
+            record.status = "cancel_requested";
+            record.cancelAtPeriodEnd = true;
+            record.cancelEffectiveAt = validISO(payload.cancelEffectiveAt)
+              ? payload.cancelEffectiveAt
+              : record.periodEnd;
+          } else if (event === "creator_subscription.canceled") {
+            record.status = "canceled";
+            record.cancelAtPeriodEnd = false;
+            record.cancelEffectiveAt = validISO(payload.canceledAt)
+              ? payload.canceledAt
+              : now().toISOString();
+            record.periodEnd = record.cancelEffectiveAt;
+          }
+          await saveSubscription(anonymousID, record);
+        }
+      }
+    }
+
+    return new Response(null, { status: 204 });
+  });
+
   app.post("/v1/chat/completions", async (c) => {
     const installationID = authenticateInstallation(c.req.raw);
     if (!installationID) return jsonError("Unauthorized installation.", 401);
@@ -361,20 +837,20 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     body.model = model;
     const isStream = body.stream === true;
 
-    const currentDay = dayInTimeZone(now(), timeZone);
-    const anonymousID = hashIdentity(installationID);
-    const deviceKey = `usage:${anonymousID}:${currentDay}`;
-    const globalKey = `global:${currentDay}`;
+    const status = await usageStatus(installationID);
+    const globalKey = status.isPro
+      ? `global:pro:${status.currentDay}`
+      : `global:${status.currentDay}`;
 
     let quotaResult: number[];
     try {
       quotaResult = (await redis.eval(
         QUOTA_SCRIPT,
         2,
-        deviceKey,
+        status.usageKey,
         globalKey,
-        dailyLimit,
-        globalCap,
+        status.limit,
+        status.isPro ? proGlobalCap : globalCap,
         RAW_RETENTION_SECONDS
       )) as number[];
     } catch {
@@ -382,11 +858,18 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     }
 
     if (Number(quotaResult[0]) === 2) {
-      await recordUnique("quota_reached", currentDay, anonymousID);
+      await recordUnique("quota_reached", status.currentDay, status.anonymousID);
       return jsonError(
-        `今日免費額度已用完（每天 ${dailyLimit} 次）。明天 00:00 重置，或查看升級方案。`,
+        status.isPro
+          ? `本期 Pro 額度已用完（每期 ${proMonthlyLimit} 次）。`
+          : `今日免費額度已用完（每天 ${dailyLimit} 次）。`,
         429,
-        { code: "daily_quota_reached", resets_at: nextResetISO(currentDay, timeZone) }
+        {
+          code: status.isPro ? "pro_quota_reached" : "daily_quota_reached",
+          resets_at: status.resetsAt,
+          used: Number(quotaResult[1]),
+          limit: status.limit,
+        }
       );
     }
     if (Number(quotaResult[0]) === 3) {
@@ -413,7 +896,7 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       );
     }
 
-    await recordUnique("app_active", currentDay, anonymousID);
+    await recordUnique("app_active", status.currentDay, status.anonymousID);
     return new Response(upstream.body, {
       status: 200,
       headers: { "Content-Type": isStream ? "text/event-stream" : "application/json" },

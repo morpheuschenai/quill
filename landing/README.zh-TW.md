@@ -4,7 +4,7 @@
 
 <!-- 截圖待補：![Quill 選單](docs/screenshot.png) -->
 
-**Quill Cloud**（即將推出）— 不需 API Key，不需任何技術設定。[加入候補名單 →](https://tally.so/r/68VMRP)
+**Quill Cloud**— 不需 API Key、不需技術設定，每天可免費使用 10 次。
 
 **開放原始碼**— 自備 API Key，自行編譯。說明如下。
 
@@ -27,11 +27,11 @@
 
 ## 兩種使用方式
 
-### Quill Cloud · 即將推出
+### Quill Cloud
 
 下載後雙擊即可安裝。不需 API Key、不需 Xcode、不需任何技術設定。
-
-[加入候補名單 →](https://tally.so/r/68VMRP) — 前 50 位會員獲贈一個月免費使用。
+免費版每天 10 次；Quill Pro 每個計費週期 600 次，NT$199／月。於
+2026/8/31 23:59（UTC+8）前完成訂閱，第一個計費週期為 NT$149。
 
 ### 開放原始碼 · 現在可用
 

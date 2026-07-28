@@ -176,6 +176,17 @@
   .demo-unit.working { opacity: 0.3; animation: pulse 0.9s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.12; } }
   .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .mac-only-tag { display:inline-flex;align-items:center;gap:5px;margin-left:9px;padding:3px 8px;border:1px solid rgba(20,20,40,.11);border-radius:999px;color:var(--text-dim);background:rgba(255,255,255,.54);font-size:10.5px;font-weight:650;vertical-align:middle }
+  .mac-only-note { width:100%;color:var(--text-dim);font-size:12.5px }
+  .promo-line { margin-top:14px;color:var(--blue);font-size:13px;font-weight:650 }
+  .price-split { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 }
+  .price-tier { border:1px solid var(--border);border-radius:12px;padding:16px;background:rgba(59,130,246,.025) }
+  .price-tier.pro { border-color:rgba(59,130,246,.28);background:var(--blue-soft) }
+  .price-tier strong { display:block;font-size:15px;margin-bottom:4px }
+  .price-tier .amount { font-size:22px;font-weight:750;letter-spacing:-.02em }
+  .price-tier small { display:block;color:var(--text-dim);font-size:11.5px;margin-top:4px;line-height:1.5 }
+  .plan-actions { display:flex;gap:10px;align-items:center;flex-wrap:wrap }
+  @media(max-width:520px){.price-split{grid-template-columns:1fr}}
   /* Dev link — below demo panel in right column */
   .hero-dev-link {
     margin-top: 12px; font-size: 13px; color: var(--text-dim);
@@ -633,17 +644,17 @@
 <div class="blob b2"></div>
 <div class="blob b3"></div>
 
-<!-- ░░ NAV — "Join waitlist" replaces "Get Quill" ░░ -->
+<!-- Navigation -->
 <div class="navbar"><div class="wrap">
   <nav>
-    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill</div>
+    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill <span class="mac-only-tag"><svg class="ic-svg" style="width:11px;height:11px"><use href="#i-apple"/></svg> macOS only</span></div>
     <div class="nav-links">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
-      <a href="index-zh.html" title="繁體中文版" style="font-size:13px;opacity:0.6">繁中</a>
-      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Join waitlist</a>
+      <a href="index.html" title="繁體中文版" style="font-size:13px;opacity:0.6">繁中</a>
+      <a class="btn btn-primary" href="Quill.zip" download>Free download for Mac</a>
     </div>
   </nav>
 </div></div>
@@ -659,8 +670,10 @@
         </div>
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">Fix, translate, or summarize text in any app —<br>with one hotkey.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Join the waitlist</a>
+          <a class="btn btn-primary" href="Quill.zip" download>Free download for Mac</a>
+          <p class="mac-only-note"><strong>Made for Mac</strong> · Other platforms coming soon</p>
         </div>
+        <p class="promo-line" id="launchPromoLine">Subscribe by Aug 31: first month NT$149, then NT$199/month</p>
         <div><button id="resetChip">↺ Reset the headline</button></div>
       </div>
 
@@ -778,27 +791,27 @@
   <section id="pricing">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-tick"/></svg> Pricing</div>
     <h2>Download. Install. Done.</h2>
-    <p class="sec-sub">No API key, no technical setup. Join the waitlist to get early access when Quill Cloud launches.</p>
+    <p class="sec-sub">No API key and no technical setup. Download it and start with 10 free uses every day.</p>
     <div class="plans-b">
       <!-- Cloud — 2/3 width, featured -->
       <div class="plan featured">
-        <span class="badge soon">Coming soon</span>
+        <span class="badge soon">Start free · Upgrade to Pro</span>
         <h3>Quill Cloud</h3>
         <div class="plan-platforms">
-          <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS</span>
-          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-windows"/></svg> Windows</span>
-          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-phone"/></svg> iPhone</span>
-          <span class="plat-tag roadmap"><svg class="ic-svg"><use href="#i-android"/></svg> Android</span>
+          <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS only</span>
         </div>
-        <div class="price">Early access — join the waitlist</div>
+        <div class="price-split">
+          <div class="price-tier"><strong>Free</strong><span class="amount">NT$0</span><small>10 uses per day, with a reset countdown in your local time</small></div>
+          <div class="price-tier pro"><strong id="proPriceLabel">Pro · Launch offer</strong><span class="amount" id="proPriceAmount">First month NT$149</span><small id="proPriceDetail">Then NT$199/month · 600 uses per billing cycle · Cancel anytime</small></div>
+        </div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Download and double-click — no tech setup needed</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>No API key needed — credits included</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>10 free uses daily; Pro includes 600 per billing cycle</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Automatic updates</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Works in Mail, Notes, Chrome, Slack, and more</li>
         </ul>
-        <p class="plan-note"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>First 50 members get one month free — no credit card needed</p>
-        <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Join the waitlist</a>
+        <p class="plan-note" id="launchPromoNote"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>Subscribe by Aug 31, 2026, 23:59 (UTC+8). The offer applies to your first billing cycle only.</p>
+        <div class="plan-actions"><a class="btn btn-primary" href="Quill.zip" download>Free download for Mac</a><a class="btn btn-ghost" href="quill://upgrade">Upgrade inside Quill →</a></div>
       </div>
       <!-- OSS — 1/3 width, minimal -->
       <div class="plan-mini">
@@ -815,22 +828,22 @@
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> FAQ</div>
     <h2>Questions, answered.</h2>
-    <div class="faq-item"><h3>When will Quill Cloud be available?</h3><p>We're working on it now. Joining the waitlist puts you in line for beta access — we'll reach out to early members before the public launch.</p></div>
-    <div class="faq-item"><h3>What do I get as an early member?</h3><p>Beta access before the public launch, plus the chance to give direct feedback that shapes the product. We'll send you an invite link when your spot is ready.</p></div>
+    <div class="faq-item"><h3>How much does Quill cost?</h3><p id="pricingFaqAnswer">The Free plan includes 10 uses per day. Pro includes 600 uses per billing cycle for NT$199/month. Subscribe by Aug 31, 2026, 23:59 (UTC+8) and your first month is NT$149; renewals are NT$199/month.</p></div>
+    <div class="faq-item"><h3>Can I install Quill on a phone or Windows?</h3><p>Not yet. Quill is currently a macOS-only app. iPhone, iPad, Windows, and Android versions are on the roadmap.</p></div>
     <div class="faq-item"><h3>Which Mac apps does Quill work in?</h3><p>Nearly all of them — Mail, Notes, Pages, Messages, Slack, Safari, Chrome, and more. Quill reads your selected text and rewrites it in place, or shows the result in a panel for read-only apps like PDFs.</p></div>
     <div class="faq-item"><h3>Why does Quill need Accessibility permission?</h3><p>It's how Quill reads your selected text and replaces it in place. You grant it once in System Settings — it takes about 10 seconds. No other data is accessed.</p></div>
-    <div class="faq-item"><h3>Is it really free to join the waitlist?</h3><p>Yes — joining the waitlist is completely free. No credit card, no commitment. We'll share pricing details before beta access opens.</p></div>
+    <div class="faq-item"><h3>What happens when I use all free credits?</h3><p>Your 10 free uses reset automatically each day, and Quill shows the countdown in your local time. You can also upgrade from Plan & Usage in Preferences. Portaly securely handles payment; Quill never stores card details.</p></div>
     <div class="faq-item"><h3>Was the headline demo calling an API?</h3><p>No — the demo on this page is scripted to show the interaction. The real app sends your selection to the AI model you configure.</p></div>
   </section>
 
   <section id="privacy">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-shield"/></svg> Privacy</div>
     <h2>Your data never takes a detour.</h2>
-    <p class="sec-sub">Quill has no servers of its own. Your text goes to the AI and comes back — nothing passes through us in between.</p>
+    <p class="sec-sub">Content is transmitted only to produce your response. Quill does not store it or use it for training.</p>
     <div class="privacy-list">
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>We never see your text.</b> <span>Quill has no servers — your selection goes straight to the AI and nowhere else.</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Your content is not stored.</b> <span>Quill Cloud sends the request to OpenAI only to produce the response.</span></span></div>
       <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>No account required.</b> <span>No sign-up, no profile, no data stored on our end.</span></span></div>
-      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Zero tracking.</b> <span>No usage data, no analytics, no logs of any kind.</span></span></div>
+      <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Privacy-preserving metrics.</b> <span>Only anonymous usage, limit, upgrade, and purchase events are counted.</span></span></div>
       <div class="privacy-item"><svg class="ic-svg"><use href="#i-tick"/></svg><span><b>Clipboard-safe.</b> <span>If Quill needs the clipboard to read your selection, it restores whatever was there before.</span></span></div>
     </div>
   </section>
@@ -839,16 +852,16 @@
   <section class="cta">
     <h2>Stop copy-pasting into chatbots.</h2>
     <p class="sec-sub" style="margin:0 auto">Select text. Press a hotkey. Done — without leaving the app you're in.</p>
-    <p class="cta-note">First 50 members get one month free · No credit card needed</p>
+    <p class="cta-note">10 free uses daily · No account · No credit card</p>
     <div class="btns">
-      <a class="btn btn-primary" href="https://tally.so/r/68VMRP">Join the waitlist</a>
+      <a class="btn btn-primary" href="Quill.zip" download>Free download for Mac</a>
     </div>
   </section>
   </main>
 
   <footer>
     <div>Quill — MIT License · Open source · <a href="https://github.com/morpheuschenai/quill">GitHub</a></div>
-    <div><a href="https://github.com/morpheuschenai/quill/issues">Report an issue</a> · <a href="index-zh.html">繁中</a></div>
+    <div><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="refund.html">Refunds</a> · <a href="index.html">繁中</a></div>
   </footer>
 </div>
 
@@ -950,7 +963,7 @@
 
     const cta = document.createElement('div');
     cta.className = 'menu-cta';
-    cta.innerHTML = 'Custom prompts run in the real app — <a href="https://tally.so/r/68VMRP">Join waitlist →</a>';
+    cta.innerHTML = 'Custom prompts run in the real app — <a href="Quill.zip">Download for Mac →</a>';
     menu.appendChild(cta);
 
     if (note) {
@@ -1001,7 +1014,7 @@
     },
     shot: {
       desc: 'Capture any region of the screen, then extract its text, describe it, or translate it. Try it on this very page.',
-      keys: ['⌃', '⌥', 'I'],
+      keys: ['⌃', '⌥', 'Q'],
       cta:  'Capture this page'
     }
   };
@@ -1216,7 +1229,7 @@
     }
     if (!(e.ctrlKey && e.altKey)) return;
     if (e.code === 'KeyA') { e.preventDefault(); openTextMenu(); }
-    if (e.code === 'KeyI') { e.preventDefault(); enterShot(); }
+    if (e.code === 'KeyQ') { e.preventDefault(); enterShot(); }
   });
 
   document.addEventListener('pointerdown', e => {
@@ -1267,6 +1280,18 @@
       card.style.setProperty('--my', (e.clientY - b.top) + 'px');
     });
   });
+
+  // Retire the launch offer automatically; checkout remains authoritative on server time.
+  if (Date.now() > Date.parse('2026-08-31T15:59:59.000Z')) {
+    document.querySelector('#launchPromoLine')?.remove();
+    document.querySelector('#launchPromoNote')?.remove();
+    document.querySelector('#proPriceLabel').textContent = 'Pro';
+    document.querySelector('#proPriceAmount').textContent = 'NT$199/month';
+    document.querySelector('#proPriceDetail').textContent =
+      '600 uses per billing cycle · Cancel anytime';
+    document.querySelector('#pricingFaqAnswer').textContent =
+      'The Free plan includes 10 uses per day. Pro includes 600 uses per billing cycle for NT$199/month. Cancel anytime.';
+  }
 })();
 </script>
 </body>

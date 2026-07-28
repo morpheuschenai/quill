@@ -84,6 +84,7 @@ final class OnboardingWindow: NSWindow {
     contentView = NSHostingView(rootView: OnboardingView(startStep: startStep) { [weak self] in
       OnboardingWindow.markDone()
       self?.close()
+      HomePanel.open()
     })
   }
 }

@@ -35,22 +35,30 @@ QUOTA_TIME_ZONE=Asia/Taipei
 
 ```text
 DAILY_LIMIT=10
+PRO_MONTHLY_LIMIT=600
 GLOBAL_DAILY_CAP=5000
+PRO_GLOBAL_DAILY_CAP=5000
 REGISTRATION_DAILY_LIMIT=20
 OPENAI_MODEL=gpt-4o-mini
-CHECKOUT_URL=<Stripe／Lemon Squeezy／Paddle 的 HTTPS checkout 連結>
-PAYMENT_WEBHOOK_SECRET=<付款 webhook 專用密鑰>
+PORTALY_API_KEY=<以 pcs_test_ 開頭的測試 key；KYC 通過後再換 live key>
+PORTALY_API_HOST=https://portaly.ai
+PORTALY_PLAN_ID=<Quill Pro plan id>
+PORTALY_CALLBACK_SECRET=<Portaly callback secret>
+PORTALY_CALLBACK_URL=https://<Railway domain>/v1/webhooks/portaly
+PORTALY_DISCOUNT_CODE=LAUNCH149
+PORTALY_PROMO_END=2026-08-31T15:59:59.000Z
+PORTALY_SUCCESS_URL=https://quill.morpheuschen.com/checkout.html?status=success
+PORTALY_CANCEL_URL=https://quill.morpheuschen.com/checkout.html?status=canceled
+PORTALY_PORTAL_RETURN_URL=https://quill.morpheuschen.com/checkout.html?status=managed
 ```
 
-`GET /checkout` 會先匿名記錄 `checkout_started`，再導向 `CHECKOUT_URL`。尚未設定
-金流時，會回到官網的「尚未開放」頁面，不會顯示假的付款成功狀態。
+App 透過已簽章的 installation token 呼叫 `POST /v1/billing/checkout` 建立
+Portaly hosted checkout。付款結果只以驗證過簽章的
+`POST /v1/webhooks/portaly` callback 為準，不以瀏覽器 redirect 判斷成功。
 
-付款服務完成交易後，應由其 webhook（或一個小型轉接器）以 Bearer
-`PAYMENT_WEBHOOK_SECRET` 呼叫 `POST /v1/webhooks/purchase`，body 為：
-
-```json
-{ "order_id": "provider-order-id" }
-```
+已綁定訂閱的裝置可呼叫 `POST /v1/billing/portal`，由伺服器依
+`subscriptionId` 建立 30 分鐘有效的 Portaly 管理頁。API key 不會傳到 App，
+也不接受未驗證的 Email 查詢他人訂閱。
 
 可用以下方式各產生一組密鑰：
 

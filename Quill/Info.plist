@@ -2,9 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <!-- App 不顯示在 Dock，只在 Menu bar -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.morpheus.quill</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>quill</string>
+      </array>
+    </dict>
+  </array>
+  <!-- 顯示在 Dock；點擊可喚醒首頁或尚未完成的設定引導。 -->
   <key>LSUIElement</key>
-  <true/>
+  <false/>
 
   <!-- Accessibility 權限說明（必填，否則無法通過審核） -->
   <key>NSAccessibilityUsageDescription</key>

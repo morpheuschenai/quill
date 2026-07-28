@@ -392,9 +392,6 @@ struct ChatView: View {
   }
 
   private func openUpgradeOptions() {
-    OpenAIService.shared.trackUpgradeClicked {
-      guard let url = URL(string: "https://quill.morpheuschen.com/#pricing") else { return }
-      NSWorkspace.shared.open(url)
-    }
+    BillingService.shared.startCheckout()
   }
 }

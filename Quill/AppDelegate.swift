@@ -16,7 +16,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
   )
 
   func applicationDidFinishLaunching(_ notification: Notification) {
-    NSApp.setActivationPolicy(.accessory)
+    // Hosted unit tests inject into the App process. Do not activate Dock/UI or
+    // start permission polling there, otherwise LaunchServices can hold the test runner open.
+    if ProcessInfo.processInfo.environment["XCTestBundlePath"] != nil {
+      return
+    }
+    NSApp.setActivationPolicy(.regular)
     _ = updaterController
     setupStatusBar()
     // 語言切換時重建選單列文字
@@ -25,8 +30,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
       .sink { [weak self] _ in DispatchQueue.main.async { self?.setupStatusBar() } }
     if OnboardingWindow.shouldShowOnLaunch {
       OnboardingWindow.open()
+    } else {
+      HomePanel.open()
     }
     checkAccessibilityPermission()
+  }
+
+  func applicationShouldHandleReopen(
+    _ sender: NSApplication,
+    hasVisibleWindows flag: Bool
+  ) -> Bool {
+    if OnboardingWindow.shouldShowOnLaunch {
+      OnboardingWindow.open()
+    } else {
+      HomePanel.open()
+    }
+    return true
+  }
+
+  func application(_ application: NSApplication, open urls: [URL]) {
+    guard let action = urls.first?.host?.lowercased() else { return }
+    switch action {
+    case "upgrade":
+      BillingService.shared.startCheckout()
+    case "billing":
+      PreferencesPanel.open()
+      BillingService.shared.refresh()
+    default:
+      break
+    }
   }
 
   // MARK: - Menu bar
@@ -46,6 +78,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
     }
 
     let menu = NSMenu()
+    menu.addItem(NSMenuItem(
+      title: L10n.t("menu.open"),
+      action: #selector(openHome),
+      keyEquivalent: ""
+    ))
     menu.addItem(NSMenuItem(
       title: L10n.t("menu.preferences"),
       action: #selector(openPreferences),
@@ -74,6 +111,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
   }
 
   // MARK: - Actions
+
+  @objc private func openHome() {
+    if OnboardingWindow.shouldShowOnLaunch {
+      OnboardingWindow.open()
+    } else {
+      HomePanel.open()
+    }
+  }
 
   @objc private func openPreferences() {
     PreferencesPanel.open()

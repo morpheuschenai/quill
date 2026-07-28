@@ -22,6 +22,8 @@
 		E30E0EE92FC6FF000002B61B /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */; };
 		E30E0FB22FC6FF000002B61B /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0FB12FC6FF000002B61B /* Localization.swift */; };
 		E30E0FC22FC6FF000002B61B /* ThinkingOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0FC12FC6FF000002B61B /* ThinkingOrb.swift */; };
+		E30E0FD22FC6FF000002B61B /* BillingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0FD12FC6FF000002B61B /* BillingService.swift */; };
+		E30E0FE22FC6FF000002B61B /* HomePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E0FE12FC6FF000002B61B /* HomePanel.swift */; };
 		E30E0FA32FC6FF000002B61B /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = E30E0FA22FC6FF000002B61B /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -55,6 +57,8 @@
 		E30E0EE82FC6FF000002B61B /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 		E30E0FB12FC6FF000002B61B /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		E30E0FC12FC6FF000002B61B /* ThinkingOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinkingOrb.swift; sourceTree = "<group>"; };
+		E30E0FD12FC6FF000002B61B /* BillingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BillingService.swift; sourceTree = "<group>"; };
+		E30E0FE12FC6FF000002B61B /* HomePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -115,6 +119,8 @@
 				E30E031D2FC688990002B61B /* QuillApp.swift */,
 				E30E031E2FC688990002B61B /* ResultPanel.swift */,
 				E30E0FC12FC6FF000002B61B /* ThinkingOrb.swift */,
+				E30E0FD12FC6FF000002B61B /* BillingService.swift */,
+				E30E0FE12FC6FF000002B61B /* HomePanel.swift */,
 				E30E03CC2FC6FF000002B61B /* ScreenshotCapture.swift */,
 				E30E0EE02FC6FF000002B61B /* PromptStore.swift */,
 				E30E0EE22FC6FF000002B61B /* PreferencesPanel.swift */,
@@ -259,6 +265,8 @@
 				E30E03262FC688990002B61B /* OpenAIService.swift in Sources */,
 				E30E03272FC688990002B61B /* QuillApp.swift in Sources */,
 				E30E0FC22FC6FF000002B61B /* ThinkingOrb.swift in Sources */,
+				E30E0FD22FC6FF000002B61B /* BillingService.swift in Sources */,
+				E30E0FE22FC6FF000002B61B /* HomePanel.swift in Sources */,
 				E30E03DD2FC6FF000002B61B /* ScreenshotCapture.swift in Sources */,
 				E30E0EE12FC6FF000002B61B /* PromptStore.swift in Sources */,
 				E30E0EE32FC6FF000002B61B /* PreferencesPanel.swift in Sources */,
@@ -419,7 +427,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -453,7 +461,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

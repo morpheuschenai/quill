@@ -1,18 +1,32 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { createApp, type QuillEnv, type RedisLike } from "./server.ts";
+import { signPortalyCallback } from "./portalyCallback.mjs";
 
 type MockRedis = RedisLike & {
   counters: Map<string, number>;
   sets: Map<string, Set<string>>;
+  values: Map<string, string>;
 };
 
 function mockRedis(): MockRedis {
   const counters = new Map<string, number>();
   const sets = new Map<string, Set<string>>();
+  const values = new Map<string, string>();
   return {
     counters,
     sets,
+    values,
+    async get(key: string) {
+      if (values.has(key)) return values.get(key) || null;
+      const counter = counters.get(key);
+      return counter === undefined ? null : String(counter);
+    },
+    async set(key: string, value: string) {
+      values.set(key, value);
+      return "OK";
+    },
     async incr(key: string) {
       const value = (counters.get(key) || 0) + 1;
       counters.set(key, value);
@@ -69,6 +83,7 @@ function env(overrides: Partial<QuillEnv> = {}): QuillEnv {
     QUOTA_TIME_ZONE: "Asia/Taipei",
     ADMIN_USERNAME: "owner",
     ADMIN_PASSWORD: "correct-horse",
+    PORTALY_PLAN_ID: "plan_quill_pro",
     ...overrides,
   };
 }
@@ -241,6 +256,291 @@ test("checkout uses honest coming-soon page until a payment URL is configured", 
     response.headers.get("location"),
     "https://quill.morpheuschen.com/checkout.html?status=coming-soon"
   );
+});
+
+test("billing status and checkout apply the launch offer for an authenticated installation", async () => {
+  const redis = mockRedis();
+  const calls: any[] = [];
+  const checkoutFetch = async (_url: any, init: any) => {
+    calls.push(JSON.parse(init.body));
+    return Response.json({
+      data: {
+        sessionId: "checkout_session_123",
+        checkoutToken: "checkout_token_123",
+        checkoutUrl: "https://portaly.cc/checkout/test",
+        expiresAt: "2026-07-23T03:30:00.000Z",
+      },
+    });
+  };
+  const app = createApp({
+    redis,
+    env: env({
+      PORTALY_API_KEY: "test-key",
+      PORTALY_CALLBACK_URL: "https://quill.example.com/v1/webhooks/portaly",
+      PORTALY_DISCOUNT_CODE: "LAUNCH149",
+      PORTALY_PROMO_END: "2026-08-31T15:59:59.000Z",
+    }),
+    fetchImpl: checkoutFetch as typeof fetch,
+    now: () => NOW,
+  });
+  const token = await installationToken(app);
+  const authorization = { Authorization: `Bearer ${token}` };
+
+  const status = await app.fetch(new Request("http://x/v1/billing/status", {
+    headers: authorization,
+  }));
+  assert.equal(status.status, 200);
+  assert.deepEqual(await status.json(), {
+    plan: "free",
+    used: 0,
+    limit: 10,
+    remaining: 10,
+    resets_at: "2026-07-23T16:00:00.000Z",
+    subscription: null,
+    promotion: {
+      active: true,
+      first_month_amount: 149,
+      recurring_amount: 199,
+      ends_at: "2026-08-31T15:59:59.000Z",
+    },
+  });
+
+  const checkout = await app.fetch(jsonPost("/v1/billing/checkout", {}, authorization));
+  assert.equal(checkout.status, 201);
+  assert.equal((await checkout.json()).promotion_applied, true);
+  assert.equal(calls[0].planId, "plan_quill_pro");
+  assert.equal(calls[0].discountCode, "LAUNCH149");
+  assert.match(calls[0].metadata.installationHash, /^[0-9a-f]{64}$/);
+  assert.ok(redis.values.has("checkout-session:checkout_session_123"));
+});
+
+test("launch offer automatically expires after the configured deadline", async () => {
+  const calls: any[] = [];
+  const checkoutFetch = async (_url: any, init: any) => {
+    calls.push(JSON.parse(init.body));
+    return Response.json({
+      data: {
+        sessionId: "checkout_after_offer",
+        checkoutToken: "token_after_offer",
+        checkoutUrl: "https://portaly.cc/checkout/test",
+        expiresAt: "2026-09-02T03:30:00.000Z",
+      },
+    });
+  };
+  const app = createApp({
+    redis: mockRedis(),
+    env: env({
+      PORTALY_API_KEY: "test-key",
+      PORTALY_CALLBACK_URL: "https://quill.example.com/v1/webhooks/portaly",
+      PORTALY_DISCOUNT_CODE: "LAUNCH149",
+      PORTALY_PROMO_END: "2026-08-31T15:59:59.000Z",
+    }),
+    fetchImpl: checkoutFetch as typeof fetch,
+    now: () => new Date("2026-09-02T03:00:00.000Z"),
+  });
+  const token = await installationToken(app);
+  const authorization = { Authorization: `Bearer ${token}` };
+  const status = await app.fetch(new Request("http://x/v1/billing/status", {
+    headers: authorization,
+  }));
+  const statusBody = await status.json();
+  assert.equal(statusBody.promotion.active, false);
+  assert.equal(statusBody.promotion.first_month_amount, 199);
+
+  const checkout = await app.fetch(jsonPost("/v1/billing/checkout", {}, authorization));
+  const checkoutBody = await checkout.json();
+  assert.equal(checkoutBody.promotion_applied, false);
+  assert.equal(checkoutBody.first_month_amount, 199);
+  assert.equal(calls[0].discountCode, undefined);
+});
+
+test("verified Portaly checkout callback records one anonymous purchase", async () => {
+  const redis = mockRedis();
+  const callbackSecret = "callback-secret";
+  const app = createApp({
+    redis,
+    env: env({ PORTALY_CALLBACK_SECRET: callbackSecret }),
+    now: () => NOW,
+  });
+  const payload = {
+    event: "creator_subscription.checkout.completed",
+    sessionId: "session_test_123",
+    subscriptionId: "session_test_123",
+    mode: "test",
+    status: "completed",
+    merchantOrderNumber: "quill_test_001",
+    amount: 199,
+    currency: "TWD",
+    customerEmail: "buyer@example.com",
+    paymentReference: "txn_test_123",
+    planId: "plan_quill_pro",
+    metadata: {
+      installationHash: "a".repeat(64),
+    },
+  };
+  const timestamp = NOW.toISOString();
+  const signature = signPortalyCallback({ secret: callbackSecret, payload, timestamp });
+  const request = () => jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event,
+    "x-portaly-timestamp": timestamp,
+    "x-portaly-signature": signature,
+  });
+
+  assert.equal((await app.fetch(request())).status, 204);
+  assert.equal((await app.fetch(request())).status, 204);
+  assert.equal(redis.sets.get("metrics:purchase_completed:2026-07-23")?.size, 1);
+  assert.equal(redis.sets.get(`portaly-callback:${payload.event}`)?.size, 1);
+  assert.ok(
+    ![...redis.sets.values()].some((set) =>
+      [...set].some((value) => value.includes(payload.customerEmail))
+    )
+  );
+});
+
+test("verified checkout activates Pro with a 600-use billing period", async () => {
+  const redis = mockRedis();
+  const callbackSecret = "callback-secret";
+  const app = createApp({
+    redis,
+    env: env({
+      PORTALY_CALLBACK_SECRET: callbackSecret,
+      PRO_MONTHLY_LIMIT: "600",
+    }),
+    fetchImpl: mockFetch().fn,
+    now: () => NOW,
+  });
+  const token = await installationToken(app);
+  const anonymousID = createHmac("sha256", "analytics-salt")
+    .update(INSTALLATION_ID).digest("hex");
+  const payload = {
+    event: "creator_subscription.checkout.completed",
+    sessionId: "session_pro_123",
+    subscriptionId: "subscription_pro_123",
+    planId: "plan_quill_pro",
+    mode: "test",
+    status: "completed",
+    amount: 149,
+    completedAt: NOW.toISOString(),
+    nextBillingAt: "2026-08-23T03:00:00.000Z",
+    metadata: { installationHash: anonymousID },
+  };
+  const timestamp = NOW.toISOString();
+  const signature = signPortalyCallback({ secret: callbackSecret, payload, timestamp });
+  assert.equal((await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event,
+    "x-portaly-timestamp": timestamp,
+    "x-portaly-signature": signature,
+  }))).status, 204);
+
+  const status = await app.fetch(new Request("http://x/v1/billing/status", {
+    headers: { Authorization: `Bearer ${token}` },
+  }));
+  const statusBody = await status.json();
+  assert.equal(statusBody.plan, "pro");
+  assert.equal(statusBody.limit, 600);
+  assert.equal(statusBody.subscription.current_amount, 149);
+  assert.equal(statusBody.subscription.next_amount, 199);
+  assert.equal(statusBody.resets_at, "2026-08-23T03:00:00.000Z");
+});
+
+test("subscription portal is scoped to the authenticated installation's subscription", async () => {
+  const redis = mockRedis();
+  const anonymousID = createHmac("sha256", "analytics-salt")
+    .update(INSTALLATION_ID).digest("hex");
+  await redis.set(`subscription:installation:${anonymousID}`, JSON.stringify({
+    subscriptionId: "subscription_pro_123",
+    sessionId: "session_pro_123",
+    planId: "plan_quill_pro",
+    mode: "test",
+    status: "active",
+    periodStart: NOW.toISOString(),
+    periodEnd: "2026-08-23T03:00:00.000Z",
+    currentAmount: 149,
+    cancelAtPeriodEnd: false,
+    cancelEffectiveAt: null,
+  }));
+  const calls: any[] = [];
+  const portalFetch = async (url: any, init: any) => {
+    calls.push({ url, body: JSON.parse(init.body) });
+    return Response.json({
+      data: {
+        portalSessionId: "portal_123",
+        portalUrl: "https://portaly.ai/portal/portal_123?token=test",
+        expiresAt: "2026-07-23T03:30:00.000Z",
+      },
+    });
+  };
+  const app = createApp({
+    redis,
+    env: env({
+      PORTALY_API_KEY: "test-key",
+      PORTALY_PORTAL_RETURN_URL: "https://quill.example.com/account",
+    }),
+    fetchImpl: portalFetch as typeof fetch,
+    now: () => NOW,
+  });
+  const token = await installationToken(app);
+  const response = await app.fetch(jsonPost("/v1/billing/portal", {}, {
+    Authorization: `Bearer ${token}`,
+  }));
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).portal_url, "https://portaly.ai/portal/portal_123?token=test");
+  assert.equal(
+    calls[0].url,
+    "https://portaly.ai/api/creator-subscription/portal-sessions"
+  );
+  assert.deepEqual(calls[0].body, {
+    subscriptionId: "subscription_pro_123",
+    returnUrl: "https://quill.example.com/account",
+  });
+  assert.equal(calls[0].body.customerEmail, undefined);
+});
+
+test("subscription portal rejects unauthenticated and unlinked installations", async () => {
+  const app = createApp({
+    redis: mockRedis(),
+    env: env({ PORTALY_API_KEY: "test-key" }),
+    now: () => NOW,
+  });
+  assert.equal((await app.fetch(jsonPost("/v1/billing/portal", {}))).status, 401);
+  const token = await installationToken(app);
+  assert.equal((await app.fetch(jsonPost("/v1/billing/portal", {}, {
+    Authorization: `Bearer ${token}`,
+  }))).status, 404);
+});
+
+test("Portaly callback rejects invalid signatures, stale timestamps, and event mismatch", async () => {
+  const callbackSecret = "callback-secret";
+  const app = createApp({
+    redis: mockRedis(),
+    env: env({ PORTALY_CALLBACK_SECRET: callbackSecret }),
+    now: () => NOW,
+  });
+  const payload = {
+    event: "creator_subscription.checkout.completed",
+    sessionId: "session_test_456",
+    mode: "test",
+    status: "completed",
+  };
+  const timestamp = NOW.toISOString();
+  const signature = signPortalyCallback({ secret: callbackSecret, payload, timestamp });
+
+  assert.equal((await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event,
+    "x-portaly-timestamp": timestamp,
+    "x-portaly-signature": "0".repeat(64),
+  }))).status, 401);
+  assert.equal((await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event,
+    "x-portaly-timestamp": "2026-07-23T02:50:00.000Z",
+    "x-portaly-signature": signature,
+  }))).status, 401);
+  assert.equal((await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": "creator_subscription.payment.succeeded",
+    "x-portaly-timestamp": timestamp,
+    "x-portaly-signature": signature,
+  }))).status, 400);
 });
 
 test("metrics dashboard and data require admin authentication", async () => {

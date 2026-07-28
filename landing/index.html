@@ -245,6 +245,14 @@
   .plan-note { margin-bottom: 14px; font-size: 12px; color: var(--yellow); display: flex; align-items: center; gap: 6px; }
   .plan-note .ic-svg { color: var(--yellow); flex-shrink: 0; }
   .plan-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .promo-line { margin-top: 14px; color: var(--blue); font-size: 13px; font-weight: 650; }
+  .price-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+  .price-tier { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: rgba(59,130,246,0.025); }
+  .price-tier.pro { border-color: rgba(59,130,246,0.28); background: var(--blue-soft); }
+  .price-tier strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .price-tier .amount { font-size: 22px; font-weight: 750; letter-spacing: -0.02em; }
+  .price-tier small { display: block; color: var(--text-dim); font-size: 11.5px; margin-top: 4px; line-height: 1.5; }
+  @media (max-width: 520px) { .price-split { grid-template-columns: 1fr; } }
   /* Section padding gap */
   #features { padding-bottom: 56px; }
   #pricing  { padding-top: 56px; }
@@ -350,7 +358,7 @@
       <a href="#features">功能</a>
       <a href="#faq">常見問題</a>
       <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
-      <a href="index.html" title="English version" style="font-size:13px;opacity:0.6">EN</a>
+      <a href="index-en-v3.html" title="English version" style="font-size:13px;opacity:0.6">EN</a>
       <a class="btn btn-primary" href="Quill.zip" download>免費下載 Mac 版</a>
     </div>
   </nav>
@@ -368,6 +376,7 @@
           <a class="btn btn-ghost" href="Quill.zip" download>免費下載 Mac 版</a>
           <p class="mac-only-note"><strong>Mac 專用</strong> · 其他平台即將推出</p>
         </div>
+        <p class="promo-line" id="launchPromoLine">8/31 前訂閱，首月 NT$149；第 2 個月起 NT$199／月</p>
       </div>
       <div>
         <div class="appmock">
@@ -531,21 +540,32 @@
     <div class="plans-b">
       <!-- Cloud — 2/3 width, featured -->
       <div class="plan featured">
-        <span class="badge soon">免費</span>
+        <span class="badge soon">免費開始 · 可升級 Pro</span>
         <h3>Quill Cloud</h3>
         <div class="plan-platforms">
           <span class="plat-tag"><svg class="ic-svg"><use href="#i-apple"/></svg> macOS 專用</span>
         </div>
-        <div class="price">免費下載 · 每天 10 次免費額度</div>
+        <div class="price-split">
+          <div class="price-tier">
+            <strong>Free</strong>
+            <span class="amount">NT$0</span>
+            <small>每天 10 次，依你的本地時間顯示重置倒數</small>
+          </div>
+          <div class="price-tier pro" id="proPriceTier">
+            <strong id="proPriceLabel">Pro · 上市優惠</strong>
+            <span class="amount" id="proPriceAmount">首月 NT$149</span>
+            <small id="proPriceDetail">第 2 個月起 NT$199／月 · 每期 600 次 · 可隨時取消</small>
+          </div>
+        </div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>下載後雙擊即可安裝，不需任何技術設定</li>
-          <li><svg class="ic-svg"><use href="#i-tick"/></svg>每天 10 次免費，覺得好用想大量使用再升級</li>
+          <li><svg class="ic-svg"><use href="#i-tick"/></svg>免費每天 10 次；Pro 每個計費週期 600 次</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>支援 Mail、備忘錄、Chrome、Slack 等所有 App</li>
         </ul>
-        <p class="plan-note"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>免費開始使用 — 不需註冊、不需信用卡</p>
+        <p class="plan-note" id="launchPromoNote"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>優惠須於 2026/8/31 23:59（UTC+8）前完成訂閱，只適用第一個計費週期</p>
         <div class="plan-actions">
           <a class="btn btn-primary" href="Quill.zip" download>免費下載 Mac 版</a>
-          <a class="btn btn-ghost" href="https://quill-production-ba4a.up.railway.app/checkout">我想升級 Pro →</a>
+          <a class="btn btn-ghost" href="quill://upgrade">在 Quill 中升級 Pro →</a>
         </div>
         <p style="font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.6">測試版 · 目前尚未簽章。第一次開啟:雙擊後按「完成」→ 系統設定 → 隱私權與安全性 → 「仍要打開」。</p>
       </div>
@@ -575,13 +595,13 @@
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> 常見問題</div>
     <h2>常見問題，一次說清。</h2>
-    <div class="faq-item"><h3>要花錢嗎？</h3><p>不用。下載就能用，每天有 10 次免費額度，適合日常隨手用。如果覺得好用、想大量使用，之後會有付費方案解除上限。</p></div>
+    <div class="faq-item"><h3>要花錢嗎？</h3><p id="pricingFaqAnswer">不用。免費版每天有 10 次額度。需要更多時可升級 Pro：每個計費週期 600 次，原價 NT$199／月；2026/8/31 23:59（UTC+8）前訂閱，首月 NT$149，第 2 個月起 NT$199／月。</p></div>
     <div class="faq-item"><h3>需要註冊或 API Key 嗎？</h3><p>都不用。下載雙擊即可安裝，開啟就能用，不需要帳號、也不需要自己申請 API Key。（進階使用者仍可在偏好設定改用自己的 Key。）</p></div>
     <div class="faq-item"><h3>可以安裝在手機或 Windows 嗎？</h3><p>不行。Quill 目前是 macOS 專用 App，必須在 Mac 上下載與安裝；不支援 iPhone、iPad、Windows 或 Android。</p></div>
     <div class="faq-item"><h3>Quill 支援哪些 Mac App？</h3><p>幾乎所有 App 都支援 — Mail、備忘錄、Pages、訊息、Slack、Safari、Chrome 等。Quill 讀取你選取的文字後直接在原位改寫，唯讀 App（如 PDF）則在浮動面板顯示結果。</p></div>
     <div class="faq-item"><h3>Quill 需要哪些權限？</h3><p>「螢幕錄製」（截圖用）與「輔助使用」（讀取選取文字用）。首次啟動的引導精靈會一步步帶你完成，各授權一次即可，不會存取其他任何資料。</p></div>
     <div class="faq-item"><h3>舊 Mac 能用嗎？</h3><p>macOS 13 以上都支援，Intel 與 Apple Silicon 皆可 — 不需要 Apple Intelligence。</p></div>
-    <div class="faq-item"><h3>免費額度用完了怎麼辦？</h3><p>每天午夜重置，隔天又有 10 次。Pro 方案正在準備中；按下「我想升級」會匿名記錄需求，正式開放後這個入口會直接連到安全付款頁。</p></div>
+    <div class="faq-item"><h3>免費額度用完了怎麼辦？</h3><p>免費額度每天自動重置，App 會依你的本地時間顯示倒數。也可以在 Quill 的「方案與用量」升級 Pro；付款由 Portaly 安全處理，Quill 不保存卡號。</p></div>
     <div class="faq-item"><h3>標題的 demo 有真的呼叫 API 嗎？</h3><p>沒有 — 這個頁面的互動是腳本模擬，用來呈現真實的操作流程。真正的 App 會將你的選取內容送到你設定的 AI 模型。</p></div>
   </section>
 
@@ -911,7 +931,7 @@
     if (e.code === 'Escape' || e.key === 'Escape') { exitShot(); hideMenu(); panel.style.display = 'none'; return; }
     if (!(e.ctrlKey && e.altKey)) return;
     if (e.code === 'KeyA') { e.preventDefault(); openTextMenu(); }
-    if (e.code === 'KeyI') { e.preventDefault(); enterShot(); }
+    if (e.code === 'KeyQ') { e.preventDefault(); enterShot(); }
   });
   document.addEventListener('pointerdown', e => {
     if (!menu.contains(e.target) && !hint.contains(e.target)) hideMenu();
@@ -944,6 +964,17 @@
   document.querySelectorAll('.feat, .plan').forEach(card => {
     card.addEventListener('mousemove', e => { const b = card.getBoundingClientRect(); card.style.setProperty('--mx', (e.clientX - b.left) + 'px'); card.style.setProperty('--my', (e.clientY - b.top) + 'px'); });
   });
+
+  // 優惠結束後自動回復正常價格；實際結帳仍以伺服器時間為準。
+  if (Date.now() > Date.parse('2026-08-31T15:59:59.000Z')) {
+    document.querySelector('#launchPromoLine')?.remove();
+    document.querySelector('#launchPromoNote')?.remove();
+    document.querySelector('#proPriceLabel').textContent = 'Pro';
+    document.querySelector('#proPriceAmount').textContent = 'NT$199／月';
+    document.querySelector('#proPriceDetail').textContent = '每個計費週期 600 次 · 可隨時取消';
+    document.querySelector('#pricingFaqAnswer').textContent =
+      '不用。免費版每天有 10 次額度。需要更多時可升級 Pro：每個計費週期 600 次，NT$199／月，可隨時取消。';
+  }
 
 })();
 </script>
