@@ -77,6 +77,26 @@
   main, nav { position: relative; z-index: 1; }
 
   /* ---------- Nav ---------- */
+  .announcement-bar {
+    position: relative; z-index: 51; display: block;
+    color: #234477 !important;
+    background: linear-gradient(90deg, #edf4ff 0%, #f3f1ff 50%, #edf7ff 100%);
+    border-bottom: 1px solid rgba(59,130,246,0.12);
+    transition: background 0.18s ease;
+  }
+  .announcement-bar:hover { background: linear-gradient(90deg, #e5f0ff 0%, #eeebff 50%, #e6f3ff 100%); }
+  .announcement-inner {
+    min-height: 38px; display: flex; align-items: center; justify-content: center;
+    gap: 9px; padding: 7px 24px; font-size: 12.5px; line-height: 1.4;
+    text-align: center; letter-spacing: 0.005em;
+  }
+  .announcement-badge {
+    flex-shrink: 0; padding: 2px 7px; border-radius: 999px;
+    color: #315f9f; background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(59,130,246,0.16);
+    font-size: 10px; font-weight: 750; letter-spacing: 0.04em;
+  }
+  .announcement-copy strong { font-weight: 750; color: #17365f; }
   .navbar {
     position: sticky; top: 0; z-index: 50;
     background: rgba(250,250,248,0.82);
@@ -176,9 +196,7 @@
   .demo-unit.working { opacity: 0.3; animation: pulse 0.9s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.12; } }
   .hero-actions { margin-top: 24px; animation: rise 0.7s 0.26s ease both; display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-  .mac-only-tag { display:inline-flex;align-items:center;gap:5px;margin-left:9px;padding:3px 8px;border:1px solid rgba(20,20,40,.11);border-radius:999px;color:var(--text-dim);background:rgba(255,255,255,.54);font-size:10.5px;font-weight:650;vertical-align:middle }
   .mac-only-note { width:100%;color:var(--text-dim);font-size:12.5px }
-  .promo-line { margin-top:14px;color:var(--blue);font-size:13px;font-weight:650 }
   .price-split { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 }
   .price-tier { border:1px solid var(--border);border-radius:12px;padding:16px;background:rgba(59,130,246,.025) }
   .price-tier.pro { border-color:rgba(59,130,246,.28);background:var(--blue-soft) }
@@ -329,6 +347,7 @@
   #shotOverlay {
     position: fixed; inset: 0; z-index: 100; display: none;
     background: rgba(20,20,40,0.30); cursor: crosshair;
+    touch-action: none; overscroll-behavior: none; user-select: none;
   }
   #shotOverlay .shot-tip {
     position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
@@ -336,6 +355,15 @@
     border: 0.5px solid rgba(255,255,255,0.14); border-radius: 999px;
     padding: 7px 16px; font-size: 13px; color: #f0f0f6; pointer-events: none;
   }
+  .touch-tip { display: none; }
+  #shotCancel {
+    position: fixed; top: 18px; right: 18px; width: 34px; height: 34px;
+    border: 0.5px solid rgba(255,255,255,0.16); border-radius: 50%;
+    background: rgba(18,18,24,0.82); color: #f0f0f6; font-size: 21px;
+    line-height: 1; cursor: pointer; backdrop-filter: blur(14px);
+  }
+  html.demo-capturing,
+  html.demo-capturing body { overflow: hidden; overscroll-behavior: none; }
   #marquee {
     position: fixed; border: 1.5px solid var(--blue);
     background: rgba(59,130,246,0.10); display: none; pointer-events: none;
@@ -607,8 +635,22 @@
     position: relative; z-index: 1;
   }
   @media (max-width: 600px) {
+    .announcement-inner { min-height: 0; padding: 8px 16px; font-size: 11.5px; }
+    .announcement-badge { display: none; }
     .nav-links a:not(.btn) { display: none; }
     header { padding: 60px 0 68px; }
+    #shotOverlay .shot-tip {
+      top: max(12px, env(safe-area-inset-top)); width: max-content;
+      max-width: calc(100vw - 112px); padding: 7px 12px; font-size: 12px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .desktop-tip { display: none; }
+    .touch-tip { display: inline; }
+    #shotCancel {
+      top: max(10px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+    }
+    #quillMenu { width: min(220px, calc(100vw - 24px)); }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -644,10 +686,17 @@
 <div class="blob b2"></div>
 <div class="blob b3"></div>
 
+<a class="announcement-bar" id="launchPromoLine" href="#pricing">
+  <span class="announcement-inner">
+    <span class="announcement-badge">LAUNCH OFFER</span>
+    <span class="announcement-copy"><strong>Subscribe by Aug 31</strong>: first month NT$149, then NT$199/month</span>
+  </span>
+</a>
+
 <!-- Navigation -->
 <div class="navbar"><div class="wrap">
   <nav>
-    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill <span class="mac-only-tag"><svg class="ic-svg" style="width:11px;height:11px"><use href="#i-apple"/></svg> macOS only</span></div>
+    <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill</div>
     <div class="nav-links">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
@@ -673,7 +722,6 @@
           <a class="btn btn-primary" href="Quill.zip" download>Free download for Mac</a>
           <p class="mac-only-note"><strong>Made for Mac</strong> · Other platforms coming soon</p>
         </div>
-        <p class="promo-line" id="launchPromoLine">Subscribe by Aug 31: first month NT$149, then NT$199/month</p>
         <div><button id="resetChip">↺ Reset the headline</button></div>
       </div>
 
@@ -869,7 +917,13 @@
 <div id="hintBubble"><svg class="ic-svg" style="width:13px;height:13px;display:inline-block;vertical-align:-1px"><use href="#i-fix"/></svg> Fix it — or press <kbd>⌃</kbd><kbd>⌥</kbd><kbd>A</kbd></div>
 <div id="quillMenu"></div>
 <div id="resultPanel"><h4><span id="resultTitle">Result</span><button id="resultClose">✕</button></h4><div id="resultBody"></div></div>
-<div id="shotOverlay"><div class="shot-tip">Drag to capture a region — <b>Esc</b> to cancel</div></div>
+<div id="shotOverlay">
+  <div class="shot-tip">
+    <span class="desktop-tip">Drag to capture a region — <b>Esc</b> to cancel</span>
+    <span class="touch-tip">Mac interaction demo · Drag with your finger</span>
+  </div>
+  <button id="shotCancel" type="button" aria-label="Cancel selection">×</button>
+</div>
 <div id="marquee"></div>
 
 <script>
@@ -1121,23 +1175,46 @@
   const marquee = document.getElementById('marquee');
   let drag = null;
 
-  function enterShot() { hideMenu(); panel.style.display = 'none'; hint.style.display = 'none'; overlay.style.display = 'block'; }
-  function exitShot()  { overlay.style.display = 'none'; marquee.style.display = 'none'; drag = null; }
+  function enterShot() {
+    hideMenu();
+    panel.style.display = 'none';
+    hint.style.display = 'none';
+    marquee.style.display = 'none';
+    document.documentElement.classList.add('demo-capturing');
+    overlay.style.display = 'block';
+  }
+  function exitShot({ keepSelection = false } = {}) {
+    overlay.style.display = 'none';
+    if (!keepSelection) marquee.style.display = 'none';
+    document.documentElement.classList.remove('demo-capturing');
+    drag = null;
+  }
   document.getElementById('shotBtn').addEventListener('click', enterShot);
+  document.getElementById('shotCancel').addEventListener('click', () => exitShot());
 
-  overlay.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY }; });
-  overlay.addEventListener('mousemove', e => {
+  overlay.addEventListener('pointerdown', e => {
+    if (e.target.closest('#shotCancel')) return;
+    e.preventDefault();
+    overlay.setPointerCapture(e.pointerId);
+    drag = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+  });
+  overlay.addEventListener('pointermove', e => {
     if (!drag) return;
+    e.preventDefault();
     const r = rectFrom(drag, e);
     marquee.style.display = 'block';
     Object.assign(marquee.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
   });
-  overlay.addEventListener('mouseup', e => {
-    if (!drag) return;
+  overlay.addEventListener('pointerup', e => {
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    e.preventDefault();
     const r = rectFrom(drag, e);
     drag = null;
-    if (r.w < 24 || r.h < 16) { exitShot(); return; }
-    overlay.style.display = 'none';
+    if (r.w < 24 || r.h < 16) {
+      marquee.style.display = 'none';
+      return;
+    }
+    exitShot({ keepSelection: true });
     anchor = { x: r.x + r.w / 2, y: r.y + r.h };
     showMenu(anchor.x, anchor.y, [
       { key: 'extract',   label: 'Extract text',  icon: 'i-keyboard',  color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
@@ -1152,6 +1229,7 @@
       if (key === 'describe')  showPanel('Description', describeRegion(r));
     }, '');
   });
+  overlay.addEventListener('pointercancel', () => exitShot());
   function rectFrom(a, e) {
     return { x: Math.min(a.x, e.clientX), y: Math.min(a.y, e.clientY),
              w: Math.abs(a.x - e.clientX), h: Math.abs(a.y - e.clientY) };
