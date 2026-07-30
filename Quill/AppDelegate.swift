@@ -23,6 +23,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
     }
     NSApp.setActivationPolicy(.regular)
     _ = updaterController
+    // 在 Onboarding 開啟前完成翻譯語言的一次性遷移。
+    _ = TranslationLanguageStore.shared
     setupStatusBar()
     // 語言切換時重建選單列文字
     localeObserver = LocaleStore.shared.$language

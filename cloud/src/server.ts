@@ -8,6 +8,8 @@
  */
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import { secureHeaders } from "hono/secure-headers";
 import { verifyPortalyCallback } from "./portalyCallback.mjs";
 
 export interface QuillEnv {
@@ -80,6 +82,13 @@ interface SubscriptionRecord {
   cancelEffectiveAt: string | null;
 }
 
+interface InstallationIdentity {
+  installationID: string;
+  timeZone: string;
+}
+
+const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+
 const QUOTA_SCRIPT = `
 local deviceUsed = tonumber(redis.call("GET", KEYS[1]) or "0")
 local globalUsed = tonumber(redis.call("GET", KEYS[2]) or "0")
@@ -131,13 +140,23 @@ function safeEqual(a: string, b: string): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-function issueInstallationToken(installationID: string, secret: string, now: Date): string {
+function issueInstallationToken(
+  installationID: string,
+  timeZone: string,
+  secret: string,
+  now: Date
+): string {
   const expiresAt = Math.floor(now.getTime() / 1000) + INSTALLATION_TOKEN_TTL_SECONDS;
-  const payload = base64url(JSON.stringify({ installationID, expiresAt }));
+  const payload = base64url(JSON.stringify({ installationID, timeZone, expiresAt }));
   return `${payload}.${signature(payload, secret)}`;
 }
 
-function verifyInstallationToken(token: string, secret: string, now: Date): string | null {
+function verifyInstallationToken(
+  token: string,
+  secret: string,
+  now: Date,
+  fallbackTimeZone: string
+): InstallationIdentity | null {
   const [payload, suppliedSignature, extra] = token.split(".");
   if (!payload || !suppliedSignature || extra || !safeEqual(signature(payload, secret), suppliedSignature)) {
     return null;
@@ -154,7 +173,10 @@ function verifyInstallationToken(token: string, secret: string, now: Date): stri
     ) {
       return null;
     }
-    return parsed.installationID;
+    return {
+      installationID: parsed.installationID,
+      timeZone: isValidTimeZone(parsed.timeZone) ? parsed.timeZone : fallbackTimeZone,
+    };
   } catch {
     return null;
   }
@@ -162,6 +184,16 @@ function verifyInstallationToken(token: string, secret: string, now: Date): stri
 
 function isInstallationID(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isValidTimeZone(value: unknown): value is string {
+  if (typeof value !== "string" || value.length === 0 || value.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function dayInTimeZone(date: Date, timeZone: string): string {
@@ -325,6 +357,11 @@ document.querySelector("#range").addEventListener("change",()=>load().catch(aler
 
 export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Deps): Hono {
   const app = new Hono();
+  app.use("*", secureHeaders());
+  app.use("/v1/*", bodyLimit({
+    maxSize: MAX_REQUEST_BYTES,
+    onError: (c) => jsonError("Request body is too large.", 413),
+  }));
   const doFetch = fetchImpl ?? fetch;
   const dailyLimit = Number.parseInt(env.DAILY_LIMIT || "10", 10);
   const proMonthlyLimit = Number.parseInt(env.PRO_MONTHLY_LIMIT || "600", 10);
@@ -348,9 +385,9 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     await redis.expire(key, RAW_RETENTION_SECONDS);
   };
 
-  const authenticateInstallation = (request: Request): string | null => {
+  const authenticateInstallation = (request: Request): InstallationIdentity | null => {
     const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
-    return verifyInstallationToken(token, env.INSTALLATION_TOKEN_SECRET, now());
+    return verifyInstallationToken(token, env.INSTALLATION_TOKEN_SECRET, now(), timeZone);
   };
 
   const subscriptionKey = (anonymousID: string): string => `subscription:installation:${anonymousID}`;
@@ -368,15 +405,16 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     await redis.set(subscriptionIndexKey(record.subscriptionId), anonymousID);
   };
 
-  const usageStatus = async (installationID: string) => {
+  const usageStatus = async (installation: InstallationIdentity) => {
     const current = now();
-    const currentDay = dayInTimeZone(current, timeZone);
-    const anonymousID = hashIdentity(installationID);
+    const quotaDay = dayInTimeZone(current, installation.timeZone);
+    const metricDay = dayInTimeZone(current, timeZone);
+    const anonymousID = hashIdentity(installation.installationID);
     const subscription = await loadSubscription(anonymousID);
     const isPro = subscriptionHasAccess(subscription, current);
     const usageKey = isPro
       ? `usage:pro:${anonymousID}:${subscription.periodStart}`
-      : `usage:${anonymousID}:${currentDay}`;
+      : `usage:${anonymousID}:${quotaDay}`;
     const used = Number.parseInt((await redis.get(usageKey)) || "0", 10) || 0;
     const limit = isPro ? proMonthlyLimit : dailyLimit;
     return {
@@ -386,12 +424,13 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       usageKey,
       used,
       limit,
-      resetsAt: isPro ? subscription.periodEnd : nextResetISO(currentDay, timeZone),
-      currentDay,
+      resetsAt: isPro ? subscription.periodEnd : nextResetISO(quotaDay, installation.timeZone),
+      quotaDay,
+      metricDay,
     };
   };
 
-  app.get("/health", (c) => c.json({ ok: true, timeZone }));
+  app.get("/health", (c) => c.json({ ok: true, metricsTimeZone: timeZone }));
 
   app.post("/v1/installations", async (c) => {
     let body: unknown;
@@ -404,6 +443,11 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     if (typeof installationID !== "string" || !isInstallationID(installationID)) {
       return jsonError("Invalid installation id.", 400);
     }
+    const requestedTimeZone = (body as { time_zone?: unknown })?.time_zone;
+    if (requestedTimeZone !== undefined && !isValidTimeZone(requestedTimeZone)) {
+      return jsonError("Invalid time zone.", 400);
+    }
+    const installationTimeZone = requestedTimeZone ?? timeZone;
     const day = dayInTimeZone(now(), timeZone);
     const ipHash = createHmac("sha256", env.ANALYTICS_SALT).update(clientIP(c.req.raw)).digest("hex");
     const registrationKey = `registration:${ipHash}:${day}`;
@@ -411,14 +455,19 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     if (used === 1) await redis.expire(registrationKey, RAW_RETENTION_SECONDS);
     if (used > registrationLimit) return jsonError("Too many installation registrations.", 429);
     return json({
-      token: issueInstallationToken(installationID, env.INSTALLATION_TOKEN_SECRET, now()),
+      token: issueInstallationToken(
+        installationID,
+        installationTimeZone,
+        env.INSTALLATION_TOKEN_SECRET,
+        now()
+      ),
       expires_in: INSTALLATION_TOKEN_TTL_SECONDS,
     }, 201);
   });
 
   app.post("/v1/events", async (c) => {
-    const installationID = authenticateInstallation(c.req.raw);
-    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    const installation = authenticateInstallation(c.req.raw);
+    if (!installation) return jsonError("Unauthorized installation.", 401);
     let body: unknown;
     try {
       body = await c.req.json();
@@ -429,14 +478,18 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     if (event !== "upgrade_clicked" && event !== "checkout_started") {
       return jsonError("Unsupported event.", 400);
     }
-    await recordUnique(event, dayInTimeZone(now(), timeZone), hashIdentity(installationID));
+    await recordUnique(
+      event,
+      dayInTimeZone(now(), timeZone),
+      hashIdentity(installation.installationID)
+    );
     return new Response(null, { status: 204 });
   });
 
   app.get("/v1/billing/status", async (c) => {
-    const installationID = authenticateInstallation(c.req.raw);
-    if (!installationID) return jsonError("Unauthorized installation.", 401);
-    const status = await usageStatus(installationID);
+    const installation = authenticateInstallation(c.req.raw);
+    if (!installation) return jsonError("Unauthorized installation.", 401);
+    const status = await usageStatus(installation);
     return json({
       plan: status.isPro ? "pro" : "free",
       used: status.used,
@@ -462,8 +515,8 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
   });
 
   app.post("/v1/billing/checkout", async (c) => {
-    const installationID = authenticateInstallation(c.req.raw);
-    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    const installation = authenticateInstallation(c.req.raw);
+    if (!installation) return jsonError("Unauthorized installation.", 401);
     if (
       !env.PORTALY_API_KEY ||
       !env.PORTALY_PLAN_ID ||
@@ -481,7 +534,7 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       return jsonError("Checkout callback must use HTTPS.", 503);
     }
 
-    const status = await usageStatus(installationID);
+    const status = await usageStatus(installation);
     if (status.isPro) {
       return jsonError("Quill Pro is already active.", 409, { code: "PRO_ALREADY_ACTIVE" });
     }
@@ -554,7 +607,7 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       "EX",
       CHECKOUT_SESSION_TTL_SECONDS
     );
-    await recordUnique("checkout_started", status.currentDay, status.anonymousID);
+    await recordUnique("checkout_started", status.metricDay, status.anonymousID);
     return json({
       checkout_url: session.checkoutUrl,
       expires_at: session.expiresAt,
@@ -565,13 +618,13 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
   });
 
   app.post("/v1/billing/portal", async (c) => {
-    const installationID = authenticateInstallation(c.req.raw);
-    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    const installation = authenticateInstallation(c.req.raw);
+    if (!installation) return jsonError("Unauthorized installation.", 401);
     if (!env.PORTALY_API_KEY) {
       return jsonError("Subscription management is not configured.", 503);
     }
 
-    const status = await usageStatus(installationID);
+    const status = await usageStatus(installation);
     if (!status.subscription) {
       return jsonError("No subscription is linked to this installation.", 404, {
         code: "SUBSCRIPTION_NOT_FOUND",
@@ -822,8 +875,8 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
   });
 
   app.post("/v1/chat/completions", async (c) => {
-    const installationID = authenticateInstallation(c.req.raw);
-    if (!installationID) return jsonError("Unauthorized installation.", 401);
+    const installation = authenticateInstallation(c.req.raw);
+    if (!installation) return jsonError("Unauthorized installation.", 401);
 
     let body: any;
     try {
@@ -837,10 +890,10 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     body.model = model;
     const isStream = body.stream === true;
 
-    const status = await usageStatus(installationID);
+    const status = await usageStatus(installation);
     const globalKey = status.isPro
-      ? `global:pro:${status.currentDay}`
-      : `global:${status.currentDay}`;
+      ? `global:pro:${status.metricDay}`
+      : `global:${status.metricDay}`;
 
     let quotaResult: number[];
     try {
@@ -858,7 +911,7 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     }
 
     if (Number(quotaResult[0]) === 2) {
-      await recordUnique("quota_reached", status.currentDay, status.anonymousID);
+      await recordUnique("quota_reached", status.metricDay, status.anonymousID);
       return jsonError(
         status.isPro
           ? `本期 Pro 額度已用完（每期 ${proMonthlyLimit} 次）。`
@@ -896,7 +949,7 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       );
     }
 
-    await recordUnique("app_active", status.currentDay, status.anonymousID);
+    await recordUnique("app_active", status.metricDay, status.anonymousID);
     return new Response(upstream.body, {
       status: 200,
       headers: { "Content-Type": isStream ? "text/event-stream" : "application/json" },

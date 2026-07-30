@@ -114,11 +114,16 @@ final class QuillTests: XCTestCase {
 
   func testScreenPermissionSetupCanResumeAfterSystemRelaunch() {
     OnboardingWindow.clearScreenPermissionPending()
+    OnboardingWindow.clearScreenRelaunchAttempted()
     defer { OnboardingWindow.clearScreenPermissionPending() }
+    defer { OnboardingWindow.clearScreenRelaunchAttempted() }
 
     XCTAssertFalse(OnboardingWindow.screenPermissionPending)
+    XCTAssertFalse(OnboardingWindow.screenRelaunchAttempted)
     OnboardingWindow.markScreenPermissionPending()
     XCTAssertTrue(OnboardingWindow.screenPermissionPending)
+    OnboardingWindow.markScreenRelaunchAttempted()
+    XCTAssertTrue(OnboardingWindow.screenRelaunchAttempted)
   }
 
   // MARK: - TextCapture editable detection
@@ -149,5 +154,47 @@ final class QuillTests: XCTestCase {
     )
     let prompt = store.toPrompt(config)
     XCTAssertEqual(prompt.title, "t")
+  }
+
+  func testTraditionalChineseUIAddsTraditionalChineseResponseRule() {
+    let original = LocaleStore.shared.language
+    defer { LocaleStore.shared.language = original }
+    LocaleStore.shared.language = .zhHant
+
+    let prompt = PromptStore.promptRespectingAppLanguage(
+      "Summarize the text.", titleKey: "action.summarize"
+    )
+
+    XCTAssertTrue(prompt.contains("Traditional Chinese"))
+    XCTAssertTrue(prompt.contains("Never use Simplified Chinese"))
+  }
+
+  func testTranslationPromptUsesIndependentTranslationLanguage() {
+    let originalInterface = LocaleStore.shared.language
+    let originalTranslation = TranslationLanguageStore.shared.language
+    defer {
+      LocaleStore.shared.language = originalInterface
+      TranslationLanguageStore.shared.language = originalTranslation
+    }
+    LocaleStore.shared.language = .en
+    TranslationLanguageStore.shared.language = .zhHant
+
+    let traditionalChineseTarget = PromptStore.promptRespectingAppLanguage(
+      "Chinese input MUST be translated into natural English.",
+      titleKey: "action.translate"
+    )
+
+    XCTAssertTrue(traditionalChineseTarget.contains("TARGET_LANGUAGE: Traditional Chinese"))
+
+    LocaleStore.shared.language = .zhHant
+    TranslationLanguageStore.shared.language = .en
+    let englishTarget = PromptStore.promptRespectingAppLanguage(
+      "Chinese input MUST be translated into natural English.",
+      titleKey: "action.translate"
+    )
+    XCTAssertTrue(englishTarget.contains("TARGET_LANGUAGE: English"))
+    XCTAssertTrue(PromptStore.defaultEditable
+      .first(where: { $0.titleKey == "action.translate" })?
+      .systemPrompt.contains("Never return Chinese when the input is Chinese") == true)
   }
 }

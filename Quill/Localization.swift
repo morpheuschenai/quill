@@ -22,6 +22,26 @@ enum AppLanguage: String, CaseIterable {
   }
 }
 
+/// 翻譯的預設目標語言，刻意與介面／系統語言分開。
+/// 中文來源仍固定翻成英文；非中文來源才使用這個偏好。
+enum TranslationLanguage: String, CaseIterable {
+  case zhHant = "zh-Hant", en
+
+  var displayName: String {
+    switch self {
+    case .zhHant: return "繁體中文"
+    case .en:     return "English"
+    }
+  }
+
+  var promptName: String {
+    switch self {
+    case .zhHant: return "Traditional Chinese (繁體中文)"
+    case .en:     return "English"
+    }
+  }
+}
+
 /// 記錄引導「試試看」頁的進度。
 /// 只有「AI 真的回覆完成」才算成功——光是框選還沒體驗到價值。
 final class UsageTracker: ObservableObject {
@@ -58,6 +78,33 @@ final class LocaleStore: ObservableObject {
   var isZh: Bool { language.resolved == .zhHant }
 }
 
+final class TranslationLanguageStore: ObservableObject {
+  static let shared = TranslationLanguageStore()
+  private static let key = "quill_translation_language"
+  private static let onboardingDoneKey = "quill_onboarding_done_v1"
+
+  @Published var language: TranslationLanguage {
+    didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.key) }
+  }
+
+  private init() {
+    let defaults = UserDefaults.standard
+    if let raw = defaults.string(forKey: Self.key),
+       let saved = TranslationLanguage(rawValue: raw) {
+      language = saved
+      return
+    }
+
+    // 既有使用者第一次升級時沿用目前介面語言；全新安裝預設繁體中文。
+    if defaults.bool(forKey: Self.onboardingDoneKey) {
+      language = LocaleStore.shared.language.resolved == .zhHant ? .zhHant : .en
+    } else {
+      language = .zhHant
+    }
+    defaults.set(language.rawValue, forKey: Self.key)
+  }
+}
+
 /// 極簡本地化:L10n.t("key") 依目前語言回傳字串。
 /// 用自訂表而非 .strings,是為了讓「切換語言」即時生效、不需重啟 App。
 enum L10n {
@@ -84,7 +131,12 @@ enum L10n {
   private static let g1: [String: (String, String)] = [
     "lang.system": ("跟隨系統", "Follow system"),
     "lang.title": ("語言", "Language"),
-    "lang.note": ("切換後介面立即更新", "Interface updates immediately"),
+    "lang.interface": ("介面語言", "Interface language"),
+    "lang.interface.note": ("切換後介面立即更新", "The interface updates immediately"),
+    "lang.translation": ("預設翻譯語言", "Default translation language"),
+    "lang.translation.note": ("非中文內容會翻成這個語言；中文固定翻成英文",
+                              "Non-Chinese content translates to this language; Chinese always translates to English"),
+    "lang.onboarding.choose": ("顯示語言", "Display language"),
   ]
 
   // 偏好設定
@@ -104,6 +156,7 @@ enum L10n {
     "pref.keyNote": ("儲存在本機 Keychain。使用 Ollama 時不需填。",
                      "Stored locally in Keychain. Not required for Ollama."),
     "pref.saved": ("已儲存", "Saved"),
+    "pref.shortcutConflict": ("快捷鍵已被其他 App 使用", "Shortcut is already in use"),
     "pref.title": ("名稱", "Title"),
     "pref.instruction": ("指令", "Instruction"),
     "pref.advanced": ("進階設定", "Advanced"),
@@ -143,10 +196,10 @@ enum L10n {
   // 選單列
   private static let g3: [String: (String, String)] = [
     "menu.open": ("開啟 Quill", "Open Quill"),
-    "menu.preferences": ("偏好設定…", "Preferences…"),
-    "menu.onboarding": ("設定引導…", "Setup Guide…"),
-    "menu.checkUpdates": ("檢查更新…", "Check for Updates…"),
-    "menu.updateAvailable": ("有可用更新…", "Update Available…"),
+    "menu.preferences": ("偏好設定", "Preferences"),
+    "menu.onboarding": ("設定引導", "Setup Guide"),
+    "menu.checkUpdates": ("檢查更新", "Check for Updates"),
+    "menu.updateAvailable": ("有可用更新", "Update Available"),
     "menu.quit": ("結束 Quill", "Quit Quill"),
   ]
 
@@ -156,69 +209,79 @@ enum L10n {
     "ob.next": ("下一步", "Next"),
     "ob.skip": ("略過", "Skip"),
     "ob.start": ("開始使用 Quill", "Start using Quill"),
-    "ob.relaunch": ("已勾選,重新啟動 Quill", "Granted — restart Quill"),
+    "ob.relaunch": ("重新啟動", "Restart"),
   ]
 
   // Onboarding — 歡迎
   private static let g5: [String: (String, String)] = [
     "ob.welcome.title": ("歡迎使用 Quill", "Welcome to Quill"),
-    "ob.welcome.sub": ("對你看到的任何東西,直接跟 AI 互動。", "Ask AI about anything you can see."),
+    "ob.welcome.sub": ("框選畫面或文字，直接問 AI。", "Ask AI about your screen or selected text."),
     "ob.welcome.shot.title": ("截圖問 AI", "Ask AI about your screen"),
-    "ob.welcome.shot.desc": ("框選畫面 → 萃取文字、翻譯、解釋,結果當場出現",
-                             "Frame any area → extract text, translate, explain — answers appear right there"),
+    "ob.welcome.shot.desc": ("框選畫面，立即取得答案",
+                             "Frame any area and get an answer"),
     "ob.welcome.text.title": ("選字改文字", "Rewrite selected text"),
-    "ob.welcome.text.desc": ("選取文字 → 修正、改語氣、翻譯,直接取代原文",
-                             "Select text → fix, change tone, translate — replaced in place"),
+    "ob.welcome.text.desc": ("選取文字，直接修正或翻譯",
+                             "Select text to rewrite or translate it"),
     "ob.welcome.hint": ("快捷鍵可隨時在偏好設定修改", "Shortcuts can be changed in Preferences"),
   ]
 
   // Onboarding — 輔助使用
   private static let g6: [String: (String, String)] = [
     "ob.ax.title": ("允許「輔助使用」", "Allow Accessibility"),
-    "ob.ax.why": ("Quill 需要這個權限才能讀取你選取的文字,並在原位置替換結果。我們只讀取你主動選取的內容,其他一概不碰。",
-                  "Quill needs this to read your selected text and replace it in place. It only ever reads what you actively select."),
-    "ob.ax.how": ("點下方按鈕 → 在系統設定找到 Quill → 打開開關",
-                  "Click below → find Quill in System Settings → turn the switch on"),
+    "ob.ax.why": ("讓 Quill 讀取並處理你主動選取的文字。",
+                  "Lets Quill work with text you select."),
+    "ob.ax.how": ("開啟設定，找到 Quill 並打開開關。",
+                  "Open Settings and turn on Quill."),
+    "ob.ax.retry": ("若 Quill 已開啟但仍未偵測：先關閉再開啟。仍無效時，按「−」移除 Quill，再用「+」重新加入。",
+                    "If Quill is already on, turn it off and on. If it still is not detected, remove Quill with −, then add it again with +."),
     "ob.ax.button": ("開啟輔助使用設定", "Open Accessibility settings"),
   ]
 
   // Onboarding — 螢幕錄製
   private static let g7: [String: (String, String)] = [
     "ob.screen.title": ("允許「螢幕錄製」", "Allow Screen Recording"),
-    "ob.screen.why": ("截圖功能需要這個權限,否則拍到的畫面不會包含視窗內容。截圖只在你按下快捷鍵時發生,且只送往 AI 服務取得回覆。",
-                      "Screenshots need this, otherwise captures won't include window contents. Capture only happens when you press the hotkey."),
-    "ob.screen.how": ("點下方按鈕 → 在系統設定勾選 Quill → 回到這裡按「重新啟動」。",
-                      "Click below → check Quill in System Settings → come back and click Restart."),
+    "ob.screen.why": ("讓 Quill 擷取你主動框選的畫面。",
+                      "Lets Quill capture the area you select."),
+    "ob.screen.how": ("在系統設定開啟 Quill，然後回來重新啟動。",
+                      "Turn on Quill in Settings, then return and restart."),
     "ob.screen.button": ("開啟螢幕錄製設定", "Open Screen Recording settings"),
+    "ob.screen.buttonAgain": ("重新開啟螢幕錄製設定", "Open Screen Recording settings again"),
+    "ob.screen.openFirst": ("請先開啟上方設定", "Open the settings above first"),
+    "ob.screen.notDetected": ("尚未偵測到權限", "Permission not detected"),
+    "ob.screen.retry": ("重新啟動後仍未偵測到權限。請再次開啟設定，確認 Quill 的開關已打開。",
+                        "Permission was not detected after restart. Open Settings again and make sure Quill is enabled."),
+    "ob.screen.finishing": ("完成系統授權…", "Finishing setup…"),
   ]
 
   // Onboarding — 權限共用
   private static let g8: [String: (String, String)] = [
-    "ob.perm.done": ("設定完成,可以進入下一步。", "All set — you can continue."),
-    "ob.perm.copyPath": ("清單裡沒有 Quill?複製 App 路徑", "Quill not in the list? Copy app path"),
-    "ob.perm.copied": ("已複製,到設定按「+」貼上路徑", "Copied — click + in Settings and paste"),
+    "ob.perm.done": ("完成", "Ready"),
+    "ob.perm.copyPath": ("清單裡沒有 Quill？複製 App 路徑", "Quill not in the list? Copy app path"),
+    "ob.perm.copied": ("已複製 App 路徑", "App path copied"),
+    "ob.perm.copyHelp": ("在系統設定按「+」→ 在檔案選擇視窗按 Command + Shift + G → 貼上路徑 → 選擇 Quill",
+                         "In Settings click + → in the file picker press Command + Shift + G → paste the path → select Quill"),
   ]
 
   // Onboarding — 試試看
   private static let g9: [String: (String, String)] = [
     "ob.try.title": ("現在試一次", "Try it now"),
-    "ob.try.sub": ("按下快捷鍵,把下面這句英文框起來,看 AI 怎麼回你。",
-                   "Press the hotkey and frame the sentence below to see what AI does."),
+    "ob.try.sub": ("用快捷鍵框選下面這句話。",
+                   "Use the shortcut to frame the sentence below."),
     "ob.try.sample": ("The quarterly report shows a 23% increase in recurring revenue.",
                       "The quarterly report shows a 23% increase in recurring revenue."),
-    "ob.try.hint": ("→ 拖曳框選上面那句話", "→ then drag to frame the sentence above"),
-    "ob.try.pickAction": ("已框選!在彈出的選單挑一個動作,例如「翻譯」",
-                          "Framed! Now pick an action from the menu — try Translate"),
-    "ob.try.done": ("成功了!", "Nice — it works!"),
-    "ob.try.doneSub": ("這就是 Quill:看到什麼都能框起來問。在任何 App 都能這樣用。",
-                       "That's Quill: frame anything you see and ask. Works in every app."),
+    "ob.try.hint": ("拖曳框選上面的句子", "Drag to frame the sentence above"),
+    "ob.try.pickAction": ("選一個動作，例如「翻譯」",
+                          "Choose an action, such as Translate"),
+    "ob.try.done": ("成功", "It works"),
+    "ob.try.doneSub": ("現在你可以在任何 App 使用 Quill。",
+                       "Quill is ready in every app."),
   ]
 
   // Onboarding — 完成
   private static let g10: [String: (String, String)] = [
-    "ob.ready.title": ("一切就緒,免費開通", "You're all set — free to use"),
-    "ob.ready.sub": ("Quill Cloud 已為你開通,直接開始截圖問 AI。",
-                     "Quill Cloud is activated. Start asking AI about your screen."),
+    "ob.ready.title": ("Quill 已就緒", "Quill is ready"),
+    "ob.ready.sub": ("開始框選畫面，直接問 AI。",
+                     "Frame anything and ask AI."),
     "ob.ready.quota": ("每天 10 次免費額度,每日重置", "10 free uses per day, resets daily"),
     "ob.ready.privacy": ("內容不留存、不訓練", "Your content is never stored or used for training"),
     "ob.ready.advanced": ("進階:想改用自己的 API key?到選單列 → 偏好設定 切換即可。",
@@ -269,8 +332,10 @@ enum L10n {
 
   // Dock 首頁
   private static let g15: [String: (String, String)] = [
-    "home.capture": ("開始截圖", "Start capture"),
-    "home.textSelection": ("選取文字", "Select text"),
+    "home.capture": ("截圖問 AI", "Ask AI with a screenshot"),
+    "home.captureHint": ("框選你想了解的畫面", "Select an area you want to understand"),
+    "home.textSelection": ("處理選取文字", "Work with selected text"),
+    "home.textHint": ("翻譯、改寫或摘要選取內容", "Translate, rewrite, or summarize selected text"),
     "home.freeUsage": ("今日免費用量", "Free usage today"),
     "home.proUsage": ("本期 Pro 用量", "Pro usage this period"),
     "home.remaining": ("剩餘 %d 次", "%d remaining"),
@@ -278,5 +343,6 @@ enum L10n {
     "home.resetsHours": ("%d 小時 %d 分後重置", "Resets in %dh %dm"),
     "home.resetsMinutes": ("%d 分後重置", "Resets in %dm"),
     "home.ready": ("已在背景待命", "Ready in the background"),
+    "home.preferences": ("偏好設定", "Settings"),
   ]
 }

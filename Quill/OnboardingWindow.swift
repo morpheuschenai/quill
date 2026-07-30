@@ -11,6 +11,7 @@ final class OnboardingWindow: NSWindow {
   private static let doneKey = "quill_onboarding_done_v1"
   static let resumeKey = "quill_onboarding_resume_step"
   private static let screenPermissionPendingKey = "quill_screen_permission_setup_pending"
+  private static let screenRelaunchAttemptedKey = "quill_screen_permission_relaunch_attempted"
 
   static var shouldShowOnLaunch: Bool {
     // 尚未完成引導、因權限重啟接續，或系統在螢幕錄製設定中重啟了 App。
@@ -41,16 +42,30 @@ final class OnboardingWindow: NSWindow {
     UserDefaults.standard.removeObject(forKey: screenPermissionPendingKey)
   }
 
+  static var screenRelaunchAttempted: Bool {
+    UserDefaults.standard.bool(forKey: screenRelaunchAttemptedKey)
+  }
+
+  static func markScreenRelaunchAttempted() {
+    UserDefaults.standard.set(true, forKey: screenRelaunchAttemptedKey)
+  }
+
+  static func clearScreenRelaunchAttempted() {
+    UserDefaults.standard.removeObject(forKey: screenRelaunchAttemptedKey)
+  }
+
   static func markDone() {
     UserDefaults.standard.set(true, forKey: doneKey)
     UserDefaults.standard.removeObject(forKey: resumeKey)
     clearScreenPermissionPending()
+    clearScreenRelaunchAttempted()
   }
 
   /// macOS 規定:螢幕錄製權限變更後 App 必須重啟才生效。
   /// 重啟前記住要回到哪一步,啟動時自動重開引導,使用者不需自己找選單列。
   static func relaunchApp(resumeStep: Int) {
     UserDefaults.standard.set(resumeStep, forKey: resumeKey)
+    if resumeStep == 2 { markScreenRelaunchAttempted() }
     let task = Process()
     task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
     task.arguments = ["-n", Bundle.main.bundlePath]
@@ -93,26 +108,62 @@ final class OnboardingWindow: NSWindow {
 
 final class OnboardingState: ObservableObject {
   @Published var accessibilityGranted = AXIsProcessTrusted()
+  @Published var accessibilitySetupStarted = false
   @Published var screenGranted = CGPreflightScreenCaptureAccess()
   @Published var hasAPIKey = !PromptStore.shared.apiKey.isEmpty
+  @Published var screenSetupStarted = OnboardingWindow.screenPermissionPending
+  @Published var screenRelaunchFailed =
+    OnboardingWindow.screenRelaunchAttempted && !CGPreflightScreenCaptureAccess()
+  @Published var directCaptureReady = false
 
   private var timer: Timer?
+  private var appActivationObserver: NSObjectProtocol?
+  private var isPreparingDirectCapture = false
 
   func startPolling() {
     guard timer == nil else { return }
-    timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-      guard let self else { return }
-      self.accessibilityGranted = AXIsProcessTrusted()
-      self.screenGranted = CGPreflightScreenCaptureAccess()
+    refreshPermissions()
+    let timer = Timer(timeInterval: 0.75, repeats: true) { [weak self] _ in
+      self?.refreshPermissions()
+    }
+    RunLoop.main.add(timer, forMode: .common)
+    self.timer = timer
+    appActivationObserver = NotificationCenter.default.addObserver(
+      forName: NSApplication.didBecomeActiveNotification,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      self?.refreshPermissions()
     }
   }
 
   func stopPolling() {
     timer?.invalidate()
     timer = nil
+    if let appActivationObserver {
+      NotificationCenter.default.removeObserver(appActivationObserver)
+      self.appActivationObserver = nil
+    }
+  }
+
+  func refreshPermissions() {
+    let noPrompt = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
+    accessibilityGranted = AXIsProcessTrustedWithOptions(noPrompt)
+    screenGranted = CGPreflightScreenCaptureAccess()
+    if screenGranted {
+      screenSetupStarted = false
+      screenRelaunchFailed = false
+      OnboardingWindow.clearScreenPermissionPending()
+      OnboardingWindow.clearScreenRelaunchAttempted()
+      prepareDirectCaptureIfNeeded()
+    } else {
+      screenSetupStarted = OnboardingWindow.screenPermissionPending
+      screenRelaunchFailed = OnboardingWindow.screenRelaunchAttempted
+    }
   }
 
   func requestAccessibility() {
+    accessibilitySetupStarted = true
     // 觸發系統的加入提示,並直接開設定頁
     let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
     _ = AXIsProcessTrustedWithOptions(opts)
@@ -121,13 +172,28 @@ final class OnboardingState: ObservableObject {
     )
   }
 
+  private func prepareDirectCaptureIfNeeded() {
+    guard !directCaptureReady, !isPreparingDirectCapture else { return }
+    isPreparingDirectCapture = true
+    ScreenshotCapture.shared.prepareDirectCaptureAuthorization { [weak self] in
+      self?.isPreparingDirectCapture = false
+      self?.directCaptureReady = true
+    }
+  }
+
   func requestScreenRecording() {
     // macOS 可能直接顯示「結束並重新開啟」並重啟 App；先記住目前步驟。
+    OnboardingWindow.clearScreenRelaunchAttempted()
     OnboardingWindow.markScreenPermissionPending()
+    screenSetupStarted = true
+    screenRelaunchFailed = false
     _ = CGRequestScreenCaptureAccess()
-    NSWorkspace.shared.open(
-      URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
-    )
+    // 避免權限提示與設定頁同時搶焦點；稍後再定位到正確頁面。
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+      NSWorkspace.shared.open(
+        URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
+      )
+    }
   }
 
   func saveAPIKey(_ key: String) {
@@ -190,15 +256,19 @@ struct OnboardingView: View {
         Spacer()
 
         Button(nextButtonTitle) {
-          // 螢幕錄製尚未生效時,主按鈕就是「重新啟動」(macOS 規定必須重啟)
+          // 只有使用者真的開過螢幕錄製設定後，才允許重新啟動。
           if step == 2 && !state.screenGranted {
-            OnboardingWindow.relaunchApp(resumeStep: 2)
+            if state.screenSetupStarted && !state.screenRelaunchFailed {
+              OnboardingWindow.relaunchApp(resumeStep: 2)
+            }
             return
           }
           if step < totalSteps - 1 { step += 1 } else { finish() }
         }
         .buttonStyle(OnboardingPrimaryStyle())
         .keyboardShortcut(.return)
+        .disabled(nextButtonDisabled)
+        .opacity(nextButtonDisabled ? 0.45 : 1)
       }
       .padding(.horizontal, 28)
       .padding(.bottom, 22)
@@ -206,6 +276,13 @@ struct OnboardingView: View {
     }
     .frame(width: 560, height: 500)
     .background(bg)
+    .overlay(alignment: .topTrailing) {
+      if step == 0 {
+        compactLanguageSwitch
+          .padding(.top, 13)
+          .padding(.trailing, 18)
+      }
+    }
     .onAppear {
       step = startStep          // 因權限重啟時,直接回到原本那一步
       state.startPolling()
@@ -220,11 +297,24 @@ struct OnboardingView: View {
     if step == totalSteps - 1 { return L10n.t("ob.start") }
     switch step {
     case 1: return state.accessibilityGranted ? L10n.t("ob.next") : L10n.t("ob.skip")
-    // 螢幕錄製:勾選後一定要重啟才生效,所以直接把主按鈕變成重新啟動
-    case 2: return state.screenGranted ? L10n.t("ob.next") : L10n.t("ob.relaunch")
+    case 2:
+      if state.screenGranted {
+        return state.directCaptureReady ? L10n.t("ob.next") : L10n.t("ob.screen.finishing")
+      }
+      if state.screenRelaunchFailed { return L10n.t("ob.screen.notDetected") }
+      return state.screenSetupStarted
+        ? L10n.t("ob.relaunch")
+        : L10n.t("ob.screen.openFirst")
     case 3: return usage.didCompleteOnce ? L10n.t("ob.next") : L10n.t("ob.skip")
     default: return L10n.t("ob.next")
     }
+  }
+
+  private var nextButtonDisabled: Bool {
+    step == 2 && (
+      (state.screenGranted && !state.directCaptureReady) ||
+      (!state.screenGranted && (!state.screenSetupStarted || state.screenRelaunchFailed))
+    )
   }
 
   private func finish() {
@@ -236,7 +326,7 @@ struct OnboardingView: View {
   // MARK: Steps
 
   private var welcomeStep: some View {
-    VStack(spacing: 18) {
+    VStack(spacing: 14) {
       // 真實 App icon,和 Dock/Finder 一致
       Image(nsImage: NSApp.applicationIconImage)
         .resizable()
@@ -275,6 +365,45 @@ struct OnboardingView: View {
         .font(.system(size: 11))
         .foregroundColor(.white.opacity(0.35))
     }
+  }
+
+  private var compactLanguageSwitch: some View {
+    HStack(spacing: 0) {
+      languageChoiceButton(.zhHant)
+      languageChoiceButton(.en)
+    }
+    .padding(2)
+    .background(
+      RoundedRectangle(cornerRadius: 7)
+        .fill(Color.white.opacity(0.035))
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 7)
+        .stroke(Color.white.opacity(0.07), lineWidth: 1)
+    )
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(L10n.t("lang.onboarding.choose"))
+  }
+
+  private func languageChoiceButton(_ language: AppLanguage) -> some View {
+    let selected = loc.language.resolved == language
+    return Button {
+      loc.language = language
+    } label: {
+      Text(language == .zhHant ? "繁中" : "EN")
+        .font(.system(size: 9.5, weight: .semibold))
+        .foregroundColor(
+          selected ? Color.white.opacity(0.78) : Color.white.opacity(0.34)
+        )
+        .frame(minWidth: 36, minHeight: 20)
+        .background(
+          RoundedRectangle(cornerRadius: 5)
+            .fill(selected ? Color.white.opacity(0.09) : Color.clear)
+        )
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(language == .zhHant ? "繁體中文" : "English")
+    .accessibilityAddTraits(selected ? .isSelected : [])
   }
 
   /// 快捷鍵的「文字版」:一般用戶不見得看得懂 ⌃⌥ 符號,直接寫字。
@@ -334,7 +463,9 @@ struct OnboardingView: View {
       title: L10n.t("ob.ax.title"),
       granted: state.accessibilityGranted,
       why: L10n.t("ob.ax.why"),
-      how: L10n.t("ob.ax.how"),
+      how: state.accessibilitySetupStarted
+        ? L10n.t("ob.ax.retry")
+        : L10n.t("ob.ax.how"),
       buttonTitle: L10n.t("ob.ax.button"),
       action: state.requestAccessibility
     )
@@ -346,8 +477,12 @@ struct OnboardingView: View {
       title: L10n.t("ob.screen.title"),
       granted: state.screenGranted,
       why: L10n.t("ob.screen.why"),
-      how: L10n.t("ob.screen.how"),
-      buttonTitle: L10n.t("ob.screen.button"),
+      how: state.screenRelaunchFailed
+        ? L10n.t("ob.screen.retry")
+        : L10n.t("ob.screen.how"),
+      buttonTitle: state.screenRelaunchFailed
+        ? L10n.t("ob.screen.buttonAgain")
+        : L10n.t("ob.screen.button"),
       action: state.requestScreenRecording
     )
   }
@@ -396,6 +531,14 @@ struct OnboardingView: View {
         .foregroundColor(pathCopied
           ? Color(red: 52/255, green: 211/255, blue: 153/255)
           : .white.opacity(0.4))
+        if pathCopied {
+          Text(L10n.t("ob.perm.copyHelp"))
+            .font(.system(size: 10.5))
+            .foregroundColor(.white.opacity(0.55))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 390)
+        }
       } else {
         Text(L10n.t("ob.perm.done"))
           .font(.system(size: 12))

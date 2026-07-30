@@ -11,7 +11,7 @@
 
 ## 已完成的一次性準備
 
-- Sparkle 2 已接入 App，選單列有「檢查更新…」。
+- Sparkle 2 已接入 App，選單列有「檢查更新」。
 - Feed：`https://quill.morpheuschen.com/appcast.xml`
 - Sparkle 公鑰已寫入 `Quill/Info.plist`。
 - 私鑰只在 macOS Keychain，account：`com.morpheus.quill`。
@@ -58,7 +58,7 @@ dist/Quill-0.2.0.zip
 ```
 
 檢查 `landing/appcast.xml` 後 commit、push。最後用前一版 Quill 按
-「檢查更新…」，完成一次真實升級再公告。
+「檢查更新」，完成一次真實升級再公告。
 
 ## 發佈閘門
 

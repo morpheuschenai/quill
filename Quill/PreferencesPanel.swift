@@ -163,6 +163,7 @@ private struct PrefMainList: View {
   @Binding var path: NavigationPath
   @ObservedObject private var loc = LocaleStore.shared
   @ObservedObject private var billing = BillingService.shared
+  @ObservedObject private var store = PromptStore.shared
 
   var body: some View {
     VStack(spacing: 0) {
@@ -182,8 +183,8 @@ private struct PrefMainList: View {
         iconColor: Color(red: 52/255, green: 211/255, blue: 153/255),
         label: L10n.t("pref.shotShortcut"),
         detail: OnboardingView.shortcutWords(
-          keyCode:   PromptStore.shared.screenshotKeyCode,
-          modifiers: PromptStore.shared.screenshotModifiers
+          keyCode:   store.screenshotKeyCode,
+          modifiers: store.screenshotModifiers
         )
       ) { path.append(Route.screenshotShortcut) }
       Divider().opacity(0.10).padding(.horizontal, 16)
@@ -192,8 +193,8 @@ private struct PrefMainList: View {
         iconColor: Color(red: 251/255, green: 146/255, blue: 60/255),
         label: L10n.t("pref.textShortcut"),
         detail: OnboardingView.shortcutWords(
-          keyCode:   PromptStore.shared.textKeyCode,
-          modifiers: PromptStore.shared.textModifiers
+          keyCode:   store.textKeyCode,
+          modifiers: store.textModifiers
         )
       ) { path.append(Route.textShortcut) }
       Divider().opacity(0.10).padding(.horizontal, 16)
@@ -213,8 +214,9 @@ private struct PrefMainList: View {
     .padding(20)
     .frame(maxHeight: .infinity, alignment: .top)
     .background(prefBg0)
+    .navigationTitle("")
     .onAppear {
-      resizeWindow(to: CGSize(width: 420, height: 460))
+      resizeWindow(to: CGSize(width: 420, height: 400))
       billing.refresh()
     }
   }
@@ -308,7 +310,7 @@ private struct BillingView: View {
       .padding(20)
     }
     .background(prefBg0)
-    .navigationTitle(L10n.t("billing.title"))
+    .navigationTitle("")
     .onAppear {
       resizeWindow(to: CGSize(width: 420, height: 500))
       billing.refresh()
@@ -808,12 +810,13 @@ private struct ShortcutView: View {
   let description: String
   @State private var keyCode: UInt32
   @State private var modifiers: UInt32
-  private let saveHandler: (UInt32, UInt32) -> Void
+  private let saveHandler: (UInt32, UInt32) -> Bool
   @State private var isRecording = false
   @State private var saved = false
+  @State private var saveFailed = false
   @State private var eventMonitor: Any? = nil
 
-  init(title: String, description: String, keyCode: UInt32, modifiers: UInt32, onSave: @escaping (UInt32, UInt32) -> Void) {
+  init(title: String, description: String, keyCode: UInt32, modifiers: UInt32, onSave: @escaping (UInt32, UInt32) -> Bool) {
     self.title = title
     self.description = description
     _keyCode   = State(initialValue: keyCode)
@@ -851,19 +854,15 @@ private struct ShortcutView: View {
       Spacer()
 
       HStack {
-        if saved {
-          Text(L10n.t("pref.saved"))
+        if saved || saveFailed {
+          Text(saveFailed ? L10n.t("pref.shortcutConflict") : L10n.t("pref.saved"))
             .font(.system(size: 12))
-            .foregroundColor(prefMuted)
+            .foregroundColor(saveFailed ? Color.orange : prefMuted)
             .transition(.opacity)
         }
         Spacer()
         Button("Save") {
-          saveHandler(keyCode, modifiers)
-          withAnimation { saved = true }
-          DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation { saved = false }
-          }
+          applyShortcut()
         }
         .buttonStyle(PrefPrimary())
       }
@@ -886,6 +885,7 @@ private struct ShortcutView: View {
       keyCode   = UInt32(event.keyCode)
       modifiers = mods
       stopRecording()
+      applyShortcut()
       return nil
     }
   }
@@ -893,6 +893,20 @@ private struct ShortcutView: View {
   private func stopRecording() {
     isRecording = false
     if let m = eventMonitor { NSEvent.removeMonitor(m); eventMonitor = nil }
+  }
+
+  private func applyShortcut() {
+    let success = saveHandler(keyCode, modifiers)
+    withAnimation {
+      saved = success
+      saveFailed = !success
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+      withAnimation {
+        saved = false
+        saveFailed = false
+      }
+    }
   }
 }
 
@@ -923,39 +937,71 @@ private struct PrefSecondary: ButtonStyle {
 
 private struct LanguageView: View {
   @ObservedObject private var loc = LocaleStore.shared
+  @ObservedObject private var translation = TranslationLanguageStore.shared
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      VStack(alignment: .leading, spacing: 6) {
-        Text(L10n.t("lang.title"))
-          .font(.system(size: 15, weight: .semibold))
+    VStack(alignment: .leading, spacing: 20) {
+      languageSection(
+        title: L10n.t("lang.interface"),
+        note: L10n.t("lang.interface.note"),
+        choices: AppLanguage.allCases,
+        selected: loc.language,
+        displayName: \.displayName
+      ) { loc.language = $0 }
+
+      languageSection(
+        title: L10n.t("lang.translation"),
+        note: L10n.t("lang.translation.note"),
+        choices: TranslationLanguage.allCases,
+        selected: translation.language,
+        displayName: \.displayName
+      ) { translation.language = $0 }
+    }
+    .padding(20)
+    .frame(maxHeight: .infinity, alignment: .top)
+    .background(prefBg0)
+    .onAppear { resizeWindow(to: CGSize(width: 420, height: 440)) }
+  }
+
+  private func languageSection<T: Hashable>(
+    title: String,
+    note: String,
+    choices: [T],
+    selected: T,
+    displayName: KeyPath<T, String>,
+    onSelect: @escaping (T) -> Void
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: 5) {
+        Text(title)
+          .font(.system(size: 14, weight: .semibold))
           .foregroundColor(.white)
-        Text(L10n.t("lang.note"))
-          .font(.system(size: 12))
+        Text(note)
+          .font(.system(size: 11))
           .foregroundColor(.white.opacity(0.45))
+          .fixedSize(horizontal: false, vertical: true)
       }
       .padding(.horizontal, 4)
-      .padding(.bottom, 14)
 
       VStack(spacing: 0) {
-        ForEach(Array(AppLanguage.allCases.enumerated()), id: \.element) { idx, lang in
+        ForEach(Array(choices.enumerated()), id: \.element) { idx, choice in
           if idx > 0 { Divider().opacity(0.10).padding(.horizontal, 12) }
           Button {
-            loc.language = lang
+            onSelect(choice)
           } label: {
             HStack {
-              Text(lang.displayName)
+              Text(choice[keyPath: displayName])
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.9))
               Spacer()
-              if loc.language == lang {
+              if selected == choice {
                 Image(systemName: "checkmark")
                   .font(.system(size: 12, weight: .bold))
                   .foregroundColor(prefAccent)
               }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 11)
+            .padding(.vertical, 10)
             .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
@@ -963,9 +1009,5 @@ private struct LanguageView: View {
       }
       .background(RoundedRectangle(cornerRadius: 10).fill(prefBg1))
     }
-    .padding(20)
-    .frame(maxHeight: .infinity, alignment: .top)
-    .background(prefBg0)
-    .onAppear { resizeWindow(to: CGSize(width: 420, height: 300)) }
   }
 }

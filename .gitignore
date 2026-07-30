@@ -5,6 +5,7 @@
 .DerivedData/
 DerivedData/
 build/
+dist/
 *.xcuserstate
 xcuserdata/
 *.xcscmblueprint

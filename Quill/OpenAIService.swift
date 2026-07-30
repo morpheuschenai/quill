@@ -160,7 +160,11 @@ class OpenAIService {
           }
 
           do {
-            completion(.success(try Self.parseCompletionContent(from: data)))
+            let content = try Self.parseCompletionContent(from: data)
+            DispatchQueue.main.async {
+              BillingService.shared.recordSuccessfulUse()
+            }
+            completion(.success(content))
           } catch {
             completion(.failure(error))
           }
@@ -298,10 +302,19 @@ final class CloudAuthentication {
 
   private var pending: [(Result<String, Error>) -> Void] = []
   private var isRegistering = false
+  private static let registrationVersion = 1
+  private static let registrationVersionKey = "quill_cloud_registration_version"
 
   private static var cloudBaseURL: URL {
     let configured = PromptStore.shared.cloudEndpoint.trimmingCharacters(in: .init(charactersIn: "/"))
-    return URL(string: configured) ?? URL(string: CloudConfig.endpoint)!
+    guard
+      let url = URL(string: configured),
+      url.host != nil,
+      url.scheme == "https" || (url.scheme == "http" && ["localhost", "127.0.0.1"].contains(url.host))
+    else {
+      return URL(string: CloudConfig.endpoint)!
+    }
+    return url
   }
 
   static var eventsEndpoint: URL {
@@ -315,6 +328,7 @@ final class CloudAuthentication {
   private init() {}
 
   func authorizationToken(completion: @escaping (Result<String, Error>) -> Void) {
+    migrateInstallationTokenIfNeeded()
     let existing = KeychainStore.cloudInstallationToken
     if !existing.isEmpty {
       completion(.success(existing))
@@ -330,7 +344,8 @@ final class CloudAuthentication {
     request.timeoutInterval = 15
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try? JSONSerialization.data(withJSONObject: [
-      "installation_id": CloudConfig.installationID
+      "installation_id": CloudConfig.installationID,
+      "time_zone": TimeZone.current.identifier
     ])
 
     URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
@@ -366,6 +381,16 @@ final class CloudAuthentication {
 
   func invalidateToken() {
     KeychainStore.cloudInstallationToken = ""
+  }
+
+  /// v1 憑證包含安裝當下的時區。升級後只重發一次，讓既有安裝也能使用當地午夜。
+  private func migrateInstallationTokenIfNeeded() {
+    let defaults = UserDefaults.standard
+    guard defaults.integer(forKey: Self.registrationVersionKey) < Self.registrationVersion else {
+      return
+    }
+    KeychainStore.cloudInstallationToken = ""
+    defaults.set(Self.registrationVersion, forKey: Self.registrationVersionKey)
   }
 }
 
@@ -477,6 +502,11 @@ final class StreamingChatTask: NSObject, URLSessionDataDelegate {
   private func finish(_ result: Result<String, Error>) {
     guard !finished else { return }
     finished = true
+    if case .success(let text) = result, !text.isEmpty {
+      DispatchQueue.main.async {
+        BillingService.shared.recordSuccessfulUse()
+      }
+    }
     onComplete(result)
     urlSession?.finishTasksAndInvalidate()
   }

@@ -42,19 +42,32 @@ class TextCapture {
     registerHotKey(keyCode: PromptStore.shared.textKeyCode, modifiers: PromptStore.shared.textModifiers)
   }
 
-  func updateHotkey(keyCode: UInt32, modifiers: UInt32) {
-    if let ref = hotKeyRef { UnregisterEventHotKey(ref); hotKeyRef = nil }
-    PromptStore.shared.textKeyCode  = keyCode
+  @discardableResult
+  func updateHotkey(keyCode: UInt32, modifiers: UInt32) -> Bool {
+    let oldKeyCode = PromptStore.shared.textKeyCode
+    let oldModifiers = PromptStore.shared.textModifiers
+    if let ref = hotKeyRef {
+      let status = UnregisterEventHotKey(ref)
+      NSLog("[Quill] TextCapture UnregisterEventHotKey status=%d", status)
+      hotKeyRef = nil
+    }
+    guard registerHotKey(keyCode: keyCode, modifiers: modifiers) else {
+      _ = registerHotKey(keyCode: oldKeyCode, modifiers: oldModifiers)
+      return false
+    }
+    PromptStore.shared.textKeyCode = keyCode
     PromptStore.shared.textModifiers = modifiers
-    registerHotKey(keyCode: keyCode, modifiers: modifiers)
+    return true
   }
 
-  private func registerHotKey(keyCode: UInt32, modifiers: UInt32) {
+  @discardableResult
+  private func registerHotKey(keyCode: UInt32, modifiers: UInt32) -> Bool {
     var hotKeyID = EventHotKeyID()
     hotKeyID.signature = 0x5175696C  // 'Quil'
     hotKeyID.id = 2
     let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
     NSLog("[Quill] TextCapture RegisterEventHotKey status=%d (0=成功)", status)
+    return status == noErr
   }
 
   // MARK: - Trigger

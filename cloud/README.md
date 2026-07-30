@@ -28,6 +28,8 @@ INSTALLATION_TOKEN_SECRET=<至少 32 bytes 的隨機字串>
 ANALYTICS_SALT=<另一組至少 32 bytes 的隨機字串>
 ADMIN_USERNAME=<管理頁帳號>
 ADMIN_PASSWORD=<管理頁長密碼>
+# 僅用於全站成本上限與匿名指標的日期分組。
+# 每位使用者的免費額度會依 App 註冊時提供的當地時區重置。
 QUOTA_TIME_ZONE=Asia/Taipei
 ```
 

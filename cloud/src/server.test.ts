@@ -108,8 +108,14 @@ const visionBody = {
   stream: true,
 };
 
-async function installationToken(app: ReturnType<typeof createApp>, id = INSTALLATION_ID): Promise<string> {
-  const response = await app.fetch(jsonPost("/v1/installations", { installation_id: id }));
+async function installationToken(
+  app: ReturnType<typeof createApp>,
+  id = INSTALLATION_ID,
+  timeZone?: string
+): Promise<string> {
+  const body: Record<string, string> = { installation_id: id };
+  if (timeZone) body.time_zone = timeZone;
+  const response = await app.fetch(jsonPost("/v1/installations", body));
   assert.equal(response.status, 201);
   return (await response.json()).token;
 }
@@ -117,6 +123,10 @@ async function installationToken(app: ReturnType<typeof createApp>, id = INSTALL
 test("installation registration returns a token; invalid id is rejected", async () => {
   const app = createApp({ redis: mockRedis(), env: env(), now: () => NOW });
   assert.equal((await app.fetch(jsonPost("/v1/installations", { installation_id: "change-me" }))).status, 400);
+  assert.equal((await app.fetch(jsonPost("/v1/installations", {
+    installation_id: INSTALLATION_ID,
+    time_zone: "Mars/Olympus_Mons",
+  }))).status, 400);
   const token = await installationToken(app);
   assert.match(token, /^[^.]+\.[^.]+$/);
 });
@@ -200,6 +210,35 @@ test("Taipei quota does not reset at UTC midnight", async () => {
   assert.equal((await app.fetch(jsonPost("/v1/chat/completions", textBody, headers))).status, 200);
   clock = new Date("2026-07-23T00:01:00.000Z");
   assert.equal((await app.fetch(jsonPost("/v1/chat/completions", textBody, headers))).status, 429);
+});
+
+test("free quota resets at the installation's signed local midnight", async () => {
+  const redis = mockRedis();
+  const app = createApp({
+    redis,
+    env: env(),
+    now: () => NOW,
+  });
+  const token = await installationToken(app, INSTALLATION_ID, "America/Los_Angeles");
+  const response = await app.fetch(new Request("http://x/v1/billing/status", {
+    headers: { Authorization: `Bearer ${token}` },
+  }));
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).resets_at, "2026-07-23T07:00:00.000Z");
+});
+
+test("oversized API request is rejected before route processing", async () => {
+  const app = createApp({ redis: mockRedis(), env: env(), now: () => NOW });
+  const response = await app.fetch(new Request("http://x/v1/installations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": String(10 * 1024 * 1024 + 1),
+    },
+    body: "{}",
+  }));
+  assert.equal(response.status, 413);
+  assert.match((await response.json()).error.message, /too large/i);
 });
 
 test("global cap does not consume another installation's quota", async () => {
@@ -559,9 +598,10 @@ test("metrics dashboard and data require admin authentication", async () => {
   assert.equal((await data.json()).days.length, 7);
 });
 
-test("/health → ok with configured time zone", async () => {
+test("/health exposes metrics time zone and security headers", async () => {
   const app = createApp({ redis: mockRedis(), env: env(), now: () => NOW });
   const response = await app.fetch(new Request("http://x/health"));
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { ok: true, timeZone: "Asia/Taipei" });
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.deepEqual(await response.json(), { ok: true, metricsTimeZone: "Asia/Taipei" });
 });

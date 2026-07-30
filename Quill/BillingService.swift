@@ -77,6 +77,23 @@ final class BillingService: ObservableObject {
 
   private init() {}
 
+  /// AI 請求成功後先在本機立即扣一次，再向伺服器校正。
+  /// Preferences、首頁若正開著，進度條與剩餘次數會立刻更新。
+  func recordSuccessfulUse() {
+    if let current = status, current.remaining > 0 {
+      status = BillingStatus(
+        plan: current.plan,
+        used: min(current.limit, current.used + 1),
+        limit: current.limit,
+        remaining: max(0, current.remaining - 1),
+        resetsAt: current.resetsAt,
+        subscription: current.subscription,
+        promotion: current.promotion
+      )
+    }
+    refresh()
+  }
+
   func refresh() {
     isLoading = true
     errorMessage = nil

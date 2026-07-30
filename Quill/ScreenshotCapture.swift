@@ -90,25 +90,54 @@ class ScreenshotCapture {
     )
   }
 
-  func updateHotkey(keyCode: UInt32, modifiers: UInt32) {
+  @discardableResult
+  func updateHotkey(keyCode: UInt32, modifiers: UInt32) -> Bool {
+    let oldKeyCode = PromptStore.shared.screenshotKeyCode
+    let oldModifiers = PromptStore.shared.screenshotModifiers
     if let ref = hotKeyRef {
-      UnregisterEventHotKey(ref)
+      let status = UnregisterEventHotKey(ref)
+      NSLog("[Quill] ScreenshotCapture UnregisterEventHotKey status=%d", status)
       hotKeyRef = nil
     }
-    PromptStore.shared.screenshotKeyCode  = keyCode
+    guard registerHotKey(keyCode: keyCode, modifiers: modifiers) else {
+      _ = registerHotKey(keyCode: oldKeyCode, modifiers: oldModifiers)
+      return false
+    }
+    PromptStore.shared.screenshotKeyCode = keyCode
     PromptStore.shared.screenshotModifiers = modifiers
-    registerHotKey(keyCode: keyCode, modifiers: modifiers)
+    return true
   }
 
-  private func registerHotKey(keyCode: UInt32, modifiers: UInt32) {
+  @discardableResult
+  private func registerHotKey(keyCode: UInt32, modifiers: UInt32) -> Bool {
     var hotKeyID = EventHotKeyID()
     hotKeyID.signature = 0x5175696C  // 'Quil'
     hotKeyID.id = 1
     let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
     NSLog("[Quill] ScreenshotCapture RegisterEventHotKey status=%d (0=成功)", status)
+    return status == noErr
   }
 
   // MARK: - Screenshot capture
+
+  /// macOS 15+ 會在第一次「直接擷取」時再詢問一次是否允許略過系統選擇器。
+  /// Onboarding 在試用步驟前先做一張主螢幕的無聲截圖，讓系統提示先完成，
+  /// 避免使用者第一次框選後，動作選單被系統提示蓋掉。
+  func prepareDirectCaptureAuthorization(completion: @escaping () -> Void) {
+    let tempPath = NSTemporaryDirectory() + "quill_prepare_\(UUID().uuidString).png"
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+    process.arguments = ["-x", "-m", tempPath]
+    process.terminationHandler = { _ in
+      try? FileManager.default.removeItem(atPath: tempPath)
+      DispatchQueue.main.async(execute: completion)
+    }
+    do {
+      try process.run()
+    } catch {
+      DispatchQueue.main.async(execute: completion)
+    }
+  }
 
   func capture() {
     let tempPath = NSTemporaryDirectory() + "quill_shot_\(Int(Date().timeIntervalSince1970)).png"

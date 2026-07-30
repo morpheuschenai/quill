@@ -232,7 +232,10 @@ struct PromptListView: View {
     if let imageData {
       let session = ChatSession.forImage(title: "Quill", imageData: imageData, mime: imageMime)
       ChatWindowManager.open(session: session)
-      session.begin(apiUserContent: instruction, displayUserText: instruction)
+      session.begin(
+        apiUserContent: PromptStore.promptRespectingAppLanguage(instruction, titleKey: nil),
+        displayUserText: instruction
+      )
       onDismiss()
       return
     }
@@ -240,7 +243,10 @@ struct PromptListView: View {
     guard isEditable else {
       let session = ChatSession.forText(
         title: "Quill",
-        systemPrompt: "Follow the user's instruction on the given text."
+        systemPrompt: PromptStore.promptRespectingAppLanguage(
+          "Follow the user's instruction on the given text.",
+          titleKey: nil
+        )
       )
       ChatWindowManager.open(session: session)
       session.begin(
@@ -254,7 +260,10 @@ struct PromptListView: View {
     // 可編輯文字 + 自訂指令:原地取代
     isLoading = true
     loadingId = nil
-    let systemPrompt = "Follow the user's instruction on the given text. Return only the result, no explanation."
+    let systemPrompt = PromptStore.promptRespectingAppLanguage(
+      "Follow the user's instruction on the given text. Return only the result, no explanation.",
+      titleKey: nil
+    )
     let userMessage  = "Instruction: \(instruction)\n\nText: \(selectedText)"
     OpenAIService.shared.complete(prompt: systemPrompt, text: userMessage) { result in
       DispatchQueue.main.async {
