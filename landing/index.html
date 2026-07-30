@@ -126,6 +126,8 @@
   #hintBubble:hover { border-color: rgba(96,165,250,0.6); }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
   #quillMenu { position: fixed; z-index: 110; display: none; width: 238px; background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 7px; animation: pop 0.15s ease; color: #e8e8f0; }
+  #quillMenu.shot-menu { animation: none; transition: opacity 0.08s ease; }
+  #quillMenu.shot-preview { opacity: 0.72; pointer-events: none; }
   .menu-row { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; transition: background 0.12s; }
   .menu-row:hover { background: rgba(255,255,255,0.06); }
   .menu-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
@@ -756,7 +758,54 @@
     { key: 'emoji',   label: '加表情 🎉',      icon: 'i-custom',    color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
   ];
 
-  function showMenu(x, y, actions, onPick, note) {
+  function menuViewport() {
+    const viewport = window.visualViewport;
+    const left = viewport?.offsetLeft || 0;
+    const top = viewport?.offsetTop || 0;
+    const width = viewport?.width || innerWidth;
+    const height = viewport?.height || innerHeight;
+    return { left, top, width, height, right: left + width, bottom: top + height };
+  }
+
+  function clamp(value, minimum, maximum) {
+    return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
+  }
+
+  function positionMenuAtPoint(x, y) {
+    const view = menuViewport();
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const minLeft = view.left + 12;
+    const maxLeft = view.right - w - 12;
+    const minTop = view.top + 12;
+    const maxTop = view.bottom - h - 12;
+    const preferredTop = y + 12;
+    const fallbackTop = y - h - 12;
+    menu.style.left = clamp(x - w / 2, minLeft, maxLeft) + 'px';
+    menu.style.top = clamp(preferredTop <= maxTop ? preferredTop : fallbackTop, minTop, maxTop) + 'px';
+  }
+
+  function positionMenuOutsideRect(rect) {
+    const view = menuViewport();
+    const gap = 12;
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const centeredLeft = clamp(rect.x + rect.w / 2 - w / 2, view.left + gap, view.right - w - gap);
+    const centeredTop = clamp(rect.y + rect.h / 2 - h / 2, view.top + gap, view.bottom - h - gap);
+    const candidates = [
+      { room: rect.y - view.top, required: h + gap, left: centeredLeft, top: rect.y - h - gap },
+      { room: view.bottom - (rect.y + rect.h), required: h + gap, left: centeredLeft, top: rect.y + rect.h + gap },
+      { room: rect.x - view.left, required: w + gap, left: rect.x - w - gap, top: centeredTop },
+      { room: view.right - (rect.x + rect.w), required: w + gap, left: rect.x + rect.w + gap, top: centeredTop },
+    ];
+    const fitting = candidates.filter(candidate => candidate.room >= candidate.required);
+    const chosen = (fitting.length ? fitting : candidates)
+      .sort((a, b) => (b.room - b.required) - (a.room - a.required))[0];
+    menu.style.left = clamp(chosen.left, view.left + gap, view.right - w - gap) + 'px';
+    menu.style.top = clamp(chosen.top, view.top + gap, view.bottom - h - gap) + 'px';
+  }
+
+  function showMenu(x, y, actions, onPick, note, options = {}) {
+    menu.classList.toggle('shot-menu', options.shot === true);
+    menu.classList.toggle('shot-preview', options.preview === true);
     menu.innerHTML = '';
     actions.forEach(a => {
       const row = document.createElement('div');
@@ -776,25 +825,12 @@
       const n = document.createElement('div'); n.className = 'menu-note'; n.textContent = note; menu.appendChild(n);
     }
     menu.style.display = 'block';
-    const viewport = window.visualViewport;
-    const viewLeft = viewport?.offsetLeft || 0;
-    const viewTop = viewport?.offsetTop || 0;
-    const viewWidth = viewport?.width || innerWidth;
-    const viewHeight = viewport?.height || innerHeight;
-    const w = menu.offsetWidth, h = menu.offsetHeight;
-    const minLeft = viewLeft + 12;
-    const maxLeft = viewLeft + viewWidth - w - 12;
-    const minTop = viewTop + 12;
-    const maxTop = viewTop + viewHeight - h - 12;
-    const preferredTop = y + 12;
-    const fallbackTop = y - h - 12;
-    menu.style.left = Math.min(Math.max(x - w / 2, minLeft), Math.max(minLeft, maxLeft)) + 'px';
-    menu.style.top = Math.min(
-      Math.max(preferredTop <= maxTop ? preferredTop : fallbackTop, minTop),
-      Math.max(minTop, maxTop)
-    ) + 'px';
+    positionMenuAtPoint(x, y);
   }
-  function hideMenu() { menu.style.display = 'none'; }
+  function hideMenu() {
+    menu.style.display = 'none';
+    menu.classList.remove('shot-menu', 'shot-preview');
+  }
 
   function openTextMenu() {
     if (!selectedKeys.length) {
@@ -879,11 +915,13 @@
     { key: 'describe',  label: '描述此區域',  icon: 'i-explain',   color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
   ];
   let drag = null;
+  let shotMenuPreviewVisible = false;
   function enterShot() {
     hideMenu();
     panel.style.display = 'none';
     hint.style.display = 'none';
     marquee.style.display = 'none';
+    shotMenuPreviewVisible = false;
     document.documentElement.classList.add('demo-capturing');
     overlay.style.display = 'block';
   }
@@ -909,6 +947,7 @@
       lastY: e.clientY,
       pointerId: e.pointerId
     };
+    shotMenuPreviewVisible = false;
     overlay.setPointerCapture?.(e.pointerId);
   });
   overlay.addEventListener('pointermove', e => {
@@ -919,15 +958,19 @@
     const r = rectFrom(drag, e);
     marquee.style.display = 'block';
     Object.assign(marquee.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+    if (r.w >= 24 && r.h >= 16) {
+      if (!shotMenuPreviewVisible) {
+        showMenu(r.x + r.w / 2, r.y + r.h, SHOT_ACTIONS, () => {}, '', {
+          shot: true,
+          preview: true
+        });
+        shotMenuPreviewVisible = true;
+      }
+      positionMenuOutsideRect(r);
+    }
   });
 
-  function finishShot(endEvent) {
-    if (!drag) return;
-    const end = endEvent || { clientX: drag.lastX, clientY: drag.lastY };
-    const r = rectFrom(drag, end);
-    drag = null;
-    if (r.w < 24 || r.h < 16) { marquee.style.display = 'none'; return; }
-    exitShot({ keepSelection: true });
+  function showShotMenu(r) {
     anchor = { x: r.x + r.w / 2, y: r.y + r.h };
     showMenu(anchor.x, anchor.y, SHOT_ACTIONS, key => {
       marquee.style.display = 'none';
@@ -935,7 +978,23 @@
       if (key === 'summarize') showPanel('摘要', summarizeRegion(r));
       if (key === 'translate') showPanel('翻譯', translateRegion(r));
       if (key === 'describe')  showPanel('區域描述', describeRegion(r));
-    }, '');
+    }, '', { shot: true });
+    positionMenuOutsideRect(r);
+  }
+
+  function finishShot(endEvent) {
+    if (!drag) return;
+    const end = endEvent || { clientX: drag.lastX, clientY: drag.lastY };
+    const r = rectFrom(drag, end);
+    drag = null;
+    shotMenuPreviewVisible = false;
+    if (r.w < 24 || r.h < 16) {
+      marquee.style.display = 'none';
+      hideMenu();
+      return;
+    }
+    exitShot({ keepSelection: true });
+    showShotMenu(r);
   }
 
   overlay.addEventListener('pointerup', e => {
