@@ -3,13 +3,13 @@
     <channel>
         <title>Quill</title>
         <item>
-            <title>0.1.7</title>
-            <pubDate>Thu, 30 Jul 2026 15:05:11 +0800</pubDate>
+            <title>0.1.8</title>
+            <pubDate>Thu, 30 Jul 2026 16:52:16 +0800</pubDate>
             <link>https://quill.morpheuschen.com/</link>
             <sparkle:version>8</sparkle:version>
-            <sparkle:shortVersionString>0.1.7</sparkle:shortVersionString>
+            <sparkle:shortVersionString>0.1.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/morpheuschenai/quill/releases/download/v0.1.7/Quill-0.1.7.zip" length="1993364" type="application/octet-stream" sparkle:edSignature="GEid/Rw7Qn/R1Fd6li3ypgnvHbdrTD0jXmAeNMb+7qcExS67/RWWU+b3XImmsxkvY2hfyvKUTNVMLioZPrv7CQ=="/>
+            <enclosure url="https://github.com/morpheuschenai/quill/releases/download/v0.1.8/Quill-0.1.8.zip" length="2002581" type="application/octet-stream" sparkle:edSignature="7RseajJ+qbztP0MnlnEHQexVT6E9V8Df5frH8k9V78O3UGvnDQRVJeK9J7G6QoYycipJBETuNFe2v18TEMrnBA=="/>
         </item>
     </channel>
 </rss>

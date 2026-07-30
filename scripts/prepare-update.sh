@@ -7,7 +7,7 @@ if [[ $# -ne 2 ]]; then
 fi
 
 archive_path="$1"
-download_prefix="${2%/}"
+download_prefix="${2%/}/"
 repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 sparkle_root="$(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast' -type f -print -quit)"
 
