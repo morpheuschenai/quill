@@ -125,14 +125,14 @@
   #hintBubble { position: fixed; z-index: 80; display: none; background: linear-gradient(145deg, var(--panel-hi), var(--panel-lo)); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 8px 16px; font-size: 13px; color: #f0f0f6; box-shadow: 0 12px 32px rgba(20,20,40,0.35); cursor: pointer; user-select: none; -webkit-user-select: none; animation: pop 0.18s ease; }
   #hintBubble:hover { border-color: rgba(96,165,250,0.6); }
   @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
-  #quillMenu { position: fixed; z-index: 90; display: none; width: 238px; background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 7px; animation: pop 0.15s ease; color: #e8e8f0; }
+  #quillMenu { position: fixed; z-index: 110; display: none; width: 238px; background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 7px; animation: pop 0.15s ease; color: #e8e8f0; }
   .menu-row { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; transition: background 0.12s; }
   .menu-row:hover { background: rgba(255,255,255,0.06); }
   .menu-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
   .menu-ic .ic-svg { width: 16px; height: 16px; }
   .menu-div { height: 1px; background: rgba(255,255,255,0.09); margin: 6px 8px; }
   .menu-note { font-size: 11px; color: #9a9aac; padding: 4px 10px 6px; }
-  #resultPanel { position: fixed; z-index: 95; display: none; width: min(380px, 88vw); background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 16px 18px; animation: pop 0.15s ease; text-align: left; color: #e8e8f0; }
+  #resultPanel { position: fixed; z-index: 115; display: none; width: min(380px, 88vw); background: linear-gradient(160deg, #1b1b24, #121218); border: 0.5px solid rgba(255,255,255,0.09); border-radius: 14px; box-shadow: 0 18px 50px rgba(20,20,40,0.45); padding: 16px 18px; animation: pop 0.15s ease; text-align: left; color: #e8e8f0; }
   #resultPanel h4 { font-size: 12px; font-weight: 600; color: #9a9aac; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 9px; display: flex; justify-content: space-between; align-items: center; }
   #resultPanel h4 button { background: none; border: none; color: #9a9aac; cursor: pointer; font-size: 14px; }
   #resultBody { font-size: 14px; white-space: pre-wrap; line-height: 1.65; }
@@ -776,9 +776,23 @@
       const n = document.createElement('div'); n.className = 'menu-note'; n.textContent = note; menu.appendChild(n);
     }
     menu.style.display = 'block';
-    const w = 238, h = menu.offsetHeight;
-    menu.style.left = Math.min(Math.max(x - w / 2, 12), innerWidth - w - 12) + 'px';
-    menu.style.top  = (y + h + 24 > innerHeight ? Math.max(y - h - 12, 12) : y + 12) + 'px';
+    const viewport = window.visualViewport;
+    const viewLeft = viewport?.offsetLeft || 0;
+    const viewTop = viewport?.offsetTop || 0;
+    const viewWidth = viewport?.width || innerWidth;
+    const viewHeight = viewport?.height || innerHeight;
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const minLeft = viewLeft + 12;
+    const maxLeft = viewLeft + viewWidth - w - 12;
+    const minTop = viewTop + 12;
+    const maxTop = viewTop + viewHeight - h - 12;
+    const preferredTop = y + 12;
+    const fallbackTop = y - h - 12;
+    menu.style.left = Math.min(Math.max(x - w / 2, minLeft), Math.max(minLeft, maxLeft)) + 'px';
+    menu.style.top = Math.min(
+      Math.max(preferredTop <= maxTop ? preferredTop : fallbackTop, minTop),
+      Math.max(minTop, maxTop)
+    ) + 'px';
   }
   function hideMenu() { menu.style.display = 'none'; }
 
@@ -858,6 +872,12 @@
 
   const overlay = document.getElementById('shotOverlay');
   const marquee = document.getElementById('marquee');
+  const SHOT_ACTIONS = [
+    { key: 'extract',   label: '擷取文字',   icon: 'i-keyboard',  color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
+    { key: 'summarize', label: '摘要',        icon: 'i-summarize', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
+    { key: 'translate', label: '翻譯',        icon: 'i-translate', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+    { key: 'describe',  label: '描述此區域',  icon: 'i-explain',   color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
+  ];
   let drag = null;
   function enterShot() {
     hideMenu();
@@ -882,40 +902,55 @@
   overlay.addEventListener('pointerdown', e => {
     if (e.target.closest('#shotCancel')) return;
     e.preventDefault();
-    drag = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+    drag = {
+      x: e.clientX,
+      y: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      pointerId: e.pointerId
+    };
     overlay.setPointerCapture?.(e.pointerId);
   });
   overlay.addEventListener('pointermove', e => {
     if (!drag) return;
     e.preventDefault();
+    drag.lastX = e.clientX;
+    drag.lastY = e.clientY;
     const r = rectFrom(drag, e);
     marquee.style.display = 'block';
     Object.assign(marquee.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
   });
-  overlay.addEventListener('pointerup', e => {
+
+  function finishShot(endEvent) {
     if (!drag) return;
-    e.preventDefault();
-    const r = rectFrom(drag, e); drag = null;
+    const end = endEvent || { clientX: drag.lastX, clientY: drag.lastY };
+    const r = rectFrom(drag, end);
+    drag = null;
     if (r.w < 24 || r.h < 16) { marquee.style.display = 'none'; return; }
     exitShot({ keepSelection: true });
     anchor = { x: r.x + r.w / 2, y: r.y + r.h };
-    showMenu(anchor.x, anchor.y, [
-      { key: 'extract',   label: '擷取文字',   icon: 'i-keyboard',  color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
-      { key: 'summarize', label: '摘要',        icon: 'i-summarize', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-      { key: 'translate', label: '翻譯',        icon: 'i-translate', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
-      { key: 'describe',  label: '描述此區域',  icon: 'i-explain',   color: '#22d3ee', bg: 'rgba(34,211,238,0.15)' },
-    ], key => {
+    showMenu(anchor.x, anchor.y, SHOT_ACTIONS, key => {
       marquee.style.display = 'none';
       if (key === 'extract')   showPanel('擷取文字', extractText(r) || '（此區域無文字）');
       if (key === 'summarize') showPanel('摘要', summarizeRegion(r));
       if (key === 'translate') showPanel('翻譯', translateRegion(r));
       if (key === 'describe')  showPanel('區域描述', describeRegion(r));
     }, '');
+  }
+
+  overlay.addEventListener('pointerup', e => {
+    if (!drag) return;
+    e.preventDefault();
+    finishShot(e);
   });
   overlay.addEventListener('pointercancel', () => {
-    drag = null;
-    marquee.style.display = 'none';
+    finishShot(null);
   });
+  overlay.addEventListener('touchend', e => {
+    if (!drag) return;
+    e.preventDefault();
+    finishShot(null);
+  }, { passive: false });
   function rectFrom(a, e) { return { x: Math.min(a.x, e.clientX), y: Math.min(a.y, e.clientY), w: Math.abs(a.x - e.clientX), h: Math.abs(a.y - e.clientY) }; }
 
   // Mail mock 當成一封全英文信:框任一部分都能正確翻譯/摘要/描述
