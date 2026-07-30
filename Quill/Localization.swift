@@ -175,7 +175,7 @@ enum L10n {
     "billing.proQuota": ("每個計費週期 600 次", "600 uses per billing cycle"),
     "billing.upgrade": ("安全升級至 Pro", "Upgrade securely to Pro"),
     "billing.secure": ("由 Portaly 安全處理付款 · Quill 不保存卡號", "Secure payment by Portaly · Quill never stores card details"),
-    "billing.renews": ("訂閱將以 NT$199／月自動續訂，可從付款收據管理。", "Renews at NT$199/month. Manage it from your payment receipt."),
+    "billing.renews": ("訂閱將以 NT$199／月自動續訂，可在下方管理。", "Renews at NT$199/month. Manage it below."),
     "billing.cancelPending": ("已取消自動續訂；Pro 可使用到目前計費週期結束。", "Renewal canceled. Pro stays active until the current period ends."),
     "billing.manage": ("管理訂閱與付款紀錄", "Manage subscription & payments"),
     "billing.error": ("暫時無法讀取方案，請稍後再試。", "Unable to load your plan. Please try again."),

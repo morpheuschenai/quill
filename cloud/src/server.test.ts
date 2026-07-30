@@ -308,13 +308,18 @@ test("billing status and checkout apply the launch offer for an authenticated in
         checkoutToken: "checkout_token_123",
         checkoutUrl: "https://portaly.cc/checkout/test",
         expiresAt: "2026-07-23T03:30:00.000Z",
+        amount: 199,
+        appliedDiscount: {
+          code: "LAUNCH149",
+          finalAmount: 149,
+        },
       },
     });
   };
   const app = createApp({
     redis,
     env: env({
-      PORTALY_API_KEY: "test-key",
+      PORTALY_API_KEY: "pcs_test_fixture",
       PORTALY_CALLBACK_URL: "https://quill.example.com/v1/webhooks/portaly",
       PORTALY_DISCOUNT_CODE: "LAUNCH149",
       PORTALY_PROMO_END: "2026-08-31T15:59:59.000Z",
@@ -346,7 +351,14 @@ test("billing status and checkout apply the launch offer for an authenticated in
 
   const checkout = await app.fetch(jsonPost("/v1/billing/checkout", {}, authorization));
   assert.equal(checkout.status, 201);
-  assert.equal((await checkout.json()).promotion_applied, true);
+  assert.deepEqual(await checkout.json(), {
+    checkout_url: "https://portaly.cc/checkout/test",
+    checkout_session_id: "checkout_session_123",
+    expires_at: "2026-07-23T03:30:00.000Z",
+    promotion_applied: true,
+    first_month_amount: 149,
+    recurring_amount: 199,
+  });
   assert.equal(calls[0].planId, "plan_quill_pro");
   assert.equal(calls[0].discountCode, "LAUNCH149");
   assert.match(calls[0].metadata.installationHash, /^[0-9a-f]{64}$/);
@@ -363,13 +375,14 @@ test("launch offer automatically expires after the configured deadline", async (
         checkoutToken: "token_after_offer",
         checkoutUrl: "https://portaly.cc/checkout/test",
         expiresAt: "2026-09-02T03:30:00.000Z",
+        amount: 199,
       },
     });
   };
   const app = createApp({
     redis: mockRedis(),
     env: env({
-      PORTALY_API_KEY: "test-key",
+      PORTALY_API_KEY: "pcs_test_fixture",
       PORTALY_CALLBACK_URL: "https://quill.example.com/v1/webhooks/portaly",
       PORTALY_DISCOUNT_CODE: "LAUNCH149",
       PORTALY_PROMO_END: "2026-08-31T15:59:59.000Z",
@@ -482,6 +495,36 @@ test("verified checkout activates Pro with a 600-use billing period", async () =
   assert.equal(statusBody.resets_at, "2026-08-23T03:00:00.000Z");
 });
 
+test("test subscriptions do not grant Pro after switching to live payments", async () => {
+  const redis = mockRedis();
+  const anonymousID = createHmac("sha256", "analytics-salt")
+    .update(INSTALLATION_ID).digest("hex");
+  await redis.set(`subscription:installation:${anonymousID}`, JSON.stringify({
+    subscriptionId: "subscription_test_123",
+    sessionId: "session_test_123",
+    planId: "plan_quill_pro",
+    mode: "test",
+    status: "active",
+    periodStart: NOW.toISOString(),
+    periodEnd: "2026-08-23T03:00:00.000Z",
+    currentAmount: 149,
+    cancelAtPeriodEnd: false,
+    cancelEffectiveAt: null,
+  }));
+  const app = createApp({
+    redis,
+    env: env({ PORTALY_API_KEY: "pcs_live_fixture" }),
+    now: () => NOW,
+  });
+  const token = await installationToken(app);
+  const response = await app.fetch(new Request("http://x/v1/billing/status", {
+    headers: { Authorization: `Bearer ${token}` },
+  }));
+  const body = await response.json();
+  assert.equal(body.plan, "free");
+  assert.equal(body.limit, 10);
+});
+
 test("subscription portal is scoped to the authenticated installation's subscription", async () => {
   const redis = mockRedis();
   const anonymousID = createHmac("sha256", "analytics-salt")
@@ -582,6 +625,34 @@ test("Portaly callback rejects invalid signatures, stale timestamps, and event m
   }))).status, 400);
 });
 
+test("Portaly callback rejects a test event when live mode is configured", async () => {
+  const callbackSecret = "callback-secret";
+  const app = createApp({
+    redis: mockRedis(),
+    env: env({
+      PORTALY_API_KEY: "pcs_live_fixture",
+      PORTALY_CALLBACK_SECRET: callbackSecret,
+    }),
+    now: () => NOW,
+  });
+  const payload = {
+    event: "creator_subscription.checkout.completed",
+    sessionId: "session_wrong_mode",
+    mode: "test",
+    status: "completed",
+    planId: "plan_quill_pro",
+    metadata: { installationHash: "a".repeat(64) },
+  };
+  const timestamp = NOW.toISOString();
+  const signature = signPortalyCallback({ secret: callbackSecret, payload, timestamp });
+  const response = await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event,
+    "x-portaly-timestamp": timestamp,
+    "x-portaly-signature": signature,
+  }));
+  assert.equal(response.status, 400);
+});
+
 test("metrics dashboard and data require admin authentication", async () => {
   const redis = mockRedis();
   const app = createApp({ redis, env: env(), now: () => NOW });
@@ -603,5 +674,9 @@ test("/health exposes metrics time zone and security headers", async () => {
   const response = await app.fetch(new Request("http://x/health"));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
-  assert.deepEqual(await response.json(), { ok: true, metricsTimeZone: "Asia/Taipei" });
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    metricsTimeZone: "Asia/Taipei",
+    payments: { configured: false, mode: null },
+  });
 });

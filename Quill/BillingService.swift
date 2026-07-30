@@ -57,6 +57,9 @@ final class BillingService: ObservableObject {
   @Published private(set) var isOpeningPortal = false
   @Published var errorMessage: String?
 
+  private static let checkoutPendingUntilKey = "quill_checkout_pending_until"
+  private var checkoutPollWorkItem: DispatchWorkItem?
+
   private let decoder: JSONDecoder = {
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .custom { decoder in
@@ -94,22 +97,29 @@ final class BillingService: ObservableObject {
     refresh()
   }
 
-  func refresh() {
+  func refresh(completion: (() -> Void)? = nil) {
     isLoading = true
     errorMessage = nil
     authenticatedRequest(path: "billing/status", method: "GET") { [weak self] result in
-      guard let self else { return }
+      guard let self else {
+        completion?()
+        return
+      }
       self.isLoading = false
       switch result {
       case .success(let data):
         do {
           self.status = try self.decoder.decode(BillingStatus.self, from: data)
+          if self.status?.plan == "pro" {
+            self.clearPendingCheckout()
+          }
         } catch {
           self.errorMessage = L10n.t("billing.error")
         }
       case .failure(let error):
         self.errorMessage = error.localizedDescription
       }
+      completion?()
     }
   }
 
@@ -131,11 +141,58 @@ final class BillingService: ObservableObject {
           self.errorMessage = L10n.t("billing.error")
           return
         }
-        NSWorkspace.shared.open(url)
+        self.markCheckoutPending()
+        if !NSWorkspace.shared.open(url) {
+          self.clearPendingCheckout()
+          self.errorMessage = L10n.t("billing.error")
+        }
       case .failure(let error):
         self.errorMessage = error.localizedDescription
       }
     }
+  }
+
+  /// Portaly callback and browser redirect can arrive a few seconds apart.
+  /// Keep checking briefly so returning users do not have to close and reopen Preferences.
+  func resumePendingCheckoutConfirmation() {
+    let deadline = Date(
+      timeIntervalSince1970: UserDefaults.standard.double(
+        forKey: Self.checkoutPendingUntilKey
+      )
+    )
+    guard deadline > Date(), status?.plan != "pro" else {
+      if status?.plan == "pro" || deadline <= Date() {
+        clearPendingCheckout()
+      }
+      return
+    }
+    checkoutPollWorkItem?.cancel()
+    pollForPro(until: deadline)
+  }
+
+  private func markCheckoutPending() {
+    let deadline = Date().addingTimeInterval(2 * 60)
+    UserDefaults.standard.set(
+      deadline.timeIntervalSince1970,
+      forKey: Self.checkoutPendingUntilKey
+    )
+  }
+
+  private func pollForPro(until deadline: Date) {
+    refresh { [weak self] in
+      guard let self, self.status?.plan != "pro", Date() < deadline else { return }
+      let workItem = DispatchWorkItem { [weak self] in
+        self?.pollForPro(until: deadline)
+      }
+      self.checkoutPollWorkItem = workItem
+      DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: workItem)
+    }
+  }
+
+  private func clearPendingCheckout() {
+    checkoutPollWorkItem?.cancel()
+    checkoutPollWorkItem = nil
+    UserDefaults.standard.removeObject(forKey: Self.checkoutPendingUntilKey)
   }
 
   func openSubscriptionPortal() {

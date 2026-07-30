@@ -4,30 +4,84 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Quill Pro 付款結果</title>
+  <title id="pageTitle">Quill Pro 付款結果</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="legal.css">
 </head>
 <body>
   <div class="shell">
-    <nav><a class="brand" href="/">✦ Quill</a><a class="back" href="/">返回官網 →</a></nav>
+    <nav><a class="brand" href="/">✦ Quill</a><a class="back" id="back" href="/">返回官網 →</a></nav>
     <main>
       <div class="eyebrow">Quill Pro</div>
       <h1 id="title">正在確認付款結果…</h1>
       <p class="lead" id="lead">付款完成後，回到 Quill 即可自動取得 Pro 額度。</p>
       <div class="actions">
         <a class="button primary" id="openApp" href="quill://billing">開啟 Quill 查看方案</a>
-        <a class="button" href="/#pricing">查看方案說明</a>
+        <a class="button" id="pricing" href="/#pricing">查看方案說明</a>
       </div>
       <article class="document">
         <h2 id="detailTitle">接下來</h2>
         <p id="detail">如果 Quill 已經開啟，按上方按鈕回到「方案與用量」；狀態可能需要幾秒更新。</p>
-        <div class="notice">付款由 Portaly 安全處理。Quill 不保存完整信用卡資料。</div>
+        <div class="notice" id="notice">付款由 Portaly 安全處理。Quill 不保存完整信用卡資料。</div>
       </article>
     </main>
-    <footer><span>Quill · macOS only</span><span><a href="privacy.html">隱私政策</a> · <a href="terms.html">服務條款</a> · <a href="refund.html">退款政策</a></span></footer>
+    <footer><span>Quill · macOS only</span><span><a id="privacy" href="privacy.html">隱私政策</a> · <a id="terms" href="terms.html">服務條款</a> · <a id="refund" href="refund.html">退款政策</a></span></footer>
   </div>
   <script>
+    const isEnglish = !navigator.language.toLowerCase().startsWith('zh');
+    const copy = isEnglish ? {
+      pageTitle: 'Quill Pro payment result',
+      back: 'Back to Quill →',
+      title: 'Confirming your payment…',
+      lead: 'Return to Quill after payment to activate your Pro allowance.',
+      openApp: 'Open Quill to view plan',
+      pricing: 'View plan details',
+      detailTitle: 'Next step',
+      detail: 'If Quill is open, use the button above to return to Plan & Usage. Sync may take a few seconds.',
+      notice: 'Payments are securely processed by Portaly. Quill never stores your full card details.',
+      privacy: 'Privacy',
+      terms: 'Terms',
+      refund: 'Refund policy',
+      successTitle: 'Payment complete. Welcome to Quill Pro.',
+      successLead: 'Return to Quill to activate 600 uses for each billing cycle.',
+      canceledTitle: 'Payment canceled. No subscription was created.',
+      canceledLead: 'Your 10 free daily uses remain available. You can upgrade anytime.',
+      canceledDetailTitle: 'No changes',
+      canceledDetail: 'You were not charged and automatic renewal was not created.',
+      canceledOpenApp: 'Return to Quill',
+      managedTitle: 'Subscription settings updated.',
+      managedLead: 'Return to Quill to view your plan. If renewal was canceled, Pro remains active until the end of this billing period.',
+      managedDetailTitle: 'Settings saved',
+      managedDetail: 'Portaly processed your changes. Quill will sync the latest status within a few seconds.'
+    } : {
+      pageTitle: 'Quill Pro 付款結果',
+      back: '返回官網 →',
+      title: '正在確認付款結果…',
+      lead: '付款完成後，回到 Quill 即可自動取得 Pro 額度。',
+      openApp: '開啟 Quill 查看方案',
+      pricing: '查看方案說明',
+      detailTitle: '接下來',
+      detail: '如果 Quill 已經開啟，按上方按鈕回到「方案與用量」；狀態可能需要幾秒更新。',
+      notice: '付款由 Portaly 安全處理。Quill 不保存完整信用卡資料。',
+      privacy: '隱私政策',
+      terms: '服務條款',
+      refund: '退款政策',
+      successTitle: '付款完成，歡迎加入 Quill Pro。',
+      successLead: '回到 Quill 後會自動啟用每個計費週期 600 次額度。',
+      canceledTitle: '付款已取消，沒有產生訂閱。',
+      canceledLead: '每天 10 次免費額度仍可正常使用，你可以隨時再決定。',
+      canceledDetailTitle: '沒有任何變更',
+      canceledDetail: '這次未完成付款，因此不會扣款，也不會建立自動續訂。',
+      canceledOpenApp: '回到 Quill',
+      managedTitle: '訂閱設定已更新。',
+      managedLead: '回到 Quill 查看目前方案；取消續訂後，Pro 仍可使用到本期結束。',
+      managedDetailTitle: '設定已儲存',
+      managedDetail: 'Portaly 已處理你的訂閱設定。Quill 會在幾秒內同步最新狀態。'
+    };
+    document.documentElement.lang = isEnglish ? 'en' : 'zh-TW';
+    for (const id of ['pageTitle', 'back', 'title', 'lead', 'openApp', 'pricing', 'detailTitle', 'detail', 'notice', 'privacy', 'terms', 'refund']) {
+      document.getElementById(id).textContent = copy[id];
+    }
     const title = document.getElementById('title');
     const lead = document.getElementById('lead');
     const detailTitle = document.getElementById('detailTitle');
@@ -35,14 +89,20 @@
     const openApp = document.getElementById('openApp');
     const status = new URLSearchParams(location.search).get('status');
     if (status === 'success') {
-      title.textContent = '付款完成，歡迎加入 Quill Pro。';
-      lead.textContent = '回到 Quill 後會自動啟用每個計費週期 600 次額度。';
+      title.textContent = copy.successTitle;
+      lead.textContent = copy.successLead;
+      openApp.href = 'quill://billing?status=success';
     } else if (status === 'canceled') {
-      title.textContent = '付款已取消，沒有產生訂閱。';
-      lead.textContent = '每天 10 次免費額度仍可正常使用，你可以隨時再決定。';
-      detailTitle.textContent = '沒有任何變更';
-      detail.textContent = '這次未完成付款，因此不會扣款，也不會建立自動續訂。';
-      openApp.textContent = '回到 Quill';
+      title.textContent = copy.canceledTitle;
+      lead.textContent = copy.canceledLead;
+      detailTitle.textContent = copy.canceledDetailTitle;
+      detail.textContent = copy.canceledDetail;
+      openApp.textContent = copy.canceledOpenApp;
+    } else if (status === 'managed') {
+      title.textContent = copy.managedTitle;
+      lead.textContent = copy.managedLead;
+      detailTitle.textContent = copy.managedDetailTitle;
+      detail.textContent = copy.managedDetail;
     }
   </script>
 </body>

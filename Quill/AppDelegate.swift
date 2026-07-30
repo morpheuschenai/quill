@@ -50,6 +50,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
     return true
   }
 
+  func applicationDidBecomeActive(_ notification: Notification) {
+    BillingService.shared.resumePendingCheckoutConfirmation()
+  }
+
   func application(_ application: NSApplication, open urls: [URL]) {
     guard let action = urls.first?.host?.lowercased() else { return }
     switch action {
@@ -57,7 +61,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
       BillingService.shared.startCheckout()
     case "billing":
       PreferencesPanel.open()
-      BillingService.shared.refresh()
+      let paymentSucceeded = URLComponents(
+        url: urls[0],
+        resolvingAgainstBaseURL: false
+      )?.queryItems?.contains(where: {
+        $0.name == "status" && $0.value == "success"
+      }) == true
+      if paymentSucceeded {
+        BillingService.shared.resumePendingCheckoutConfirmation()
+      } else {
+        BillingService.shared.refresh()
+      }
     default:
       break
     }

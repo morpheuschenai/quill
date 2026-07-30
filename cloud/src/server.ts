@@ -305,6 +305,12 @@ function checkoutURL(env: QuillEnv): string {
   }
 }
 
+function portalyMode(apiKey: string | undefined): "live" | "test" | null {
+  if (apiKey?.startsWith("pcs_live_")) return "live";
+  if (apiKey?.startsWith("pcs_test_")) return "test";
+  return null;
+}
+
 function adminAuthorized(request: Request, env: QuillEnv): boolean {
   if (!env.ADMIN_USERNAME || !env.ADMIN_PASSWORD) return false;
   const auth = request.headers.get("authorization") || "";
@@ -411,7 +417,13 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     const metricDay = dayInTimeZone(current, timeZone);
     const anonymousID = hashIdentity(installation.installationID);
     const subscription = await loadSubscription(anonymousID);
-    const isPro = subscriptionHasAccess(subscription, current);
+    const configuredPaymentMode = portalyMode(env.PORTALY_API_KEY);
+    const subscriptionMatchesMode =
+      !configuredPaymentMode ||
+      !subscription?.mode ||
+      subscription.mode === configuredPaymentMode;
+    const isPro =
+      subscriptionMatchesMode && subscriptionHasAccess(subscription, current);
     const usageKey = isPro
       ? `usage:pro:${anonymousID}:${subscription.periodStart}`
       : `usage:${anonymousID}:${quotaDay}`;
@@ -430,7 +442,16 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     };
   };
 
-  app.get("/health", (c) => c.json({ ok: true, metricsTimeZone: timeZone }));
+  app.get("/health", (c) =>
+    c.json({
+      ok: true,
+      metricsTimeZone: timeZone,
+      payments: {
+        configured: Boolean(env.PORTALY_API_KEY && env.PORTALY_PLAN_ID),
+        mode: portalyMode(env.PORTALY_API_KEY),
+      },
+    })
+  );
 
   app.post("/v1/installations", async (c) => {
     let body: unknown;
@@ -587,14 +608,34 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     }
 
     const session = result?.data;
+    let hostedCheckoutURL: URL;
+    try {
+      hostedCheckoutURL = new URL(session?.checkoutUrl);
+    } catch {
+      return jsonError("Checkout service returned an invalid checkout URL.", 502);
+    }
     if (
       typeof session?.sessionId !== "string" ||
-      typeof session?.checkoutUrl !== "string" ||
+      hostedCheckoutURL.protocol !== "https:" ||
       typeof session?.checkoutToken !== "string" ||
       !validISO(session?.expiresAt)
     ) {
       return jsonError("Checkout service returned an incomplete session.", 502);
     }
+    const appliedDiscount =
+      session?.appliedDiscount && typeof session.appliedDiscount === "object"
+        ? session.appliedDiscount as Record<string, unknown>
+        : null;
+    const promotionApplied =
+      promoActive &&
+      appliedDiscount?.code === env.PORTALY_DISCOUNT_CODE &&
+      typeof appliedDiscount?.finalAmount === "number";
+    const firstMonthAmount =
+      promotionApplied
+        ? appliedDiscount!.finalAmount as number
+        : typeof session?.amount === "number"
+          ? session.amount
+          : 199;
     await redis.set(
       `checkout-session:${session.sessionId}`,
       JSON.stringify({
@@ -603,6 +644,8 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
         checkoutUrl: session.checkoutUrl,
         expiresAt: session.expiresAt,
         installationHash: status.anonymousID,
+        mode: portalyMode(env.PORTALY_API_KEY),
+        amount: firstMonthAmount,
       }),
       "EX",
       CHECKOUT_SESSION_TTL_SECONDS
@@ -610,9 +653,10 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     await recordUnique("checkout_started", status.metricDay, status.anonymousID);
     return json({
       checkout_url: session.checkoutUrl,
+      checkout_session_id: session.sessionId,
       expires_at: session.expiresAt,
-      promotion_applied: promoActive,
-      first_month_amount: promoActive ? 149 : 199,
+      promotion_applied: promotionApplied,
+      first_month_amount: firstMonthAmount,
       recurring_amount: 199,
     }, 201);
   });
@@ -756,6 +800,13 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
 
     const payload = body as Record<string, unknown>;
     if (payload.event !== event) return jsonError("Callback event mismatch.", 400);
+    if (payload.mode !== "live" && payload.mode !== "test") {
+      return jsonError("Callback mode is missing or invalid.", 400);
+    }
+    const expectedMode = portalyMode(env.PORTALY_API_KEY);
+    if (expectedMode && payload.mode !== expectedMode) {
+      return jsonError("Callback mode does not match the configured payment mode.", 400);
+    }
 
     let deliveryIdentity: string | null = null;
     let callbackAnonymousID: string | null = null;
@@ -773,6 +824,23 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       }
       if (env.PORTALY_PLAN_ID && payload.planId !== env.PORTALY_PLAN_ID) {
         return jsonError("Unexpected checkout plan.", 400);
+      }
+      const pendingCheckoutRaw = await redis.get(`checkout-session:${payload.sessionId}`);
+      if (pendingCheckoutRaw) {
+        try {
+          const pendingCheckout = JSON.parse(pendingCheckoutRaw) as {
+            installationHash?: unknown;
+            mode?: unknown;
+          };
+          if (
+            pendingCheckout.installationHash !== installationHash ||
+            (expectedMode && pendingCheckout.mode && pendingCheckout.mode !== expectedMode)
+          ) {
+            return jsonError("Checkout session identity does not match.", 400);
+          }
+        } catch {
+          return jsonError("Checkout session record is invalid.", 500);
+        }
       }
       deliveryIdentity = payload.sessionId;
       callbackAnonymousID = installationHash;
