@@ -1,9 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>Quill Updates</title>
-    <link>https://quill.morpheuschen.com/</link>
-    <description>Quill for macOS updates</description>
-    <language>zh-TW</language>
-  </channel>
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Quill</title>
+        <item>
+            <title>0.1.7</title>
+            <pubDate>Thu, 30 Jul 2026 15:05:11 +0800</pubDate>
+            <link>https://quill.morpheuschen.com/</link>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>0.1.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/morpheuschenai/quill/releases/download/v0.1.7/Quill-0.1.7.zip" length="1993364" type="application/octet-stream" sparkle:edSignature="GEid/Rw7Qn/R1Fd6li3ypgnvHbdrTD0jXmAeNMb+7qcExS67/RWWU+b3XImmsxkvY2hfyvKUTNVMLioZPrv7CQ=="/>
+        </item>
+    </channel>
 </rss>
