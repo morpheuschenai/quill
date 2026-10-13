@@ -134,12 +134,18 @@ class OpenAIService {
   }
 
   private func send(body: [String: Any], completion: @escaping (Result<String, Error>) -> Void) {
+    let recordsCloudUsage = useCloud
     makeRequest(body: body) { result in
       switch result {
       case .failure(let error):
         completion(.failure(error))
       case .success(let request):
         URLSession.shared.dataTask(with: request) { data, response, error in
+          defer {
+            if recordsCloudUsage {
+              DispatchQueue.main.async { BillingService.shared.refresh() }
+            }
+          }
           if let error {
             completion(.failure(error))
             return
@@ -161,8 +167,8 @@ class OpenAIService {
 
           do {
             let content = try Self.parseCompletionContent(from: data)
-            DispatchQueue.main.async {
-              BillingService.shared.recordSuccessfulUse()
+            if recordsCloudUsage {
+              DispatchQueue.main.async { BillingService.shared.recordSuccessfulUse() }
             }
             completion(.success(content))
           } catch {
@@ -252,7 +258,8 @@ class OpenAIService {
     ]
     let task = StreamingChatTask(
       onDelta: onDelta,
-      onComplete: onComplete
+      onComplete: onComplete,
+      recordsUsage: useCloud
     )
     makeRequest(body: body) { result in
       switch result {
@@ -400,20 +407,23 @@ final class CloudAuthentication {
 /// Delegate callback 跑在 main queue,onDelta/onComplete 可直接更新 UI。
 final class StreamingChatTask: NSObject, URLSessionDataDelegate {
   private var urlSession: URLSession?
-  private var lineBuffer = ""
+  private var lineBuffer = Data()
   private var fullText = ""
   private var statusCode = 200
   private var errorBody = Data()
   private var finished = false
   private let onDelta: (String) -> Void
   private let onComplete: (Result<String, Error>) -> Void
+  private let recordsUsage: Bool
 
   init(
     onDelta: @escaping (String) -> Void,
-    onComplete: @escaping (Result<String, Error>) -> Void
+    onComplete: @escaping (Result<String, Error>) -> Void,
+    recordsUsage: Bool = true
   ) {
     self.onDelta = onDelta
     self.onComplete = onComplete
+    self.recordsUsage = recordsUsage
     super.init()
   }
 
@@ -453,9 +463,14 @@ final class StreamingChatTask: NSObject, URLSessionDataDelegate {
       errorBody.append(data)
       return
     }
-    lineBuffer += String(data: data, encoding: .utf8) ?? ""
-    while let newline = lineBuffer.firstIndex(of: "\n") {
-      let line = String(lineBuffer[..<newline]).trimmingCharacters(in: .whitespaces)
+    lineBuffer.append(data)
+    while let newline = lineBuffer.firstIndex(of: 0x0A) {
+      guard let decoded = String(data: lineBuffer[..<newline], encoding: .utf8) else {
+        finish(.failure(NSError(domain: "QuillError", code: -1,
+          userInfo: [NSLocalizedDescriptionKey: "Invalid response encoding"])))
+        return
+      }
+      let line = decoded.trimmingCharacters(in: .whitespaces)
       lineBuffer.removeSubrange(...newline)
       processLine(line)
     }
@@ -465,7 +480,7 @@ final class StreamingChatTask: NSObject, URLSessionDataDelegate {
     guard line.hasPrefix("data:") else { return }
     let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
     if payload == "[DONE]" {
-      finish(.success(fullText))
+      finishReceivedText()
       return
     }
     guard
@@ -496,16 +511,27 @@ final class StreamingChatTask: NSObject, URLSessionDataDelegate {
       finish(.failure(OpenAIService.parseAPIError(from: errorBody, statusCode: statusCode)))
       return
     }
-    finish(.success(fullText))
+    finishReceivedText()
+  }
+
+  private func finishReceivedText() {
+    if fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      finish(.failure(NSError(domain: "QuillError", code: -1,
+        userInfo: [NSLocalizedDescriptionKey: L10n.t("err.service")])))
+    } else {
+      finish(.success(fullText))
+    }
   }
 
   private func finish(_ result: Result<String, Error>) {
     guard !finished else { return }
     finished = true
-    if case .success(let text) = result, !text.isEmpty {
+    if recordsUsage, case .success(let text) = result, !text.isEmpty {
       DispatchQueue.main.async {
         BillingService.shared.recordSuccessfulUse()
       }
+    } else if recordsUsage {
+      DispatchQueue.main.async { BillingService.shared.refresh() }
     }
     onComplete(result)
     urlSession?.finishTasksAndInvalidate()

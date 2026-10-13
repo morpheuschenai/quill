@@ -68,7 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
         $0.name == "status" && $0.value == "success"
       }) == true
       if paymentSucceeded {
-        BillingService.shared.resumePendingCheckoutConfirmation()
+        BillingService.shared.resumePendingCheckoutConfirmation(paymentReturned: true)
       } else {
         BillingService.shared.refresh()
       }

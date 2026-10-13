@@ -54,26 +54,6 @@
   @keyframes drift1 { to { transform: translate(60px, 40px) scale(1.08); } }
   @keyframes drift2 { to { transform: translate(-50px, 60px) scale(0.94); } }
   main, nav { position: relative; z-index: 1; }
-  .announcement-bar {
-    position: relative; z-index: 51; display: block;
-    color: #234477 !important;
-    background: linear-gradient(90deg, #edf4ff 0%, #f3f1ff 50%, #edf7ff 100%);
-    border-bottom: 1px solid rgba(59,130,246,0.12);
-    transition: background 0.18s ease;
-  }
-  .announcement-bar:hover { background: linear-gradient(90deg, #e5f0ff 0%, #eeebff 50%, #e6f3ff 100%); }
-  .announcement-inner {
-    min-height: 38px; display: flex; align-items: center; justify-content: center;
-    gap: 9px; padding: 7px 24px; font-size: 12.5px; line-height: 1.4;
-    text-align: center; letter-spacing: 0.005em;
-  }
-  .announcement-badge {
-    flex-shrink: 0; padding: 2px 7px; border-radius: 999px;
-    color: #315f9f; background: rgba(255,255,255,0.72);
-    border: 1px solid rgba(59,130,246,0.16);
-    font-size: 10px; font-weight: 750; letter-spacing: 0.04em;
-  }
-  .announcement-copy strong { font-weight: 750; color: #17365f; }
   .navbar { position: sticky; top: 0; z-index: 50; background: rgba(250,250,248,0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(20,20,40,0.06); }
   nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
   .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); }
@@ -275,9 +255,6 @@
   .plan-mini .mini-desc { font-size: 13.5px; color: var(--text-dim); margin-bottom: 6px; line-height: 1.6; }
   .plan-mini .mini-note { font-size: 12px; color: var(--text-dim); opacity: 0.7; margin-bottom: 24px; }
   .plan-mini .btn { margin-top: auto; justify-content: center; }
-  /* Plan note */
-  .plan-note { margin-bottom: 14px; font-size: 12px; color: var(--yellow); display: flex; align-items: center; gap: 6px; }
-  .plan-note .ic-svg { color: var(--yellow); flex-shrink: 0; }
   .plan-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .price-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
   .price-tier { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: rgba(59,130,246,0.025); }
@@ -291,8 +268,6 @@
   #pricing  { padding-top: 56px; }
   #how { border-top: none; }
   @media (max-width: 600px) {
-    .announcement-inner { min-height: 0; padding: 8px 16px; font-size: 11.5px; }
-    .announcement-badge { display: none; }
     .nav-links a { display: none !important; }
     .navbar nav { gap: 10px; }
     header { padding: 60px 0 68px; }
@@ -390,13 +365,6 @@
 <div class="blob b2"></div>
 <div class="blob b3"></div>
 
-<a class="announcement-bar" id="launchPromoLine" href="#pricing">
-  <span class="announcement-inner">
-    <span class="announcement-badge">上市優惠</span>
-    <span class="announcement-copy"><strong>8/31 前訂閱</strong>，首月 NT$149；第 2 個月起 NT$199／月</span>
-  </span>
-</a>
-
 <div class="navbar"><div class="wrap">
   <nav>
     <div class="logo"><span class="logo-mark"><svg class="ic-svg"><use href="#i-quill-logo"/></svg></span> Quill</div>
@@ -406,7 +374,7 @@
       <a href="#faq">常見問題</a>
       <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
       <a href="/en/" title="English version" style="font-size:13px;opacity:0.6">EN</a>
-      <a class="btn btn-primary" href="Quill.zip" download>免費下載 Mac 版</a>
+      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-zh-TW.dmg" download>免費下載 Mac 版</a>
     </div>
   </nav>
 </div></div>
@@ -420,7 +388,7 @@
         <p class="hero-sub" data-demo-en="Frame any area of your screen to translate, extract text, or explain it. Get an answer right there and ask follow-up questions.">框選螢幕任何區域 — 翻譯、擷取文字、解釋內容，<br>結果當場浮現，還能追問。</p>
         <div class="hero-actions">
           <button class="btn btn-primary btn-try" id="heroShotBtn"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-camera"/></svg> 立即體驗</button>
-          <a class="btn btn-ghost" href="Quill.zip" download>免費下載 Mac 版</a>
+          <a class="btn btn-ghost" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-zh-TW.dmg" download>免費下載 Mac 版</a>
           <p class="mac-only-note"><strong>Mac 專用</strong> · 其他平台即將推出</p>
         </div>
       </div>
@@ -613,9 +581,9 @@
             <small>每天 10 次，依你的本地時間顯示重置倒數</small>
           </div>
           <div class="price-tier pro" id="proPriceTier">
-            <strong id="proPriceLabel">Pro · 上市優惠</strong>
-            <span class="amount" id="proPriceAmount">首月 NT$149</span>
-            <small id="proPriceDetail">第 2 個月起 NT$199／月 · 每期 600 次 · 可隨時取消</small>
+            <strong id="proPriceLabel">Pro</strong>
+            <span class="amount" id="proPriceAmount">NT$199／月</span>
+            <small id="proPriceDetail">每個計費週期 600 次 · 可隨時取消</small>
           </div>
         </div>
         <ul>
@@ -623,9 +591,8 @@
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>免費每天 10 次；Pro 每個計費週期 600 次</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>支援 Mail、備忘錄、Chrome、Slack 等所有 App</li>
         </ul>
-        <p class="plan-note" id="launchPromoNote"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>優惠須於 2026/8/31 23:59（UTC+8）前完成訂閱，只適用第一個計費週期</p>
         <div class="plan-actions">
-          <a class="btn btn-primary" href="Quill.zip" download>免費下載 Mac 版</a>
+          <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-zh-TW.dmg" download>免費下載 Mac 版</a>
           <a class="btn btn-ghost" href="quill://upgrade">在 Quill 中升級 Pro →</a>
         </div>
         <p style="font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.6">支援 macOS 13 以上 · 已通過 Apple 公證 · 支援自動更新</p>
@@ -656,7 +623,7 @@
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> 常見問題</div>
     <h2>常見問題，一次說清。</h2>
-    <div class="faq-item"><h3>要花錢嗎？</h3><p id="pricingFaqAnswer">不用。免費版每天有 10 次額度。需要更多時可升級 Pro：每個計費週期 600 次，原價 NT$199／月；2026/8/31 23:59（UTC+8）前訂閱，首月 NT$149，第 2 個月起 NT$199／月。</p></div>
+    <div class="faq-item"><h3>要花錢嗎？</h3><p id="pricingFaqAnswer">不用。免費版每天有 10 次額度。需要更多時可升級 Pro：每個計費週期 600 次，NT$199／月，可隨時取消。</p></div>
     <div class="faq-item"><h3>需要註冊或 API Key 嗎？</h3><p>都不用。下載雙擊即可安裝，開啟就能用，不需要帳號、也不需要自己申請 API Key。（進階使用者仍可在偏好設定改用自己的 Key。）</p></div>
     <div class="faq-item"><h3>可以安裝在手機或 Windows 嗎？</h3><p>不行。Quill 目前是 macOS 專用 App，必須在 Mac 上下載與安裝；不支援 iPhone、iPad、Windows 或 Android。</p></div>
     <div class="faq-item"><h3>Quill 支援哪些 Mac App？</h3><p>幾乎所有 App 都支援 — Mail、備忘錄、Pages、訊息、Slack、Safari、Chrome 等。Quill 讀取你選取的文字後直接在原位改寫，唯讀 App（如 PDF）則在浮動面板顯示結果。</p></div>
@@ -671,7 +638,7 @@
     <p class="sec-sub" style="margin:0 auto">框選畫面或選取文字，按一個快捷鍵 — 答案當場出現，不用離開你正在用的 App。</p>
     <p class="cta-note">每天 10 次免費 · 不需註冊 · 不需信用卡</p>
     <div class="btns">
-      <a class="btn btn-primary" href="Quill.zip" download>免費下載 Mac 版</a>
+      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-zh-TW.dmg" download>免費下載 Mac 版</a>
     </div>
   </section>
   </main>
@@ -1151,17 +1118,6 @@
   document.querySelectorAll('.feat, .plan').forEach(card => {
     card.addEventListener('mousemove', e => { const b = card.getBoundingClientRect(); card.style.setProperty('--mx', (e.clientX - b.left) + 'px'); card.style.setProperty('--my', (e.clientY - b.top) + 'px'); });
   });
-
-  // 優惠結束後自動回復正常價格；實際結帳仍以伺服器時間為準。
-  if (Date.now() > Date.parse('2026-08-31T15:59:59.000Z')) {
-    document.querySelector('#launchPromoLine')?.remove();
-    document.querySelector('#launchPromoNote')?.remove();
-    document.querySelector('#proPriceLabel').textContent = 'Pro';
-    document.querySelector('#proPriceAmount').textContent = 'NT$199／月';
-    document.querySelector('#proPriceDetail').textContent = '每個計費週期 600 次 · 可隨時取消';
-    document.querySelector('#pricingFaqAnswer').textContent =
-      '不用。免費版每天有 10 次額度。需要更多時可升級 Pro：每個計費週期 600 次，NT$199／月，可隨時取消。';
-  }
 
 })();
 </script>

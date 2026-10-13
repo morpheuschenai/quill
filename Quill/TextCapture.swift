@@ -60,6 +60,20 @@ class TextCapture {
     return true
   }
 
+  func suspendHotkey() {
+    guard let ref = hotKeyRef else { return }
+    UnregisterEventHotKey(ref)
+    hotKeyRef = nil
+  }
+
+  func resumeHotkey() {
+    guard hotKeyRef == nil else { return }
+    _ = registerHotKey(
+      keyCode: PromptStore.shared.textKeyCode,
+      modifiers: PromptStore.shared.textModifiers
+    )
+  }
+
   @discardableResult
   private func registerHotKey(keyCode: UInt32, modifiers: UInt32) -> Bool {
     var hotKeyID = EventHotKeyID()

@@ -40,16 +40,42 @@ struct BillingStatus: Decodable {
   let resetsAt: Date
   let subscription: Subscription?
   let promotion: Promotion
+  var recoveryEnabled: Bool? = nil
+
+  func canRecoverPurchases(localRolloutEnabled: Bool) -> Bool {
+    localRolloutEnabled && recoveryEnabled == true
+  }
 
   enum CodingKeys: String, CodingKey {
     case plan, used, limit, remaining, subscription, promotion
     case resetsAt = "resets_at"
+    case recoveryEnabled = "recovery_enabled"
+  }
+}
+
+enum BillingRefreshOutcome {
+  case accepted(BillingStatus)
+  case failed
+  case superseded
+}
+
+enum PurchaseRecoveryPresentation {
+  static func showsForm(localRolloutEnabled: Bool, serverEnabled: Bool,
+                        isPresented: Bool, awaitingStatus: Bool, succeeded: Bool) -> Bool {
+    // Verified recovery clears the billing snapshot. Keep retry/cancel (and then
+    // success) visible while refreshing it, without bypassing the local rollout.
+    localRolloutEnabled && isPresented && (serverEnabled || awaitingStatus || succeeded)
   }
 }
 
 @MainActor
 final class BillingService: ObservableObject {
   static let shared = BillingService()
+  // Email delivery setup is deferred. Enable only after end-to-end rollout verification.
+  static let emailRecoveryRolloutEnabled = false
+  var canRecoverPurchases: Bool {
+    status?.canRecoverPurchases(localRolloutEnabled: Self.emailRecoveryRolloutEnabled) == true
+  }
 
   @Published private(set) var status: BillingStatus?
   @Published private(set) var isLoading = false
@@ -59,6 +85,8 @@ final class BillingService: ObservableObject {
 
   private static let checkoutPendingUntilKey = "quill_checkout_pending_until"
   private var checkoutPollWorkItem: DispatchWorkItem?
+  private var refreshRevision = 0
+  private let statusRequest: ((@escaping (Result<Data, Error>) -> Void) -> Void)?
 
   private let decoder: JSONDecoder = {
     let decoder = JSONDecoder()
@@ -78,7 +106,22 @@ final class BillingService: ObservableObject {
     return decoder
   }()
 
-  private init() {}
+  init(statusRequest: ((@escaping (Result<Data, Error>) -> Void) -> Void)? = nil) {
+    self.statusRequest = statusRequest
+  }
+
+  func makeRecoveryFlow() -> PurchaseRecoveryFlow {
+    PurchaseRecoveryFlow(request: { [weak self] path, body, completion in
+      self?.authenticatedRequest(path: path, method: "POST", body: body, completion: completion)
+    }, refresh: { [weak self] completion in
+      guard let self else { completion(.failed); return }
+      // A recovered link is not a local entitlement. Discard the old snapshot.
+      self.clearPendingCheckout()
+      self.status = nil
+      self.errorMessage = nil
+      self.refresh(statusCompletion: completion)
+    })
+  }
 
   /// AI 請求成功後先在本機立即扣一次，再向伺服器校正。
   /// Preferences、首頁若正開著，進度條與剩餘次數會立刻更新。
@@ -91,36 +134,49 @@ final class BillingService: ObservableObject {
         remaining: max(0, current.remaining - 1),
         resetsAt: current.resetsAt,
         subscription: current.subscription,
-        promotion: current.promotion
+        promotion: current.promotion,
+        recoveryEnabled: current.recoveryEnabled
       )
     }
     refresh()
   }
 
-  func refresh(completion: (() -> Void)? = nil) {
+  func refresh(completion: (() -> Void)? = nil, statusCompletion: ((BillingRefreshOutcome) -> Void)? = nil) {
+    refreshRevision += 1
+    let revision = refreshRevision
     isLoading = true
     errorMessage = nil
-    authenticatedRequest(path: "billing/status", method: "GET") { [weak self] result in
+    let receive: (Result<Data, Error>) -> Void = { [weak self] result in
+      defer { completion?() }
       guard let self else {
-        completion?()
+        statusCompletion?(.failed)
+        return
+      }
+      guard revision == self.refreshRevision else {
+        statusCompletion?(.superseded)
         return
       }
       self.isLoading = false
       switch result {
       case .success(let data):
         do {
-          self.status = try self.decoder.decode(BillingStatus.self, from: data)
+          let snapshot = try self.decoder.decode(BillingStatus.self, from: data)
+          self.status = snapshot
           if self.status?.plan == "pro" {
             self.clearPendingCheckout()
           }
+          statusCompletion?(.accepted(snapshot))
         } catch {
           self.errorMessage = L10n.t("billing.error")
+          statusCompletion?(.failed)
         }
       case .failure(let error):
         self.errorMessage = error.localizedDescription
+        statusCompletion?(.failed)
       }
-      completion?()
     }
+    if let statusRequest { statusRequest(receive) }
+    else { authenticatedRequest(path: "billing/status", method: "GET", completion: receive) }
   }
 
   func startCheckout() {
@@ -154,20 +210,30 @@ final class BillingService: ObservableObject {
 
   /// Portaly callback and browser redirect can arrive a few seconds apart.
   /// Keep checking briefly so returning users do not have to close and reopen Preferences.
-  func resumePendingCheckoutConfirmation() {
-    let deadline = Date(
-      timeIntervalSince1970: UserDefaults.standard.double(
-        forKey: Self.checkoutPendingUntilKey
-      )
+  func resumePendingCheckoutConfirmation(paymentReturned: Bool = false) {
+    let now = Date()
+    let deadline = Self.confirmationDeadline(
+      savedDeadline: UserDefaults.standard.double(forKey: Self.checkoutPendingUntilKey),
+      paymentReturned: paymentReturned,
+      now: now
     )
-    guard deadline > Date(), status?.plan != "pro" else {
-      if status?.plan == "pro" || deadline <= Date() {
+    if paymentReturned {
+      UserDefaults.standard.set(deadline.timeIntervalSince1970, forKey: Self.checkoutPendingUntilKey)
+    }
+    guard deadline > now, status?.plan != "pro" else {
+      if status?.plan == "pro" || deadline <= now {
         clearPendingCheckout()
       }
       return
     }
     checkoutPollWorkItem?.cancel()
     pollForPro(until: deadline)
+  }
+
+  /// A verified entitlement still comes from the backend, never from the redirect.
+  /// The return only gives slow checkout flows a fresh confirmation window.
+  static func confirmationDeadline(savedDeadline: TimeInterval, paymentReturned: Bool, now: Date) -> Date {
+    paymentReturned ? now.addingTimeInterval(120) : Date(timeIntervalSince1970: savedDeadline)
   }
 
   private func markCheckoutPending() {
@@ -179,14 +245,14 @@ final class BillingService: ObservableObject {
   }
 
   private func pollForPro(until deadline: Date) {
-    refresh { [weak self] in
+    refresh(completion: { [weak self] in
       guard let self, self.status?.plan != "pro", Date() < deadline else { return }
       let workItem = DispatchWorkItem { [weak self] in
         self?.pollForPro(until: deadline)
       }
       self.checkoutPollWorkItem = workItem
       DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: workItem)
-    }
+    })
   }
 
   private func clearPendingCheckout() {
@@ -222,6 +288,7 @@ final class BillingService: ObservableObject {
   private func authenticatedRequest(
     path: String,
     method: String,
+    body: [String: String] = [:],
     completion: @escaping (Result<Data, Error>) -> Void
   ) {
     CloudAuthentication.shared.authorizationToken { result in
@@ -243,7 +310,7 @@ final class BillingService: ObservableObject {
         request.timeoutInterval = 20
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if method == "POST" { request.httpBody = Data("{}".utf8) }
+        if method == "POST" { request.httpBody = try? JSONSerialization.data(withJSONObject: body) }
         URLSession.shared.dataTask(with: request) { data, response, error in
           let finalResult: Result<Data, Error>
           if let error {
@@ -264,6 +331,124 @@ final class BillingService: ObservableObject {
           DispatchQueue.main.async { completion(finalResult) }
         }.resume()
       }
+    }
+  }
+}
+
+/// Ephemeral recovery state; injectable transport keeps tests away from credentials and the network.
+@MainActor
+final class PurchaseRecoveryFlow: ObservableObject {
+  typealias Request = (String, [String: String], @escaping (Result<Data, Error>) -> Void) -> Void
+  @Published var email = ""
+  @Published var code = ""
+  @Published private(set) var challengeID: String?
+  @Published private(set) var expiresAt: Date?
+  @Published private(set) var resendAt: Date?
+  @Published private(set) var isBusy = false
+  @Published private(set) var succeeded = false
+  @Published private(set) var awaitingStatus = false
+  @Published private(set) var errorKey: String?
+  private var revision = 0
+  private let request: Request
+  private let refresh: (@escaping (BillingRefreshOutcome) -> Void) -> Void
+
+  init(request: @escaping Request, refresh: @escaping (@escaping (BillingRefreshOutcome) -> Void) -> Void) {
+    self.request = request
+    self.refresh = refresh
+  }
+
+  static func validEmail(_ value: String) -> Bool {
+    let email = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    return email.count <= 254 && email.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil
+  }
+
+  static func validCode(_ value: String) -> Bool {
+    value.utf8.count == 6 && value.utf8.allSatisfy { (48...57).contains($0) }
+  }
+
+  func resendSeconds(at now: Date) -> Int { max(0, Int(ceil((resendAt ?? now).timeIntervalSince(now)))) }
+  func expirySeconds(at now: Date) -> Int { max(0, Int(ceil((expiresAt ?? now).timeIntervalSince(now)))) }
+
+  func reset() {
+    revision += 1
+    email = ""; code = ""; challengeID = nil; expiresAt = nil; resendAt = nil
+    isBusy = false; succeeded = false; awaitingStatus = false; errorKey = nil
+  }
+
+  func sendCode(now: Date = Date()) {
+    guard !isBusy, !succeeded, !awaitingStatus, resendSeconds(at: now) == 0 else { return }
+    guard Self.validEmail(email) else { errorKey = "recovery.invalidEmail"; return }
+    email = email.trimmingCharacters(in: .whitespacesAndNewlines)
+    isBusy = true; errorKey = nil; code = ""
+    let current = revision
+    request("billing/recovery/request", ["email": email, "language": LocaleStore.shared.isZh ? "zh-TW" : "en"]) { [weak self] result in
+      guard let self, current == self.revision else { return }
+      self.isBusy = false
+      switch result {
+      case .success(let data):
+        struct Challenge: Decodable { let challenge_id: String; let expires_in: Int; let resend_after: Int }
+        guard let response = try? JSONDecoder().decode(Challenge.self, from: data),
+              !response.challenge_id.isEmpty, response.expires_in > 0, response.resend_after >= 0 else {
+          self.errorKey = "recovery.unavailable"; return
+        }
+        self.challengeID = response.challenge_id
+        self.expiresAt = now.addingTimeInterval(TimeInterval(response.expires_in))
+        self.resendAt = now.addingTimeInterval(TimeInterval(response.resend_after))
+      case .failure(let error): self.errorKey = Self.failureKey(error, verifying: false)
+      }
+    }
+  }
+
+  func verify(now: Date = Date()) {
+    guard !isBusy, !succeeded, !awaitingStatus, let challengeID else { return }
+    guard expirySeconds(at: now) > 0 else { errorKey = "recovery.expired"; return }
+    guard Self.validCode(code) else { errorKey = "recovery.invalidCode"; return }
+    isBusy = true; errorKey = nil
+    let current = revision
+    request("billing/recovery/verify", ["challenge_id": challengeID, "code": code]) { [weak self] result in
+      guard let self, current == self.revision else { return }
+      switch result {
+      case .success(let data):
+        struct Verification: Decodable { let restored: Bool }
+        guard let response = try? JSONDecoder().decode(Verification.self, from: data), response.restored else {
+          self.isBusy = false; self.errorKey = "recovery.unavailable"; return
+        }
+        self.email = ""; self.code = ""; self.challengeID = nil; self.expiresAt = nil; self.resendAt = nil
+        self.awaitingStatus = true
+        self.isBusy = false
+        self.retryStatus()
+      case .failure(let error):
+        self.isBusy = false; self.errorKey = Self.failureKey(error, verifying: true)
+      }
+    }
+  }
+
+  func retryStatus() {
+    guard awaitingStatus, !isBusy, !succeeded else { return }
+    isBusy = true; errorKey = nil
+    let current = revision
+    refresh { [weak self] outcome in
+      guard let self, current == self.revision else { return }
+      self.isBusy = false
+      if case .accepted(let snapshot) = outcome,
+         snapshot.plan == "pro", let subscription = snapshot.subscription,
+         ["active", "cancel_requested", "past_due"].contains(subscription.status) {
+        self.awaitingStatus = false
+        self.succeeded = true
+      } else {
+        self.errorKey = "recovery.refreshFailed"
+      }
+    }
+  }
+
+  static func failureKey(_ error: Error, verifying: Bool) -> String {
+    switch (error as NSError).code {
+    case 400: return verifying ? "recovery.invalidCode" : "recovery.invalidEmail"
+    case 401: return "recovery.auth"
+    case 404: return verifying ? "recovery.expired" : "recovery.notFound"
+    case 409: return "recovery.conflict"
+    case 429: return "recovery.rateLimited"
+    default: return "recovery.unavailable"
     }
   }
 }

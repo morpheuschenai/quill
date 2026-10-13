@@ -108,6 +108,20 @@ class ScreenshotCapture {
     return true
   }
 
+  func suspendHotkey() {
+    guard let ref = hotKeyRef else { return }
+    UnregisterEventHotKey(ref)
+    hotKeyRef = nil
+  }
+
+  func resumeHotkey() {
+    guard hotKeyRef == nil else { return }
+    _ = registerHotKey(
+      keyCode: PromptStore.shared.screenshotKeyCode,
+      modifiers: PromptStore.shared.screenshotModifiers
+    )
+  }
+
   @discardableResult
   private func registerHotKey(keyCode: UInt32, modifiers: UInt32) -> Bool {
     var hotKeyID = EventHotKeyID()
@@ -123,19 +137,21 @@ class ScreenshotCapture {
   /// macOS 15+ 會在第一次「直接擷取」時再詢問一次是否允許略過系統選擇器。
   /// Onboarding 在試用步驟前先做一張主螢幕的無聲截圖，讓系統提示先完成，
   /// 避免使用者第一次框選後，動作選單被系統提示蓋掉。
-  func prepareDirectCaptureAuthorization(completion: @escaping () -> Void) {
+  func prepareDirectCaptureAuthorization(completion: @escaping (Bool) -> Void) {
     let tempPath = NSTemporaryDirectory() + "quill_prepare_\(UUID().uuidString).png"
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
     process.arguments = ["-x", "-m", tempPath]
-    process.terminationHandler = { _ in
+    process.terminationHandler = { process in
+      let succeeded = process.terminationStatus == 0 &&
+        (NSImage(contentsOfFile: tempPath) != nil)
       try? FileManager.default.removeItem(atPath: tempPath)
-      DispatchQueue.main.async(execute: completion)
+      DispatchQueue.main.async { completion(succeeded) }
     }
     do {
       try process.run()
     } catch {
-      DispatchQueue.main.async(execute: completion)
+      DispatchQueue.main.async { completion(false) }
     }
   }
 

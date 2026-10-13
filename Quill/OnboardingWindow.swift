@@ -106,6 +106,40 @@ final class OnboardingWindow: NSWindow {
 
 // MARK: - Permission state(每秒輪詢,使用者在系統設定勾完回來就看到 ✓)
 
+/// Permission-free preparation state machine; failed attempts retry only on explicit user action.
+struct DirectCapturePreparation {
+  private(set) var ready = false
+  private(set) var failed = false
+  private(set) var inFlight = false
+
+  mutating func begin() -> Bool {
+    guard !ready, !failed, !inFlight else { return false }
+    inFlight = true
+    return true
+  }
+
+  mutating func complete(succeeded: Bool) {
+    guard inFlight else { return }
+    inFlight = false
+    ready = succeeded
+    failed = !succeeded
+  }
+
+  mutating func allowRetry() { failed = false }
+}
+
+/// Calls macOS's supported Accessibility prompt at most once per onboarding session.
+/// The prompt can register Quill in the Privacy list, but only the user can grant access.
+struct AccessibilityPromptPreparation {
+  private(set) var requested = false
+
+  mutating func begin(isGranted: Bool) -> Bool {
+    guard !isGranted, !requested else { return false }
+    requested = true
+    return true
+  }
+}
+
 final class OnboardingState: ObservableObject {
   @Published var accessibilityGranted = AXIsProcessTrusted()
   @Published var accessibilitySetupStarted = false
@@ -114,11 +148,13 @@ final class OnboardingState: ObservableObject {
   @Published var screenSetupStarted = OnboardingWindow.screenPermissionPending
   @Published var screenRelaunchFailed =
     OnboardingWindow.screenRelaunchAttempted && !CGPreflightScreenCaptureAccess()
-  @Published var directCaptureReady = false
+  @Published private var directCapturePreparation = DirectCapturePreparation()
+  var directCaptureReady: Bool { directCapturePreparation.ready }
+  var directCaptureFailed: Bool { directCapturePreparation.failed }
 
   private var timer: Timer?
   private var appActivationObserver: NSObjectProtocol?
-  private var isPreparingDirectCapture = false
+  private var accessibilityPromptPreparation = AccessibilityPromptPreparation()
 
   func startPolling() {
     guard timer == nil else { return }
@@ -162,26 +198,46 @@ final class OnboardingState: ObservableObject {
     }
   }
 
-  func requestAccessibility() {
-    accessibilitySetupStarted = true
-    // 觸發系統的加入提示,並直接開設定頁
+  @discardableResult
+  func prepareAccessibilityListing() -> Bool {
+    guard accessibilityPromptPreparation.begin(isGranted: accessibilityGranted) else {
+      return false
+    }
+    // 只請 macOS 顯示官方授權提示，不會也不能自動授權。
     let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
     _ = AXIsProcessTrustedWithOptions(opts)
-    NSWorkspace.shared.open(
-      URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-    )
+    return true
+  }
+
+  func requestAccessibility() {
+    accessibilitySetupStarted = true
+    let didPrompt = prepareAccessibilityListing()
+    // 若這次才請 macOS 顯示提示，留一點時間讓系統先將 Quill 登錄到清單。
+    let openSettings: () -> Void = {
+      _ = NSWorkspace.shared.open(
+        URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+      )
+    }
+    guard didPrompt else {
+      openSettings()
+      return
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: openSettings)
   }
 
   private func prepareDirectCaptureIfNeeded() {
-    guard !directCaptureReady, !isPreparingDirectCapture else { return }
-    isPreparingDirectCapture = true
-    ScreenshotCapture.shared.prepareDirectCaptureAuthorization { [weak self] in
-      self?.isPreparingDirectCapture = false
-      self?.directCaptureReady = true
+    guard directCapturePreparation.begin() else { return }
+    ScreenshotCapture.shared.prepareDirectCaptureAuthorization { [weak self] succeeded in
+      self?.directCapturePreparation.complete(succeeded: succeeded)
     }
   }
 
   func requestScreenRecording() {
+    if screenGranted {
+      directCapturePreparation.allowRetry()
+      prepareDirectCaptureIfNeeded()
+      return
+    }
     // macOS 可能直接顯示「結束並重新開啟」並重啟 App；先記住目前步驟。
     OnboardingWindow.clearScreenRelaunchAttempted()
     OnboardingWindow.markScreenPermissionPending()
@@ -199,8 +255,7 @@ final class OnboardingState: ObservableObject {
   func saveAPIKey(_ key: String) {
     let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return }
-    PromptStore.shared.apiKey = trimmed
-    hasAPIKey = true
+    hasAPIKey = KeychainStore.saveAPIKey(trimmed)
   }
 }
 
@@ -214,7 +269,7 @@ struct OnboardingView: View {
   @ObservedObject private var loc = LocaleStore.shared
   @ObservedObject private var usage = UsageTracker.shared
   @State private var step = 0
-  @State private var pathCopied = false
+  @State private var showAccessibilityHelp = false
 
   private let bg     = Color(red: 20/255, green: 20/255, blue: 26/255)
   private let accent = Color(red: 96/255, green: 165/255, blue: 250/255)
@@ -286,9 +341,17 @@ struct OnboardingView: View {
     .onAppear {
       step = startStep          // 因權限重啟時,直接回到原本那一步
       state.startPolling()
+      if step == 1 { state.prepareAccessibilityListing() }
     }
     .onChange(of: step) { newStep in
+      if newStep == 1 { state.prepareAccessibilityListing() }
+      if newStep != 1 { showAccessibilityHelp = false }
       if newStep > 2 { OnboardingWindow.clearScreenPermissionPending() }
+      // 第一次 Cloud 請求還要建立安裝憑證。進入試用頁時先做完，
+      // 讓使用者按下第一個 AI 動作後只需等待模型回覆。
+      if newStep == 3 {
+        CloudAuthentication.shared.authorizationToken { _ in }
+      }
     }
     .onDisappear { state.stopPolling() }
   }
@@ -299,7 +362,8 @@ struct OnboardingView: View {
     case 1: return state.accessibilityGranted ? L10n.t("ob.next") : L10n.t("ob.skip")
     case 2:
       if state.screenGranted {
-        return state.directCaptureReady ? L10n.t("ob.next") : L10n.t("ob.screen.finishing")
+        return state.directCaptureReady ? L10n.t("ob.next") :
+          L10n.t(state.directCaptureFailed ? "ob.screen.notDetected" : "ob.screen.finishing")
       }
       if state.screenRelaunchFailed { return L10n.t("ob.screen.notDetected") }
       return state.screenSetupStarted
@@ -457,16 +521,17 @@ struct OnboardingView: View {
     }
   }
 
+  @ViewBuilder
   private var accessibilityStep: some View {
     permissionStep(
       icon: "hand.raised.fill",
       title: L10n.t("ob.ax.title"),
       granted: state.accessibilityGranted,
       why: L10n.t("ob.ax.why"),
-      how: state.accessibilitySetupStarted
-        ? L10n.t("ob.ax.retry")
-        : L10n.t("ob.ax.how"),
+      how: L10n.t(state.accessibilitySetupStarted ? "ob.ax.retry" : "ob.ax.how"),
+      note: L10n.t("ob.ax.password"),
       buttonTitle: L10n.t("ob.ax.button"),
+      showsAccessibilityHelp: true,
       action: state.requestAccessibility
     )
   }
@@ -475,12 +540,13 @@ struct OnboardingView: View {
     permissionStep(
       icon: "camera.viewfinder",
       title: L10n.t("ob.screen.title"),
-      granted: state.screenGranted,
+      granted: state.screenGranted && state.directCaptureReady,
       why: L10n.t("ob.screen.why"),
-      how: state.screenRelaunchFailed
+      how: state.directCaptureFailed ? L10n.t("ob.screen.captureFailed") : state.screenRelaunchFailed
         ? L10n.t("ob.screen.retry")
         : L10n.t("ob.screen.how"),
-      buttonTitle: state.screenRelaunchFailed
+      note: nil,
+      buttonTitle: state.directCaptureFailed ? L10n.t("ob.screen.captureRetry") : state.screenRelaunchFailed
         ? L10n.t("ob.screen.buttonAgain")
         : L10n.t("ob.screen.button"),
       action: state.requestScreenRecording
@@ -489,10 +555,11 @@ struct OnboardingView: View {
 
   private func permissionStep(
     icon: String, title: String, granted: Bool,
-    why: String, how: String, buttonTitle: String,
+    why: String, how: String, note: String?, buttonTitle: String,
+    showsAccessibilityHelp: Bool = false,
     action: @escaping () -> Void
   ) -> some View {
-    VStack(spacing: 16) {
+    VStack(spacing: showsAccessibilityHelp && showAccessibilityHelp ? 10 : 16) {
       ZStack {
         Circle()
           .fill((granted ? green : accent).opacity(0.15))
@@ -517,27 +584,40 @@ struct OnboardingView: View {
           .foregroundColor(.white.opacity(0.45))
           .multilineTextAlignment(.center)
           .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: 410)
         Button(buttonTitle, action: action)
           .buttonStyle(OnboardingPrimaryStyle())
-        // 清單裡沒有 Quill 時的逃生口:點「+」手動加入,路徑先複製好
-        Button(pathCopied ? L10n.t("ob.perm.copied") : L10n.t("ob.perm.copyPath")) {
-          NSPasteboard.general.clearContents()
-          NSPasteboard.general.setString(Bundle.main.bundlePath, forType: .string)
-          pathCopied = true
-          DispatchQueue.main.asyncAfter(deadline: .now() + 4) { pathCopied = false }
-        }
-        .buttonStyle(.plain)
-        .font(.system(size: 11))
-        .foregroundColor(pathCopied
-          ? Color(red: 52/255, green: 211/255, blue: 153/255)
-          : .white.opacity(0.4))
-        if pathCopied {
-          Text(L10n.t("ob.perm.copyHelp"))
-            .font(.system(size: 10.5))
-            .foregroundColor(.white.opacity(0.55))
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 390)
+
+        if showsAccessibilityHelp {
+          Button(L10n.t("ob.ax.missing")) {
+            withAnimation(.easeInOut(duration: 0.18)) {
+              showAccessibilityHelp.toggle()
+            }
+          }
+          .buttonStyle(.plain)
+          .font(.system(size: 11, weight: .medium))
+          .foregroundColor(accent)
+
+          if showAccessibilityHelp {
+            VStack(spacing: 8) {
+              Text(L10n.t("ob.ax.missingHelp"))
+                .font(.system(size: 10.5))
+                .foregroundColor(.white.opacity(0.58))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+              if let note {
+                Text(note)
+                  .font(.system(size: 10.5))
+                  .foregroundColor(.white.opacity(0.42))
+                  .multilineTextAlignment(.leading)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+            }
+            .frame(maxWidth: 390, alignment: .leading)
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.04)))
+            .transition(.opacity.combined(with: .move(edge: .top)))
+          }
         }
       } else {
         Text(L10n.t("ob.perm.done"))

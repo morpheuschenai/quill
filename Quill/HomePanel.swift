@@ -127,7 +127,19 @@ private struct HomeView: View {
   var body: some View {
     VStack(spacing: 16) {
       actionStack
-      usageCard
+      if billing.status == nil || billing.errorMessage != nil {
+        VStack(spacing: 10) {
+          Text(billing.errorMessage ?? L10n.t("billing.loading"))
+            .font(.system(size: 12)).foregroundColor(muted)
+          if billing.errorMessage != nil {
+            Button(L10n.t("billing.retry")) { billing.refresh() }
+              .buttonStyle(.plain).foregroundColor(accent)
+          }
+        }
+        .frame(maxWidth: .infinity).frame(height: 90)
+      } else {
+        usageCard
+      }
       HStack {
         Spacer()
 

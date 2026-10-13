@@ -145,10 +145,15 @@ struct PromptListView: View {
           }
         }
 
-        TextField(L10n.t("menu.custom"), text: $customPrompt)
+        TextField(
+          "",
+          text: $customPrompt,
+          prompt: Text(L10n.t("menu.custom"))
+            .foregroundColor(.white.opacity(0.42))
+        )
           .textFieldStyle(.plain)
           .font(.system(size: 12))
-          .foregroundColor(.white.opacity(0.6))
+          .foregroundColor(.white.opacity(0.86))
           .disabled(isLoading)
           .onSubmit { runCustomPrompt() }
 

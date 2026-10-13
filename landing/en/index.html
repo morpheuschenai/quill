@@ -78,26 +78,6 @@
   main, nav { position: relative; z-index: 1; }
 
   /* ---------- Nav ---------- */
-  .announcement-bar {
-    position: relative; z-index: 51; display: block;
-    color: #234477 !important;
-    background: linear-gradient(90deg, #edf4ff 0%, #f3f1ff 50%, #edf7ff 100%);
-    border-bottom: 1px solid rgba(59,130,246,0.12);
-    transition: background 0.18s ease;
-  }
-  .announcement-bar:hover { background: linear-gradient(90deg, #e5f0ff 0%, #eeebff 50%, #e6f3ff 100%); }
-  .announcement-inner {
-    min-height: 38px; display: flex; align-items: center; justify-content: center;
-    gap: 9px; padding: 7px 24px; font-size: 12.5px; line-height: 1.4;
-    text-align: center; letter-spacing: 0.005em;
-  }
-  .announcement-badge {
-    flex-shrink: 0; padding: 2px 7px; border-radius: 999px;
-    color: #315f9f; background: rgba(255,255,255,0.72);
-    border: 1px solid rgba(59,130,246,0.16);
-    font-size: 10px; font-weight: 750; letter-spacing: 0.04em;
-  }
-  .announcement-copy strong { font-weight: 750; color: #17365f; }
   .navbar {
     position: sticky; top: 0; z-index: 50;
     background: rgba(250,250,248,0.82);
@@ -496,12 +476,6 @@
     display: inline-flex; align-items: center; gap: 4px; }
   .plat-tag .ic-svg { width: 11px; height: 11px; flex-shrink: 0; }
   .plat-tag.roadmap { opacity: 0.55; }
-  /* NEW: early access note inside card */
-  .plan-note {
-    margin-bottom: 14px; font-size: 12px; color: var(--yellow);
-    display: flex; align-items: center; gap: 6px;
-  }
-  .plan-note .ic-svg { color: var(--yellow); flex-shrink: 0; }
   /* NEW: OSS footnote below pricing */
   .oss-note {
     margin-top: 20px; font-size: 13.5px; color: var(--text-dim);
@@ -636,8 +610,6 @@
     position: relative; z-index: 1;
   }
   @media (max-width: 600px) {
-    .announcement-inner { min-height: 0; padding: 8px 16px; font-size: 11.5px; }
-    .announcement-badge { display: none; }
     .nav-links a:not(.btn) { display: none; }
     header { padding: 60px 0 68px; }
     #shotOverlay .shot-tip {
@@ -687,13 +659,6 @@
 <div class="blob b2"></div>
 <div class="blob b3"></div>
 
-<a class="announcement-bar" id="launchPromoLine" href="#pricing">
-  <span class="announcement-inner">
-    <span class="announcement-badge">LAUNCH OFFER</span>
-    <span class="announcement-copy"><strong>Subscribe by Aug 31</strong>: first month NT$149, then NT$199/month</span>
-  </span>
-</a>
-
 <!-- Navigation -->
 <div class="navbar"><div class="wrap">
   <nav>
@@ -704,7 +669,7 @@
       <a href="#faq">FAQ</a>
       <a href="https://github.com/morpheuschenai/quill" style="display:inline-flex;align-items:center;gap:6px"><svg class="ic-svg" style="width:16px;height:16px"><use href="#i-github"/></svg> GitHub</a>
       <a href="/" title="繁體中文版" style="font-size:13px;opacity:0.6">繁中</a>
-      <a class="btn btn-primary" href="/Quill.zip" download>Free download for Mac</a>
+      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-en.dmg" download>Free download for Mac</a>
     </div>
   </nav>
 </div></div>
@@ -720,7 +685,7 @@
         </div>
         <p id="heroSub" class="hero-sub demo-unit" data-unit="sub">Fix, translate, or summarize text in any app —<br>with one hotkey.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="/Quill.zip" download>Free download for Mac</a>
+          <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-en.dmg" download>Free download for Mac</a>
           <p class="mac-only-note"><strong>Made for Mac</strong> · Other platforms coming soon</p>
         </div>
         <div><button id="resetChip">↺ Reset the headline</button></div>
@@ -851,7 +816,7 @@
         </div>
         <div class="price-split">
           <div class="price-tier"><strong>Free</strong><span class="amount">NT$0</span><small>10 uses per day, with a reset countdown in your local time</small></div>
-          <div class="price-tier pro"><strong id="proPriceLabel">Pro · Launch offer</strong><span class="amount" id="proPriceAmount">First month NT$149</span><small id="proPriceDetail">Then NT$199/month · 600 uses per billing cycle · Cancel anytime</small></div>
+          <div class="price-tier pro"><strong id="proPriceLabel">Pro</strong><span class="amount" id="proPriceAmount">NT$199/month</span><small id="proPriceDetail">600 uses per billing cycle · Cancel anytime</small></div>
         </div>
         <ul>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Download and double-click — no tech setup needed</li>
@@ -859,8 +824,7 @@
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Automatic updates</li>
           <li><svg class="ic-svg"><use href="#i-tick"/></svg>Works in Mail, Notes, Chrome, Slack, and more</li>
         </ul>
-        <p class="plan-note" id="launchPromoNote"><svg class="ic-svg" style="width:14px;height:14px"><use href="#i-crown"/></svg>Subscribe by Aug 31, 2026, 23:59 (UTC+8). The offer applies to your first billing cycle only.</p>
-        <div class="plan-actions"><a class="btn btn-primary" href="/Quill.zip" download>Free download for Mac</a><a class="btn btn-ghost" href="quill://upgrade">Upgrade inside Quill →</a></div>
+        <div class="plan-actions"><a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-en.dmg" download>Free download for Mac</a><a class="btn btn-ghost" href="quill://upgrade">Upgrade inside Quill →</a></div>
       </div>
       <!-- OSS — 1/3 width, minimal -->
       <div class="plan-mini">
@@ -877,7 +841,7 @@
   <section id="faq">
     <div class="sec-label"><svg class="ic-svg"><use href="#i-explain"/></svg> FAQ</div>
     <h2>Questions, answered.</h2>
-    <div class="faq-item"><h3>How much does Quill cost?</h3><p id="pricingFaqAnswer">The Free plan includes 10 uses per day. Pro includes 600 uses per billing cycle for NT$199/month. Subscribe by Aug 31, 2026, 23:59 (UTC+8) and your first month is NT$149; renewals are NT$199/month.</p></div>
+    <div class="faq-item"><h3>How much does Quill cost?</h3><p id="pricingFaqAnswer">The Free plan includes 10 uses per day. Pro includes 600 uses per billing cycle for NT$199/month. Cancel anytime.</p></div>
     <div class="faq-item"><h3>Can I install Quill on a phone or Windows?</h3><p>Not yet. Quill is currently a macOS-only app. iPhone, iPad, Windows, and Android versions are on the roadmap.</p></div>
     <div class="faq-item"><h3>Which Mac apps does Quill work in?</h3><p>Nearly all of them — Mail, Notes, Pages, Messages, Slack, Safari, Chrome, and more. Quill reads your selected text and rewrites it in place, or shows the result in a panel for read-only apps like PDFs.</p></div>
     <div class="faq-item"><h3>Why does Quill need Accessibility permission?</h3><p>It's how Quill reads your selected text and replaces it in place. You grant it once in System Settings — it takes about 10 seconds. No other data is accessed.</p></div>
@@ -903,7 +867,7 @@
     <p class="sec-sub" style="margin:0 auto">Select text. Press a hotkey. Done — without leaving the app you're in.</p>
     <p class="cta-note">10 free uses daily · No account · No credit card</p>
     <div class="btns">
-      <a class="btn btn-primary" href="/Quill.zip" download>Free download for Mac</a>
+      <a class="btn btn-primary" href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-en.dmg" download>Free download for Mac</a>
     </div>
   </section>
   </main>
@@ -1018,7 +982,7 @@
 
     const cta = document.createElement('div');
     cta.className = 'menu-cta';
-    cta.innerHTML = 'Custom prompts run in the real app — <a href="/Quill.zip">Download for Mac →</a>';
+    cta.innerHTML = 'Custom prompts run in the real app — <a href="https://github.com/morpheuschenai/quill/releases/download/v0.1.9/Quill-0.1.9-en.dmg">Download for Mac →</a>';
     menu.appendChild(cta);
 
     if (note) {
@@ -1360,17 +1324,6 @@
     });
   });
 
-  // Retire the launch offer automatically; checkout remains authoritative on server time.
-  if (Date.now() > Date.parse('2026-08-31T15:59:59.000Z')) {
-    document.querySelector('#launchPromoLine')?.remove();
-    document.querySelector('#launchPromoNote')?.remove();
-    document.querySelector('#proPriceLabel').textContent = 'Pro';
-    document.querySelector('#proPriceAmount').textContent = 'NT$199/month';
-    document.querySelector('#proPriceDetail').textContent =
-      '600 uses per billing cycle · Cancel anytime';
-    document.querySelector('#pricingFaqAnswer').textContent =
-      'The Free plan includes 10 uses per day. Pro includes 600 uses per billing cycle for NT$199/month. Cancel anytime.';
-  }
 })();
 </script>
 </body>

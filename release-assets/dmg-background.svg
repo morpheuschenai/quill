@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="420" viewBox="0 0 660 420">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FAFAFD"/>
+      <stop offset="1" stop-color="#F1F3FA"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+
+  <rect width="660" height="420" fill="url(#bg)"/>
+  <circle cx="80" cy="30" r="145" fill="#5EA4F7" opacity="0.10" filter="url(#glow)"/>
+  <circle cx="600" cy="390" r="170" fill="#7368F7" opacity="0.08" filter="url(#glow)"/>
+
+  <path d="M320 192 L340 210 L320 228" fill="none" stroke="#171820"
+        stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="330" y="70" text-anchor="middle" fill="#3F414A"
+        font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif"
+        font-size="18" font-weight="600">Drag Quill to Applications</text>
+</svg>

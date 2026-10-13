@@ -14,24 +14,38 @@ enum KeychainStore {
 
   static var apiKey: String {
     get {
-      if let key = read(account: apiKeyAccount), !key.isEmpty { return key }
-      // 一次性搬移：舊版存在 UserDefaults 的 key
-      if let legacy = UserDefaults.standard.string(forKey: legacyDefaultsKey), !legacy.isEmpty {
-        write(legacy, account: apiKeyAccount)
-        UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
-        return legacy
-      }
-      return ""
+      loadAPIKey(read: { read(account: apiKeyAccount) },
+                 legacy: { UserDefaults.standard.string(forKey: legacyDefaultsKey) },
+                 write: { write($0, account: apiKeyAccount) },
+                 removeLegacy: { UserDefaults.standard.removeObject(forKey: legacyDefaultsKey) })
     }
     set {
-      if newValue.isEmpty {
-        delete(account: apiKeyAccount)
-      } else {
-        write(newValue, account: apiKeyAccount)
-      }
-      // 確保舊的明文副本被清掉
-      UserDefaults.standard.removeObject(forKey: legacyDefaultsKey)
+      _ = saveAPIKey(newValue)
     }
+  }
+
+  @discardableResult
+  static func saveAPIKey(_ value: String) -> Bool {
+    saveAPIKey(value, write: { write($0, account: apiKeyAccount) },
+               delete: { delete(account: apiKeyAccount) },
+               removeLegacy: { UserDefaults.standard.removeObject(forKey: legacyDefaultsKey) })
+  }
+
+  // Inject storage operations so migration and failure handling can be tested without credentials.
+  static func loadAPIKey(read: () -> String?, legacy: () -> String?,
+                         write: (String) -> Bool, removeLegacy: () -> Void) -> String {
+    if let key = read(), !key.isEmpty { return key }
+    guard let old = legacy(), !old.isEmpty else { return "" }
+    if write(old) { removeLegacy() }
+    return old
+  }
+
+  @discardableResult
+  static func saveAPIKey(_ value: String, write: (String) -> Bool,
+                         delete: () -> Bool, removeLegacy: () -> Void) -> Bool {
+    let succeeded = value.isEmpty ? delete() : write(value)
+    if succeeded { removeLegacy() }
+    return succeeded
   }
 
   static var cloudInstallationToken: String {
@@ -102,6 +116,7 @@ enum KeychainStore {
     )
     if updateStatus == errSecSuccess { return true }
 
+    guard updateStatus == errSecItemNotFound else { return false }
     // 不存在則新增
     var addQuery = query
     addQuery[kSecValueData as String] = data
@@ -109,9 +124,11 @@ enum KeychainStore {
     return SecItemAdd(addQuery as CFDictionary, nil) == errSecSuccess
   }
 
-  private static func delete(account: String) {
-    guard defaultKeychainAvailable else { return }
-    SecItemDelete(baseQuery(account: account) as CFDictionary)
+  @discardableResult
+  private static func delete(account: String) -> Bool {
+    guard defaultKeychainAvailable else { return false }
+    let status = SecItemDelete(baseQuery(account: account) as CFDictionary)
+    return status == errSecSuccess || status == errSecItemNotFound
   }
 
   /// 剛建立、尚未完成首次登入初始化的標準使用者可能沒有預設 login keychain。

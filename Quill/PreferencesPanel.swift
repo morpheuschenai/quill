@@ -111,6 +111,13 @@ func shortcutLabel(keyCode: UInt32, modifiers: UInt32) -> String {
   return parts
 }
 
+func hotkeysMatch(
+  keyCode: UInt32, modifiers: UInt32,
+  otherKeyCode: UInt32, otherModifiers: UInt32
+) -> Bool {
+  keyCode == otherKeyCode && modifiers == otherModifiers
+}
+
 private func carbonModifiers(from flags: NSEvent.ModifierFlags) -> UInt32 {
   var m: UInt32 = 0
   if flags.contains(.command) { m |= UInt32(cmdKey) }
@@ -139,14 +146,20 @@ private struct PrefRootView: View {
               title: L10n.t("pref.textShortcut"),
               description: L10n.t("pref.textShortcut.desc"),
               keyCode: PromptStore.shared.textKeyCode,
-              modifiers: PromptStore.shared.textModifiers
+              modifiers: PromptStore.shared.textModifiers,
+              conflictingShortcut: {
+                (PromptStore.shared.screenshotKeyCode, PromptStore.shared.screenshotModifiers)
+              }
             ) { kc, mods in TextCapture.shared.updateHotkey(keyCode: kc, modifiers: mods) }
           case .screenshotShortcut:
             ShortcutView(
               title: L10n.t("pref.shotShortcut"),
               description: L10n.t("pref.shotShortcut.desc"),
               keyCode: PromptStore.shared.screenshotKeyCode,
-              modifiers: PromptStore.shared.screenshotModifiers
+              modifiers: PromptStore.shared.screenshotModifiers,
+              conflictingShortcut: {
+                (PromptStore.shared.textKeyCode, PromptStore.shared.textModifiers)
+              }
             ) { kc, mods in ScreenshotCapture.shared.updateHotkey(keyCode: kc, modifiers: mods) }
           }
         }
@@ -273,12 +286,21 @@ private struct PrefRow: View {
 
 private struct BillingView: View {
   @ObservedObject private var billing = BillingService.shared
+  @StateObject private var recovery = BillingService.shared.makeRecoveryFlow()
+  @State private var showingRecovery = false
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 16) {
-        usageCard
-        if billing.status?.plan != "pro" {
+        if billing.status == nil || billing.errorMessage != nil {
+          Text(billing.errorMessage ?? L10n.t("billing.loading"))
+            .font(.system(size: 12)).foregroundColor(prefMuted)
+          Button(L10n.t("billing.retry")) { billing.refresh() }
+            .disabled(billing.isLoading)
+        } else {
+          usageCard
+        }
+        if billing.status?.plan == "free" {
           offerCard
         } else if let subscription = billing.status?.subscription {
           Text(subscription.cancelAtPeriodEnd
@@ -299,7 +321,20 @@ private struct BillingView: View {
             .foregroundColor(.white.opacity(0.78))
           }
           .buttonStyle(.plain)
-          .disabled(billing.isOpeningPortal)
+          .disabled(billing.isOpeningPortal || showingRecovery)
+        }
+        if PurchaseRecoveryPresentation.showsForm(
+          localRolloutEnabled: BillingService.emailRecoveryRolloutEnabled,
+          serverEnabled: billing.status?.recoveryEnabled == true,
+          isPresented: showingRecovery,
+          awaitingStatus: recovery.awaitingStatus,
+          succeeded: recovery.succeeded
+        ) {
+          recoveryForm
+        } else if billing.canRecoverPurchases {
+          Button(L10n.t("recovery.title")) { showingRecovery = true }
+            .font(.system(size: 12))
+            .disabled(billing.isStartingCheckout || billing.isOpeningPortal)
         }
         if let message = billing.errorMessage {
           Text(message)
@@ -311,10 +346,63 @@ private struct BillingView: View {
     }
     .background(prefBg0)
     .navigationTitle("")
+    .onDisappear { recovery.reset(); showingRecovery = false }
     .onAppear {
       resizeWindow(to: CGSize(width: 420, height: 500))
       billing.refresh()
     }
+  }
+
+  private var recoveryForm: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Text(L10n.t("recovery.title")).font(.system(size: 14, weight: .semibold))
+      if recovery.succeeded {
+        Text(L10n.t("recovery.success"))
+          .font(.system(size: 12)).foregroundColor(prefMuted)
+      } else {
+        if recovery.awaitingStatus {
+          Button(L10n.t("billing.retry")) { recovery.retryStatus() }
+            .disabled(recovery.isBusy)
+        } else {
+        Text(L10n.t("recovery.detail"))
+          .font(.system(size: 12)).foregroundColor(prefMuted)
+        TextField(L10n.t("recovery.email"), text: $recovery.email)
+          .textFieldStyle(.roundedBorder)
+          .disabled(recovery.isBusy || recovery.challengeID != nil)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+          let resend = recovery.resendSeconds(at: context.date)
+          let expiry = recovery.expirySeconds(at: context.date)
+          VStack(alignment: .leading, spacing: 10) {
+            Button(resend > 0 ? "\(L10n.t("recovery.resend")) (\(resend)s)" : L10n.t(recovery.challengeID == nil ? "recovery.send" : "recovery.resend")) {
+              recovery.sendCode()
+            }
+            .disabled(recovery.isBusy || resend > 0 || !PurchaseRecoveryFlow.validEmail(recovery.email))
+            if recovery.challengeID != nil {
+              TextField(L10n.t("recovery.code"), text: $recovery.code)
+                .textFieldStyle(.roundedBorder)
+                .disabled(recovery.isBusy || expiry == 0)
+                .onSubmit { recovery.verify() }
+              Text(expiry > 0 ? "\(L10n.t("recovery.expires")) \(expiry / 60):\(String(format: "%02d", expiry % 60))" : L10n.t("recovery.expired"))
+                .font(.system(size: 11)).foregroundColor(prefMuted)
+              Button(L10n.t("recovery.verify")) { recovery.verify() }
+                .disabled(recovery.isBusy || expiry == 0 || !PurchaseRecoveryFlow.validCode(recovery.code))
+            }
+          }
+        }
+        }
+        if recovery.isBusy { ProgressView().controlSize(.small) }
+        if let key = recovery.errorKey {
+          Text(L10n.t(key)).font(.system(size: 12))
+            .foregroundColor(Color(red: 251/255, green: 146/255, blue: 60/255))
+        }
+      }
+      Button(L10n.t(recovery.succeeded ? "recovery.done" : "recovery.cancel")) {
+        recovery.reset(); showingRecovery = false
+      }
+    }
+    .padding(14)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.04)))
   }
 
   private var usageCard: some View {
@@ -384,7 +472,7 @@ private struct BillingView: View {
         .foregroundColor(Color(red: 10/255, green: 10/255, blue: 20/255))
       }
       .buttonStyle(.plain)
-      .disabled(billing.isStartingCheckout)
+      .disabled(billing.isStartingCheckout || showingRecovery)
       Text(L10n.t("billing.secure"))
         .font(.system(size: 10))
         .foregroundColor(prefMuted)
@@ -432,6 +520,7 @@ private struct APIKeyView: View {
   @State private var apiKey: String   = PromptStore.shared.apiKey
   @State private var isVisible = false
   @State private var saved = false
+  @State private var keySaveFailed = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -514,17 +603,22 @@ private struct APIKeyView: View {
       Spacer()
 
       HStack {
-        if saved {
-          Text(L10n.t("pref.saved"))
+        if saved || keySaveFailed {
+          Text(L10n.t(keySaveFailed ? "pref.keySaveFailed" : "pref.saved"))
             .font(.system(size: 12))
             .foregroundColor(prefMuted)
             .transition(.opacity)
         }
         Spacer()
         Button("Save") {
+          guard KeychainStore.saveAPIKey(apiKey) else {
+            saved = false
+            keySaveFailed = true
+            return
+          }
+          keySaveFailed = false
           PromptStore.shared.apiEndpoint = endpoint
           PromptStore.shared.textModel   = model
-          PromptStore.shared.apiKey      = apiKey
           withAnimation { saved = true }
           DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation { saved = false }
@@ -810,17 +904,28 @@ private struct ShortcutView: View {
   let description: String
   @State private var keyCode: UInt32
   @State private var modifiers: UInt32
+  @State private var committedKeyCode: UInt32
+  @State private var committedModifiers: UInt32
   private let saveHandler: (UInt32, UInt32) -> Bool
+  private let conflictingShortcut: () -> (UInt32, UInt32)
   @State private var isRecording = false
   @State private var saved = false
   @State private var saveFailed = false
+  @State private var quillConflict = false
   @State private var eventMonitor: Any? = nil
 
-  init(title: String, description: String, keyCode: UInt32, modifiers: UInt32, onSave: @escaping (UInt32, UInt32) -> Bool) {
+  init(
+    title: String, description: String, keyCode: UInt32, modifiers: UInt32,
+    conflictingShortcut: @escaping () -> (UInt32, UInt32),
+    onSave: @escaping (UInt32, UInt32) -> Bool
+  ) {
     self.title = title
     self.description = description
     _keyCode   = State(initialValue: keyCode)
     _modifiers = State(initialValue: modifiers)
+    _committedKeyCode = State(initialValue: keyCode)
+    _committedModifiers = State(initialValue: modifiers)
+    self.conflictingShortcut = conflictingShortcut
     self.saveHandler = onSave
   }
 
@@ -851,15 +956,21 @@ private struct ShortcutView: View {
       .padding(.horizontal, 20)
       .padding(.top, 12)
 
+      if saved || saveFailed {
+        Text(saveFailed
+          ? L10n.t(quillConflict ? "pref.shortcutQuillConflict" : "pref.shortcutConflict")
+          : L10n.t("pref.saved"))
+          .font(.system(size: 12))
+          .foregroundColor(saveFailed ? Color.orange : prefMuted)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 20)
+          .padding(.top, 10)
+          .transition(.opacity)
+      }
+
       Spacer()
 
       HStack {
-        if saved || saveFailed {
-          Text(saveFailed ? L10n.t("pref.shortcutConflict") : L10n.t("pref.saved"))
-            .font(.system(size: 12))
-            .foregroundColor(saveFailed ? Color.orange : prefMuted)
-            .transition(.opacity)
-        }
         Spacer()
         Button("Save") {
           applyShortcut()
@@ -877,6 +988,11 @@ private struct ShortcutView: View {
   }
 
   private func startRecording() {
+    saved = false
+    saveFailed = false
+    quillConflict = false
+    ScreenshotCapture.shared.suspendHotkey()
+    TextCapture.shared.suspendHotkey()
     isRecording = true
     eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
       if event.keyCode == 53 { stopRecording(); return nil }  // Escape
@@ -893,18 +1009,43 @@ private struct ShortcutView: View {
   private func stopRecording() {
     isRecording = false
     if let m = eventMonitor { NSEvent.removeMonitor(m); eventMonitor = nil }
+    ScreenshotCapture.shared.resumeHotkey()
+    TextCapture.shared.resumeHotkey()
   }
 
   private func applyShortcut() {
+    let other = conflictingShortcut()
+    if hotkeysMatch(
+      keyCode: keyCode, modifiers: modifiers,
+      otherKeyCode: other.0, otherModifiers: other.1
+    ) {
+      keyCode = committedKeyCode
+      modifiers = committedModifiers
+      showShortcutFeedback(success: false, isQuillConflict: true)
+      return
+    }
     let success = saveHandler(keyCode, modifiers)
+    if success {
+      committedKeyCode = keyCode
+      committedModifiers = modifiers
+    } else {
+      keyCode = committedKeyCode
+      modifiers = committedModifiers
+    }
+    showShortcutFeedback(success: success, isQuillConflict: false)
+  }
+
+  private func showShortcutFeedback(success: Bool, isQuillConflict: Bool) {
     withAnimation {
       saved = success
       saveFailed = !success
+      quillConflict = isQuillConflict
     }
     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
       withAnimation {
         saved = false
         saveFailed = false
+        quillConflict = false
       }
     }
   }
