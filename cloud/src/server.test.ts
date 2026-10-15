@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { createApp, type QuillEnv, type RedisLike } from "./server.ts";
 import { signPortalyCallback } from "./portalyCallback.mjs";
+import { meteredResponseStream } from "./responseStream.ts";
 
 type MockRedis = RedisLike & {
   counters: Map<string, number>;
@@ -50,7 +51,44 @@ function mockRedis(): MockRedis {
       keys.forEach((key) => sets.get(key)?.forEach((member) => result.add(member)));
       return [...result];
     },
-    async eval(_script, _numberOfKeys, deviceKey, globalKey, dailyLimit, globalLimit) {
+    async eval(_script, _numberOfKeys, deviceKey, globalKey, dailyLimit, globalLimit, ...args) {
+      if (_script.includes("checkout_known_v1")) {
+        if (values.get(String(deviceKey)) !== String(dailyLimit)) return 0;
+        values.set(String(globalKey), String(globalLimit)); return 1;
+      }
+      if (_script.includes("checkout_reserve_v1")) {
+        if (values.has(String(deviceKey)) || values.has(String(globalKey))) return 0;
+        if ((values.get(String(dailyLimit)) || "") !== String(args[0])) return 0;
+        values.set(String(deviceKey), String(globalLimit)); return 1;
+      }
+      if (_script.includes("checkout_release_v1")) {
+        if (values.get(String(deviceKey)) !== String(globalKey)) return 0;
+        values.delete(String(deviceKey)); return 1;
+      }
+      if (_script.includes("quota_refund_v1")) {
+        if (values.has(String(dailyLimit))) return 0;
+        for (const key of [String(deviceKey), String(globalKey)]) {
+          counters.set(key, Math.max(0, (counters.get(key) || 0) - 1));
+        }
+        values.set(String(dailyLimit), "1");
+        return 1;
+      }
+      if (_script.includes("billing_commit_v1")) {
+        const [record, identity, receipt, previous, _ttl, metric] = args.map(String);
+        if (values.has(`subscription:alias:${identity}`)) return -1;
+        const receipts = sets.get(String(dailyLimit)) || new Set<string>();
+        if (receipt && receipts.has(receipt)) return 0;
+        if (values.has(String(globalKey)) && values.get(String(globalKey)) !== identity) return -1;
+        if ((values.get(String(deviceKey)) || "") !== previous) return -1;
+        values.set(String(deviceKey), record);
+        values.set(String(globalKey), identity);
+        if (receipt) { receipts.add(receipt); sets.set(String(dailyLimit), receipts); }
+        if (metric) {
+          const metrics = sets.get(String(globalLimit)) || new Set<string>();
+          metrics.add(metric); sets.set(String(globalLimit), metrics);
+        }
+        return 1;
+      }
       const deviceUsed = counters.get(String(deviceKey)) || 0;
       const globalUsed = counters.get(String(globalKey)) || 0;
       if (deviceUsed >= Number(dailyLimit)) return [2, deviceUsed, globalUsed];
@@ -66,10 +104,30 @@ function mockFetch(status = 200) {
   const calls: any[] = [];
   const fn = async (url: any, init: any) => {
     calls.push({ url, init, body: JSON.parse(init.body) });
-    return new Response("data: {}\n\ndata: [DONE]\n\n", { status });
+    return new Response('data: {"choices":[{"delta":{"content":"Answer"}}]}\n\ndata: [DONE]\n\n', { status });
   };
   return { fn: fn as unknown as typeof fetch, calls };
 }
+
+test("checkout reserves before provider call, keeps unknown outcomes, releases known rejection", async () => {
+  for (const outcome of ["timeout", "invalid-json", "server-error", "known-rejection"] as const) {
+    const redis = mockRedis(); let calls = 0;
+    const app = createApp({ redis, env: env({ PORTALY_API_KEY: "pcs_test_fake", PORTALY_CALLBACK_URL: "https://example.com/callback" }), now: () => NOW,
+      fetchImpl: (async () => {
+        calls++;
+        assert.equal([...redis.values.keys()].filter(k => k.startsWith("checkout:pending:")).length, 1);
+        if (outcome === "timeout") throw Error("timeout");
+        if (outcome === "invalid-json") return new Response("bad");
+        return Response.json({ code: "PLAN_INACTIVE" }, { status: outcome === "known-rejection" ? 422 : 500 });
+      }) as typeof fetch });
+    const token = await installationToken(app);
+    const request = () => app.fetch(jsonPost("/v1/billing/checkout", {}, { Authorization: `Bearer ${token}` }));
+    await request();
+    const retry = await request();
+    assert.equal(calls, outcome === "known-rejection" ? 2 : 1);
+    assert.equal(retry.status, outcome === "known-rejection" ? 422 : 409);
+  }
+});
 
 const NOW = new Date("2026-07-23T03:00:00.000Z");
 const INSTALLATION_ID = "0e94b434-1f10-4a7f-8d34-e09f9c0e7bd9";
@@ -335,6 +393,7 @@ test("billing status and checkout apply the launch offer for an authenticated in
   }));
   assert.equal(status.status, 200);
   assert.deepEqual(await status.json(), {
+    recovery_enabled: false,
     plan: "free",
     used: 0,
     limit: 10,
@@ -625,6 +684,47 @@ test("Portaly callback rejects invalid signatures, stale timestamps, and event m
   }))).status, 400);
 });
 
+test("Portaly callback rejects unknown signed events without changing subscription state", async () => {
+  const callbackSecret = "callback-secret";
+  const redis = mockRedis();
+  const anonymousID = "a".repeat(64);
+  const subscriptionID = "subscription_known_123";
+  const original = JSON.stringify({
+    subscriptionId: subscriptionID,
+    sessionId: subscriptionID,
+    planId: "plan_quill_pro",
+    mode: "test",
+    status: "active",
+    periodStart: NOW.toISOString(),
+    periodEnd: "2026-08-23T03:00:00.000Z",
+    currentAmount: 199,
+    cancelAtPeriodEnd: false,
+    cancelEffectiveAt: null,
+  });
+  redis.values.set(`subscription:portaly:${subscriptionID}`, anonymousID);
+  redis.values.set(`subscription:installation:${anonymousID}`, original);
+  const app = createApp({
+    redis,
+    env: env({ PORTALY_CALLBACK_SECRET: callbackSecret }),
+    now: () => NOW,
+  });
+  const payload = {
+    event: "creator_subscription.future_event",
+    subscriptionId: subscriptionID,
+    planId: "plan_quill_pro",
+    mode: "test",
+  };
+  const timestamp = NOW.toISOString();
+  const signature = signPortalyCallback({ secret: callbackSecret, payload, timestamp });
+  const response = await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event,
+    "x-portaly-timestamp": timestamp,
+    "x-portaly-signature": signature,
+  }));
+  assert.equal(response.status, 400);
+  assert.equal(redis.values.get(`subscription:installation:${anonymousID}`), original);
+});
+
 test("Portaly callback rejects a test event when live mode is configured", async () => {
   const callbackSecret = "callback-secret";
   const app = createApp({
@@ -667,6 +767,110 @@ test("metrics dashboard and data require admin authentication", async () => {
   }));
   assert.equal(data.status, 200);
   assert.equal((await data.json()).days.length, 7);
+});
+
+test("failed entitlement commit can retry, duplicate delivery cannot reset renewed quota", async () => {
+  const redis = mockRedis();
+  const originalEval = redis.eval.bind(redis);
+  let fail = true;
+  redis.eval = async (...args) => {
+    if (args[0].includes("billing_commit_v1") && fail) { fail = false; throw new Error("Injected outage"); }
+    return originalEval(...args);
+  };
+  const app = createApp({redis, env: env({PORTALY_CALLBACK_SECRET: "fixture"}), now: () => NOW});
+  const identity = "a".repeat(64);
+  const payload = {event: "creator_subscription.checkout.completed", mode: "test", status: "completed",
+    sessionId: "retry-session", planId: "plan_quill_pro", metadata: {installationHash: identity},
+    completedAt: NOW.toISOString(), nextBillingAt: "2026-08-23T03:00:00.000Z"};
+  const deliver = () => app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+    "x-portaly-event": payload.event, "x-portaly-timestamp": NOW.toISOString(),
+    "x-portaly-signature": signPortalyCallback({secret: "fixture", payload, timestamp: NOW.toISOString()})
+  }));
+  assert.equal((await deliver()).status, 500);
+  assert.equal(redis.values.has(`subscription:installation:${identity}`), false);
+  assert.equal((await deliver()).status, 204);
+  const key = `subscription:installation:${identity}`;
+  const record = JSON.parse(redis.values.get(key)!);
+  record.periodStart = "2026-08-23T03:00:00.000Z";
+  redis.values.set(key, JSON.stringify(record));
+  assert.equal((await deliver()).status, 204);
+  assert.equal(JSON.parse(redis.values.get(key)!).periodStart, record.periodStart);
+});
+
+test("cancel then resume clears cancellation and permits subsequent cancellation", async () => {
+  const redis = mockRedis();
+  const identity = "a".repeat(64), sub = "resume-session";
+  redis.values.set(`subscription:portaly:${sub}`, identity);
+  redis.values.set(`subscription:installation:${identity}`, JSON.stringify({
+    subscriptionId: sub, sessionId: sub, planId: "plan_quill_pro", mode: "test", status: "active",
+    periodStart: NOW.toISOString(), periodEnd: "2026-08-23T03:00:00.000Z"
+  }));
+  const app = createApp({redis, env: env({PORTALY_CALLBACK_SECRET: "fixture"}), now: () => NOW});
+  for (const action of ["cancel_requested", "active", "cancel_requested"]) {
+    const payload = {event: `creator_subscription.${action}`, mode: "test", subscriptionId: sub};
+    const response = await app.fetch(jsonPost("/v1/webhooks/portaly", payload, {
+      "x-portaly-event": payload.event, "x-portaly-timestamp": NOW.toISOString(),
+      "x-portaly-signature": signPortalyCallback({secret: "fixture", payload, timestamp: NOW.toISOString()})
+    }));
+    assert.equal(response.status, 204);
+    const record = JSON.parse(redis.values.get(`subscription:installation:${identity}`)!);
+    assert.equal(record.cancelAtPeriodEnd, action === "cancel_requested");
+    if (action === "active") assert.equal(record.cancelEffectiveAt, null);
+  }
+});
+
+test("upstream HTTP and connection failures refund device and global usage", async () => {
+  for (const networkFailure of [false, true]) {
+    const redis = mockRedis();
+    const app = createApp({redis, env: env(), now: () => NOW, fetchImpl: async () => {
+      if (networkFailure) throw new Error("Disconnected");
+      return new Response("unavailable", {status: 503});
+    }});
+    const token = await installationToken(app);
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const response = await app.fetch(jsonPost("/v1/chat/completions", textBody, {Authorization: `Bearer ${token}`}));
+      assert.equal(response.status, 502);
+    }
+    for (const [key, used] of redis.counters) {
+      if (key.startsWith("usage:") || key.startsWith("global:")) assert.equal(used, 0);
+    }
+  }
+});
+
+test("stream meter preserves byte-split Chinese and refunds empty or interrupted output", async () => {
+  const text = new TextEncoder().encode('data: {"choices":[{"delta":{"content":"繁體中文🙂"}}]}\n\ndata: [DONE]\n\n');
+  for (let split = 1; split < text.length; split++) {
+    let refunds = 0;
+    const source = new ReadableStream<Uint8Array>({start(c) {
+      c.enqueue(text.slice(0, split)); c.enqueue(text.slice(split)); c.close();
+    }});
+    const body = await new Response(meteredResponseStream(source, async () => { refunds++; })).text();
+    assert.equal(body, new TextDecoder().decode(text));
+    assert.equal(refunds, 0);
+  }
+  for (const fail of [false, true]) {
+    let refunds = 0, pulls = 0;
+    const source = new ReadableStream<Uint8Array>({pull(c) {
+      if (pulls++ === 0) c.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"role":"assistant"}}]}\n\n'));
+      else if (fail) c.error(new Error("Disconnected"));
+      else c.close();
+    }});
+    const response = new Response(meteredResponseStream(source, async () => { refunds++; }));
+    if (fail) await assert.rejects(response.text()); else await response.text();
+    assert.equal(refunds, 1);
+  }
+});
+
+test("malformed and empty non-streaming success responses refund quota", async () => {
+  for (const response of ['garbled', '{}', '{"choices":[{"message":{"content":""}}]}']) {
+    const redis = mockRedis();
+    const app = createApp({redis, env: env(), now: () => NOW,
+      fetchImpl: async () => new Response(response)});
+    const token = await installationToken(app);
+    const result = await app.fetch(jsonPost("/v1/chat/completions", {...textBody, stream: false}, {Authorization: `Bearer ${token}`}));
+    assert.equal(result.status, 502);
+    for (const [key, count] of redis.counters) if (key.startsWith("usage:")) assert.equal(count, 0);
+  }
 });
 
 test("/health exposes metrics time zone and security headers", async () => {

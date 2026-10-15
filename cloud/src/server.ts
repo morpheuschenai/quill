@@ -11,6 +11,9 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import { verifyPortalyCallback } from "./portalyCallback.mjs";
+import { meteredResponseStream } from "./responseStream.ts";
+import { createPurchaseRecovery, RecoveryError, resolveCanonicalInstallation, CHECKOUT_KNOWN_SCRIPT, type RecoverySender } from "./purchaseRecovery.ts";
+import { reconcileBilling } from "./billingReconciliation.ts";
 
 export interface QuillEnv {
   OPENAI_KEY: string;
@@ -37,6 +40,9 @@ export interface QuillEnv {
   PORTALY_SUCCESS_URL?: string;
   PORTALY_CANCEL_URL?: string;
   PORTALY_PORTAL_RETURN_URL?: string;
+  RESEND_API_KEY?: string;
+  RECOVERY_EMAIL_FROM?: string;
+  EMAIL_RECOVERY_ENABLED?: string;
 }
 
 export interface RedisLike {
@@ -55,6 +61,7 @@ export interface Deps {
   env: QuillEnv;
   fetchImpl?: typeof fetch;
   now?: () => Date;
+  sendRecoveryEmail?: RecoverySender;
 }
 
 type MetricEvent =
@@ -80,6 +87,8 @@ interface SubscriptionRecord {
   currentAmount: number | null;
   cancelAtPeriodEnd: boolean;
   cancelEffectiveAt: string | null;
+  lastEventAt?: string;
+  lastPaymentReference?: string;
 }
 
 interface InstallationIdentity {
@@ -88,6 +97,58 @@ interface InstallationIdentity {
 }
 
 const MAX_REQUEST_BYTES = 10 * 1024 * 1024;
+const PORTALY_CALLBACK_EVENTS = new Set([
+  "creator_subscription.checkout.completed",
+  "creator_subscription.payment.succeeded",
+  "creator_subscription.payment.failed",
+  "creator_subscription.active",
+  "creator_subscription.cancel_requested",
+  "creator_subscription.canceled",
+]);
+
+// Never time out this guard: session expiry does not prove that a payment or
+// delayed callback cannot still arrive. Unknown outcomes require reconciliation.
+export const CHECKOUT_RESERVE_SCRIPT = `
+-- checkout_reserve_v1
+if redis.call("EXISTS", KEYS[1]) == 1 or redis.call("EXISTS", KEYS[2]) == 1 then return 0 end
+if (redis.call("GET", KEYS[3]) or "") ~= ARGV[2] then return 0 end
+redis.call("SET", KEYS[1], ARGV[1])
+return 1
+`;
+export const CHECKOUT_RELEASE_SCRIPT = `
+-- checkout_release_v1
+if redis.call("GET", KEYS[1]) ~= ARGV[1] then return 0 end
+return redis.call("DEL", KEYS[1])
+`;
+
+// Persist entitlement, reverse index and delivery receipt together. A failed
+// write must never leave a receipt that suppresses the provider's retry.
+export const BILLING_COMMIT_SCRIPT = `
+-- billing_commit_v1
+-- A checkout started before recovery must not create an independent entitlement
+-- on an installation which has since become an alias.
+if redis.call("EXISTS", "subscription:alias:" .. ARGV[2]) == 1 then return -1 end
+for i = 1, 4 do
+  local kind = redis.call("TYPE", KEYS[i]).ok
+  local expected = i <= 2 and "string" or "set"
+  if kind ~= "none" and kind ~= expected then return redis.error_reply("Invalid billing key type") end
+end
+if ARGV[3] ~= "" and redis.call("SISMEMBER", KEYS[3], ARGV[3]) == 1 then return 0 end
+local owner = redis.call("GET", KEYS[2])
+if owner and owner ~= ARGV[2] then return -1 end
+if (redis.call("GET", KEYS[1]) or "") ~= ARGV[4] then return -1 end
+redis.call("SET", KEYS[1], ARGV[1])
+redis.call("SET", KEYS[2], ARGV[2])
+if ARGV[3] ~= "" then
+  redis.call("SADD", KEYS[3], ARGV[3])
+  redis.call("EXPIRE", KEYS[3], ARGV[5])
+end
+if ARGV[6] ~= "" then
+  redis.call("SADD", KEYS[4], ARGV[6])
+  redis.call("EXPIRE", KEYS[4], ARGV[5])
+end
+return 1
+`;
 
 const QUOTA_SCRIPT = `
 local deviceUsed = tonumber(redis.call("GET", KEYS[1]) or "0")
@@ -102,6 +163,16 @@ globalUsed = redis.call("INCR", KEYS[2])
 if deviceUsed == 1 then redis.call("EXPIRE", KEYS[1], ttl) end
 if globalUsed == 1 then redis.call("EXPIRE", KEYS[2], ttl) end
 return {1, deviceUsed, globalUsed}
+`;
+
+const QUOTA_REFUND_SCRIPT = `
+-- quota_refund_v1
+if redis.call("EXISTS", KEYS[3]) == 1 then return 0 end
+for i = 1, 2 do
+  if tonumber(redis.call("GET", KEYS[i]) or "0") > 0 then redis.call("DECR", KEYS[i]) end
+end
+redis.call("SET", KEYS[3], "1", "EX", ARGV[1])
+return 1
 `;
 
 function jsonError(message: string, status: number, extras: Record<string, unknown> = {}): Response {
@@ -267,6 +338,8 @@ function parseSubscription(raw: string | null): SubscriptionRecord | null {
       currentAmount: typeof parsed.currentAmount === "number" ? parsed.currentAmount : null,
       cancelAtPeriodEnd: parsed.cancelAtPeriodEnd === true,
       cancelEffectiveAt: validISO(parsed.cancelEffectiveAt) ? parsed.cancelEffectiveAt : null,
+      lastEventAt: validISO(parsed.lastEventAt) ? parsed.lastEventAt : undefined,
+      lastPaymentReference: typeof parsed.lastPaymentReference === "string" ? parsed.lastPaymentReference : undefined,
     };
   } catch {
     return null;
@@ -361,7 +434,7 @@ document.querySelector("#range").addEventListener("change",()=>load().catch(aler
 </script></body></html>`;
 }
 
-export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Deps): Hono {
+export function createApp({ redis, env, fetchImpl, now = () => new Date(), sendRecoveryEmail }: Deps): Hono {
   const app = new Hono();
   app.use("*", secureHeaders());
   app.use("/v1/*", bodyLimit({
@@ -369,6 +442,7 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     onError: (c) => jsonError("Request body is too large.", 413),
   }));
   const doFetch = fetchImpl ?? fetch;
+  const recovery = createPurchaseRecovery({ redis, env, fetchImpl: doFetch, now, sendEmail: sendRecoveryEmail });
   const dailyLimit = Number.parseInt(env.DAILY_LIMIT || "10", 10);
   const proMonthlyLimit = Number.parseInt(env.PRO_MONTHLY_LIMIT || "600", 10);
   const globalCap = Number.parseInt(env.GLOBAL_DAILY_CAP || "5000", 10);
@@ -403,19 +477,11 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
   const loadSubscription = async (anonymousID: string): Promise<SubscriptionRecord | null> =>
     parseSubscription(await redis.get(subscriptionKey(anonymousID)));
 
-  const saveSubscription = async (
-    anonymousID: string,
-    record: SubscriptionRecord
-  ): Promise<void> => {
-    await redis.set(subscriptionKey(anonymousID), JSON.stringify(record));
-    await redis.set(subscriptionIndexKey(record.subscriptionId), anonymousID);
-  };
-
   const usageStatus = async (installation: InstallationIdentity) => {
     const current = now();
     const quotaDay = dayInTimeZone(current, installation.timeZone);
     const metricDay = dayInTimeZone(current, timeZone);
-    const anonymousID = hashIdentity(installation.installationID);
+    const anonymousID = await resolveCanonicalInstallation(redis, hashIdentity(installation.installationID));
     const subscription = await loadSubscription(anonymousID);
     const configuredPaymentMode = portalyMode(env.PORTALY_API_KEY);
     const subscriptionMatchesMode =
@@ -507,11 +573,33 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     return new Response(null, { status: 204 });
   });
 
+  for (const action of ["request", "verify"] as const) {
+    app.post(`/v1/billing/recovery/${action}`, async (c) => {
+      const installation = authenticateInstallation(c.req.raw);
+      if (!installation) return jsonError("Unauthorized installation.", 401);
+      if (env.EMAIL_RECOVERY_ENABLED !== "true") return jsonError("Email purchase recovery is not enabled.", 503, { code: "recovery_unavailable" });
+      let body: unknown;
+      try { body = await c.req.json(); } catch { return jsonError("Invalid request body.", 400); }
+      try {
+        const device = hashIdentity(installation.installationID);
+        return json(action === "request"
+          ? await recovery.request(device, clientIP(c.req.raw), body)
+          : await recovery.verify(device, body));
+      } catch (error) {
+        if (error instanceof RecoveryError) return jsonError(error.message, error.status, { code: error.code });
+        return jsonError("Purchase recovery is temporarily unavailable. Please try again later.", 503, { code: "recovery_unavailable" });
+      }
+    });
+  }
+
   app.get("/v1/billing/status", async (c) => {
     const installation = authenticateInstallation(c.req.raw);
     if (!installation) return jsonError("Unauthorized installation.", 401);
+    const owner = await resolveCanonicalInstallation(redis, hashIdentity(installation.installationID));
+    await reconcileBilling(redis, env, owner, doFetch, now);
     const status = await usageStatus(installation);
     return json({
+      recovery_enabled: env.EMAIL_RECOVERY_ENABLED === "true",
       plan: status.isPro ? "pro" : "free",
       used: status.used,
       limit: status.limit,
@@ -555,9 +643,23 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       return jsonError("Checkout callback must use HTTPS.", 503);
     }
 
+    // Reconcile the complete known subscription before deciding whether this
+    // installation may create another one. A missed renewal callback can leave
+    // an expired local period that looks free until the provider is queried.
+    const owner = await resolveCanonicalInstallation(redis, hashIdentity(installation.installationID));
+    await reconcileBilling(redis, env, owner, doFetch, now);
     const status = await usageStatus(installation);
     if (status.isPro) {
       return jsonError("Quill Pro is already active.", 409, { code: "PRO_ALREADY_ACTIVE" });
+    }
+
+    // If reconciliation was unavailable or inconclusive, a known paid record
+    // must fail closed. Only a confirmed local cancellation may start a fresh
+    // checkout; the reservation CAS below still protects the following race.
+    const previous = await redis.get(subscriptionKey(status.anonymousID));
+    const linkedSubscription = parseSubscription(previous);
+    if (previous && (!linkedSubscription || linkedSubscription.status !== "canceled")) {
+      return jsonError("A purchase is active or awaiting confirmation. Please contact support if it does not finish.", 409, { code: "CHECKOUT_PENDING" });
     }
 
     const promoActive = promotionIsActive();
@@ -576,12 +678,21 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     };
     if (promoActive) requestBody.discountCode = env.PORTALY_DISCOUNT_CODE;
 
+    const pendingKey = `checkout:pending:${status.anonymousID}`;
+    // Re-read status after taking the CAS snapshot so a new entitlement cannot
+    // slip between the initial isPro check and the reservation.
+    if ((await usageStatus(installation)).isPro || Number(await redis.eval(
+      CHECKOUT_RESERVE_SCRIPT, 3, pendingKey, `subscription:alias:${status.anonymousID}`,
+      subscriptionKey(status.anonymousID), requestBody.merchantOrderNumber as string, previous || ""
+    )) !== 1) return jsonError("A purchase is active or awaiting confirmation. Please contact support if it does not finish.", 409, { code: "CHECKOUT_PENDING" });
+
     let response: Response;
     try {
       response = await doFetch(
         `${env.PORTALY_API_HOST || "https://portaly.ai"}/api/creator-subscription/checkout-sessions`,
         {
           method: "POST",
+          signal: AbortSignal.timeout(10_000),
           headers: {
             Authorization: `Bearer ${env.PORTALY_API_KEY}`,
             "Content-Type": "application/json",
@@ -601,6 +712,9 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     }
     if (!response.ok) {
       const code = typeof result?.code === "string" ? result.code : undefined;
+      if ([400, 401, 403, 404, 422].includes(response.status)) {
+        await redis.eval(CHECKOUT_RELEASE_SCRIPT, 1, pendingKey, requestBody.merchantOrderNumber as string);
+      }
       if (code === "PLAN_INACTIVE") {
         return jsonError("This plan is no longer available.", 422, { code });
       }
@@ -616,12 +730,16 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
     }
     if (
       typeof session?.sessionId !== "string" ||
+      !/^[A-Za-z0-9_-]{1,200}$/.test(session.sessionId) ||
       hostedCheckoutURL.protocol !== "https:" ||
       typeof session?.checkoutToken !== "string" ||
       !validISO(session?.expiresAt)
     ) {
       return jsonError("Checkout service returned an incomplete session.", 502);
     }
+    await redis.eval(CHECKOUT_KNOWN_SCRIPT, 2, pendingKey, `checkout:known:${status.anonymousID}`,
+      requestBody.merchantOrderNumber as string,
+      JSON.stringify({ order: requestBody.merchantOrderNumber, sessionId: session.sessionId, mode: portalyMode(env.PORTALY_API_KEY), planId: env.PORTALY_PLAN_ID }));
     const appliedDiscount =
       session?.appliedDiscount && typeof session.appliedDiscount === "object"
         ? session.appliedDiscount as Record<string, unknown>
@@ -800,6 +918,9 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
 
     const payload = body as Record<string, unknown>;
     if (payload.event !== event) return jsonError("Callback event mismatch.", 400);
+    if (!PORTALY_CALLBACK_EVENTS.has(event)) {
+      return jsonError("Unsupported callback event.", 400);
+    }
     if (payload.mode !== "live" && payload.mode !== "test") {
       return jsonError("Callback mode is missing or invalid.", 400);
     }
@@ -857,12 +978,25 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       if (!deliveryIdentity) return jsonError("Missing callback payment identity.", 400);
     }
 
+    const commitCallback = async (anonymousID: string, record: SubscriptionRecord, previous: string | null) => {
+      const result = Number(await redis.eval(
+        BILLING_COMMIT_SCRIPT, 4,
+        subscriptionKey(anonymousID), subscriptionIndexKey(record.subscriptionId),
+        `portaly-callback:${event}`,
+        `metrics:purchase_completed:${dayInTimeZone(now(), timeZone)}`,
+        JSON.stringify(record), anonymousID,
+        deliveryIdentity ? hashIdentity(`${event}:${deliveryIdentity}`) : "",
+        previous || "", RAW_RETENTION_SECONDS,
+        event === "creator_subscription.checkout.completed"
+          ? hashIdentity(`portaly-purchase:${deliveryIdentity}`) : ""
+      ));
+      if (result === -1) throw new Error("Subscription changed; retry callback");
+      if (event === "creator_subscription.checkout.completed" && typeof payload.merchantOrderNumber === "string") {
+        await redis.eval(CHECKOUT_RELEASE_SCRIPT, 1, `checkout:pending:${anonymousID}`, payload.merchantOrderNumber);
+      }
+    };
+
     if (deliveryIdentity) {
-      const idempotencyKey = `portaly-callback:${event}`;
-      const anonymousIdentity = hashIdentity(`${event}:${deliveryIdentity}`);
-      const inserted = await redis.sadd(idempotencyKey, anonymousIdentity);
-      await redis.expire(idempotencyKey, RAW_RETENTION_SECONDS);
-      if (inserted === 0) return new Response(null, { status: 204 });
 
       if (event === "creator_subscription.checkout.completed") {
         const sessionID = payload.sessionId as string;
@@ -874,7 +1008,16 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
         const periodEnd = validISO(payload.nextBillingAt)
           ? payload.nextBillingAt
           : addOneMonthISO(periodStart);
-        await saveSubscription(callbackAnonymousID!, {
+        const previous = await redis.get(subscriptionKey(callbackAnonymousID!));
+        const existing = parseSubscription(previous);
+        // Checkout is a one-time initialization, never a period reset. A late
+        // original delivery must not undo a reconciled renewal or cancellation.
+        if (existing) {
+          if (existing.subscriptionId !== subscriptionID || existing.mode !== payload.mode || existing.planId !== payload.planId) return jsonError("Checkout conflicts with an existing subscription.", 409);
+          await commitCallback(callbackAnonymousID!, existing, previous);
+          return new Response(null, { status: 204 });
+        }
+        await commitCallback(callbackAnonymousID!, {
           subscriptionId: subscriptionID,
           sessionId: sessionID,
           planId: typeof payload.planId === "string" ? payload.planId : env.PORTALY_PLAN_ID || "",
@@ -885,12 +1028,9 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
           currentAmount: typeof payload.amount === "number" ? payload.amount : null,
           cancelAtPeriodEnd: false,
           cancelEffectiveAt: null,
-        });
-        await recordUnique(
-          "purchase_completed",
-          dayInTimeZone(now(), timeZone),
-          hashIdentity(`portaly-purchase:${deliveryIdentity}`)
-        );
+          lastEventAt: periodStart,
+          lastPaymentReference: typeof payload.paymentReference === "string" ? payload.paymentReference : undefined,
+        }, previous);
       }
     }
 
@@ -903,16 +1043,31 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
             : null;
       if (subscriptionID) {
         const anonymousID = await redis.get(subscriptionIndexKey(subscriptionID));
-        const record = anonymousID ? await loadSubscription(anonymousID) : null;
+        const previous = anonymousID ? await redis.get(subscriptionKey(anonymousID)) : null;
+        const record = parseSubscription(previous);
+        if (!anonymousID || !record) {
+          return jsonError("Subscription not ready; retry callback.", 503);
+        }
+        if (record.subscriptionId !== subscriptionID || record.mode !== payload.mode || (payload.planId !== undefined && payload.planId !== record.planId) || (env.PORTALY_PLAN_ID && record.planId !== env.PORTALY_PLAN_ID)) return jsonError("Callback subscription does not match.", 400);
         if (anonymousID && record) {
+          // Fully canceled subscriptions cannot be resumed under the provider
+          // contract; late active/failed/paid deliveries must not revive them.
+          if (record.status === "canceled" && event !== "creator_subscription.canceled") return new Response(null, { status: 204 });
+          const eventTime = event === "creator_subscription.payment.succeeded" ? payload.chargedAt
+            : event === "creator_subscription.payment.failed" ? payload.failedAt
+            : event === "creator_subscription.canceled" ? payload.canceledAt
+            : event === "creator_subscription.cancel_requested" ? payload.cancelRequestedAt : timestamp;
+          const eventDate = validISO(eventTime) ? eventTime : timestamp;
+          if (Date.parse(eventDate) < Math.max(Date.parse(record.periodStart), Date.parse(record.lastEventAt || record.periodStart))) return new Response(null, { status: 204 });
           if (event === "creator_subscription.payment.succeeded") {
+            if (!validISO(payload.chargedAt) || !validISO(payload.nextBillingAt) || Date.parse(payload.nextBillingAt) <= Date.parse(payload.chargedAt)) return jsonError("Missing confirmed payment period.", 400);
+            if (record.status === "canceled" || Date.parse(payload.nextBillingAt) < Date.parse(record.periodEnd)) return new Response(null, { status: 204 });
+            const samePeriod = Date.parse(record.periodStart) === Date.parse(payload.chargedAt);
+            if (samePeriod && (record.cancelAtPeriodEnd || record.status === "canceled")) return new Response(null, { status: 204 });
             record.status = "active";
-            record.periodStart = validISO(payload.chargedAt)
-              ? payload.chargedAt
-              : now().toISOString();
-            record.periodEnd = validISO(payload.nextBillingAt)
-              ? payload.nextBillingAt
-              : addOneMonthISO(record.periodStart);
+            record.periodStart = samePeriod ? record.periodStart : payload.chargedAt;
+            record.periodEnd = payload.nextBillingAt;
+            record.lastPaymentReference = typeof payload.paymentReference === "string" ? payload.paymentReference : record.lastPaymentReference;
             record.currentAmount = typeof payload.amount === "number" ? payload.amount : 199;
             record.cancelAtPeriodEnd = false;
             record.cancelEffectiveAt = null;
@@ -920,6 +1075,8 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
             record.status = typeof payload.status === "string" ? payload.status : "past_due";
           } else if (event === "creator_subscription.active") {
             record.status = "active";
+            record.cancelAtPeriodEnd = false;
+            record.cancelEffectiveAt = null;
           } else if (event === "creator_subscription.cancel_requested") {
             record.status = "cancel_requested";
             record.cancelAtPeriodEnd = true;
@@ -934,7 +1091,8 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
               : now().toISOString();
             record.periodEnd = record.cancelEffectiveAt;
           }
-          await saveSubscription(anonymousID, record);
+          record.lastEventAt = eventDate;
+          await commitCallback(anonymousID, record, previous);
         }
       }
     }
@@ -997,6 +1155,10 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
       return jsonError("Quill Cloud 今日流量已滿，請稍後再試，或改用自己的 API key。", 503);
     }
 
+    const refundKey = `quota-refund:${randomUUID()}`;
+    const refund = async () => {
+      await redis.eval(QUOTA_REFUND_SCRIPT, 3, status.usageKey, globalKey, refundKey, RAW_RETENTION_SECONDS);
+    };
     let upstream: Response;
     try {
       upstream = await doFetch(OPENAI_URL, {
@@ -1008,17 +1170,37 @@ export function createApp({ redis, env, fetchImpl, now = () => new Date() }: Dep
         body: JSON.stringify(body),
       });
     } catch {
+      await refund();
       return jsonError("Upstream connection failed.", 502);
     }
     if (!upstream.ok) {
+      await refund();
       return jsonError(
         `AI 服務暫時無法回應（${upstream.status}）。請稍後再試。`,
         upstream.status >= 500 ? 502 : 400
       );
     }
 
+    if (!upstream.body) {
+      await refund();
+      return jsonError("AI service returned an empty response.", 502);
+    }
+    if (!isStream) {
+      let answer: any;
+      try { answer = await upstream.json(); } catch {
+        await refund();
+        return jsonError("AI service returned an invalid response.", 502);
+      }
+      const content = answer?.choices?.[0]?.message?.content;
+      if (typeof content !== "string" || !content.trim()) {
+        await refund();
+        return jsonError("AI service returned no text.", 502);
+      }
+      await recordUnique("app_active", status.metricDay, status.anonymousID);
+      return json(answer);
+    }
     await recordUnique("app_active", status.metricDay, status.anonymousID);
-    return new Response(upstream.body, {
+    return new Response(meteredResponseStream(upstream.body, refund), {
       status: 200,
       headers: { "Content-Type": isStream ? "text/event-stream" : "application/json" },
     });
